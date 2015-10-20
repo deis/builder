@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Give this a useful name.
+  name: deis-example
+  labels:
+    heritage: deis
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
+      protocol: TCP
+  selector:
+    # Match the selector in the RC
+    app: deis-example
