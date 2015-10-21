@@ -36,6 +36,18 @@ build:
 	mkdir -p ${BINDIR}/bin
 	docker run --rm -v ${PWD}:/app -w /app golang:1.5.1 make docker-compile
 
+build-bpb:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder cli/builder.go || exit 1
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
+	@$(call check-static-binary,$(BINARY_DEST_DIR)/builder)
+	@$(call check-static-binary,$(BINARY_DEST_DIR)/fetcher)
+	for i in $(BINARIES); do \
+		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i src/$$i.go || exit 1; \
+	done
+	@for i in $(BINARIES); do \
+		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
+	done
+	docker build -t $(IMAGE) rootfs
 # For cases where build is run inside of a container.
 docker-compile:
 	go build -o ${BINDIR}/bin/boot -a -installsuffix cgo -ldflags ${LDFLAGS} boot.go

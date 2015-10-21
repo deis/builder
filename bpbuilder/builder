@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# builder hook called on every git receive-pack
+# NOTE: this script must be run as root (for docker access)
+#
+set -eo pipefail
+
+ARGS=3
+
+indent() {
+    echo "       $@"
+}
+
+puts-step() {
+    echo "-----> $@"
+}
+
+puts-step-sameline() {
+    echo -n "-----> $@"
+}
+
+puts-warn() {
+    echo " !     $@"
+}
+
+usage() {
+    echo "Usage: $0 <user> <repo> <sha>"
+}
+
+parse-string(){
+    # helper to avoid the single quote escape
+    # occurred in command substitution
+    local args=() idx=0 IFS=' ' c
+    for c; do printf -v args[idx++] '%s ' "$c"; done
+    printf "%s\n" "${args[*]}"
+}
+
+if [ $# -ne $ARGS ]; then
+    usage
+    exit 1
+fi
+
+USER=$1
+REPO=$2
+GIT_SHA=$3
+SHORT_SHA=${GIT_SHA:0:8}
+APP_NAME="${REPO%.*}"
+
+cd $(dirname $0) # ensure we are in the root dir
+
+ROOT_DIR=$(pwd)
+REPO_DIR="${ROOT_DIR}/${REPO}"
+BUILD_DIR="${REPO_DIR}/build"
+CACHE_DIR="${REPO_DIR}/cache"
+
+# define image names
+SLUG_NAME="$APP_NAME:git-$SHORT_SHA"
+
+# create app directories
+mkdir -p $BUILD_DIR $CACHE_DIR
+# create temporary directory inside the build dir for this push
+TMP_DIR=$(mktemp -d -p $BUILD_DIR)
+
+cd $REPO_DIR
+# use Procfile if provided, otherwise try default process types from ./release
+
+
+git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
+TAR_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/tar
+PUSH_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/push
+
+docker -H ${HOST}:2375 run -e TAR_URL=${TAR_URL} smothiki/slugbuilder ${PUSH_URL}
+
+# pull config from controller to be used during build
+# if [ -f Procfile ]; then
+#     echo "here1"
+#     PROCFILE=$(cat Procfile | yaml2json-procfile)
+# elif [ -f ${APP_NAME}.tgz ]; then
+#     echo "here2"
+#     # Sometimes, the buildpack will generate a Procfile instead of populating /bin/release
+#     # /bin/release was unofficially deprecated for declaring default process types
+#     if tar -xzf ${APP_NAME}.tar.gz ./Procfile &> /dev/null;
+#     then
+#         PROCFILE="$(tar --to-stdout -xzf ${APP_NAME}.tar.gz ./Procfile | yaml2json-procfile)"
+#     else
+#         PROCFILE=$(tar --to-stdout -xzf ${APP_NAME}.tar.gz ./.release | extract-types)
+#     fi
+# else
+#     echo "here3"
+#     PROCFILE={"web":"example-go"}
+# fi
+PROCFILE='{"web":"example-go"}'
+URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/config"
+RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
+CODE=$?
+echo $URL
+echo $RESPONSE
+if [ $CODE -ne 0 ]; then
+    puts-warn $RESPONSE
+    exit 1
+fi
+
+# use Procfile if provided, otherwise try default process types from ./release
+echo $PROCFILE
+USING_DOCKERFILE=false
+puts-step "Launching... "
+URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/build"
+DATA="$(generate-buildhook "$SHORT_SHA" "$USER" "$APP_NAME" "$APP_NAME" "$PROCFILE" "$USING_DOCKERFILE")"
+echo $DATA
+PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key={{ getv "/deis/controller/builderKey" }})
+echo $PUBLISH_RELEASE
+CODE=$?
+if [ $CODE -ne 0 ]; then
+    puts-warn "ERROR: Failed to launch container"
+    puts-warn $PUBLISH_RELEASE
+    exit 1
+fi
+
+RELEASE=$(echo $PUBLISH_RELEASE | extract-version)
+DOMAIN=$(echo $PUBLISH_RELEASE | extract-domain)
+indent "done, $APP_NAME:v$RELEASE deployed to Deis"
+echo
+indent "http://$DOMAIN"
+echo
+indent "To learn more, use \`deis help\` or visit http://deis.io"
+echo
+
+# cleanup
+cd $REPO_DIR
+git gc &>/dev/null
