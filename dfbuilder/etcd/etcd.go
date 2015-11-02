@@ -367,7 +367,7 @@ func UpdateHostPort(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Int
 }
 
 func setHostPort(client Setter, base, host, port string, ttl uint64) error {
-	if _, err := client.Set(base+"/buildpack/host", host, ttl); err != nil {
+	if _, err := client.Set(base+"/dockerfile/host", host, ttl); err != nil {
 		return err
 	}
 	if _, err := client.Set(base+"/port", port, ttl); err != nil {
@@ -450,63 +450,8 @@ func Watch(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 
 	return nil, nil
 
-	/* Watch seems to be broken. So we do this stupid watch loop instead.
-	receiver := make(chan *etcd.Response)
-	stop := make(chan bool)
-	// Buffer the channels so that we don't hang waiting for go-etcd to
-	// read off the channel.
-	stopetcd := make(chan bool, 1)
-	stopwatch := make(chan bool, 1)
-
-
-	// Watch for errors.
-	safely.GoDo(c, func() {
-		// When a receiver is passed in, no *Response is ever returned. Instead,
-		// Watch acts like an error channel, and receiver gets all of the messages.
-		_, err := client.Watch(path, 0, true, receiver, stopetcd)
-		if err != nil {
-			log.Infof(c, "Watcher stopped with error '%s'", err)
-			stopwatch <- true
-			//close(stopwatch)
-		}
-	})
-	// Watch for events
-	safely.GoDo(c, func() {
-		for {
-			select {
-			case msg := <-receiver:
-				if msg.Node != nil {
-					log.Infof(c, "Received notification %s for %s", msg.Action, msg.Node.Key)
-				} else {
-					log.Infof(c, "Received unexpected etcd message: %v", msg)
-				}
-				git := exec.Command("/home/git/check-repos")
-				if out, err := git.CombinedOutput(); err != nil {
-					log.Errf(c, "Failed git check-repos: %s", err)
-					log.Infof(c, "Output: %s", out)
-				}
-			case <-stopwatch:
-				c.Logf("debug", "Received signal to stop watching events.")
-				return
-			}
-		}
-	})
-	// Fan out stop requests.
-	safely.GoDo(c, func() {
-		<-stop
-		stopwatch <- true
-		stopetcd <- true
-		close(stopwatch)
-		close(stopetcd)
-	})
-
-	return stop, nil
-	*/
 }
 
-// checkRetry overrides etcd.DefaultCheckRetry.
-//
-// It adds configurable number of retries and configurable timesouts.
 func checkRetry(c *etcd.Cluster, numReqs int, last http.Response, err error) error {
 	if numReqs > retryCycles*len(c.Machines) {
 		return fmt.Errorf("Tried and failed %d cluster connections: %s", retryCycles, err)

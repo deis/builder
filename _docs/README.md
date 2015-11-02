@@ -1,10 +1,7 @@
-# Project Docs
+# Deis builder
 
-Documentation for the project should be stored in the `_docs` directory.
-Since the directory is protected from Go, undecorated code samples can
-also be dropped inside of this directory.
-
-We need to decide on whether we'll continue using RST or switch to
-Markdown.
+Deis builder is decoupled into two builder components.
+deis buildpack builder need deis/slugrunner and deis/slugbuilder on every host
+deis docker file builder needs deis registry running.
 
 I believe we are leaning toward MkDocs: http://www.mkdocs.org/

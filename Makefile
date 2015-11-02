@@ -2,29 +2,37 @@
 # Some uses for short name:
 # - Docker image name
 # - Kubernetes service, rc, pod, secret, volume names
-SHORT_NAME := example
+SHORT_NAME := builder
 
 # Enable vendor/ directory support.
 export GO15VENDOREXPERIMENT=1
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
-VERSION := 0.0.1-$(shell date "+%Y%m%d%H%M%S")
+# VERSION := 0.0.1-$(shell date "+%Y%m%d%H%M%S")
 
+VERSION := 2.0.0
+BINARY_DEST_DIR := rootfs/usr/bin
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
-
+BINARIES := extract-domain extract-types extract-version generate-buildhook get-app-config get-app-values publish-release-controller yaml2json-procfile
+STANDALONE := extract-types  generate-buildhook yaml2json-procfile
 # Docker Root FS
 BINDIR := ./rootfs
 
 # Legacy support for DEV_REGISTRY, plus new support for DEIS_REGISTRY.
-DEV_REGISTRY ?= $(eval docker-machine ip deis):5000
+DEV_REGISTRY ?= $$DEV_REGISTRY
 DEIS_REGISTY ?= ${DEV_REGISTRY}
 
 # Kubernetes-specific information for RC, Service, and Image.
-RC := manifests/deis-${SHORT_NAME}-rc.yaml
-SVC := manifests/deis-${SHORT_NAME}-service.yaml
-IMAGE := ${DEIS_REGISTRY}/deis/${SHORT_NAME}:${VERSION}
+RCBP := manifests/deis-bp${SHORT_NAME}-rc.yaml
+SVCBP := manifests/deis-bp${SHORT_NAME}-service.yaml
+# IMAGEBP := ${DEV_REGISTRY}/deis/bp${SHORT_NAME}:${VERSION}
+IMAGEBP := deis/bp${SHORT_NAME}:${VERSION}
+
+RCDF := manifests/deis-df${SHORT_NAME}-rc.yaml
+SVCDF := manifests/deis-df${SHORT_NAME}-service.yaml
+IMAGEDF := ${DEV_REGISTRY}/deis/df${SHORT_NAME}:${VERSION}
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -33,34 +41,52 @@ all:
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
 build:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder cli/builder.go || exit 1
 	mkdir -p ${BINDIR}/bin
 	docker run --rm -v ${PWD}:/app -w /app golang:1.5.1 make docker-compile
 
-build-bpb:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder cli/builder.go || exit 1
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
-	@$(call check-static-binary,$(BINARY_DEST_DIR)/builder)
+docker-build-bpb:
+	cp -r bpbuilder/etcd pkg/
+	cp bpbuilder/kubectl rootfs/bin/
+	cp bpbuilder/entrypoint.sh rootfs/
+	cp bpbuilder/deis-slugbuilder.yaml rootfs/etc/
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/bpbuilder boot.go || exit 1
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher bpbuilder/fetcher/fetcher.go || exit 1
+	@$(call check-static-binary,$(BINARY_DEST_DIR)/bpbuilder)
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/fetcher)
 	for i in $(BINARIES); do \
-		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i src/$$i.go || exit 1; \
+		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
+	done
+	@echo "Past go compiling"
+	@for i in $(BINARIES); do \
+		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
+	done
+	docker build -t $(IMAGEBP) rootfs
+	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGEBP}|g" ${RCBP}
+	rm -rf pkg/etcd
+	rm rootfs/entrypoint.sh
+# For cases where build is run inside of a container.
+
+docker-build-dfb:
+	cp -r dfbuilder/etcd pkg/
+	cp bpbuilder/entrypoint.sh rootfs/
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/dfbuilder boot.go || exit 1
+	@$(call check-static-binary,$(BINARY_DEST_DIR)/dfbuilder)
+	for i in $(BINARIES); do \
+		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
 	done
 	@for i in $(BINARIES); do \
 		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
 	done
-	docker build -t $(IMAGE) rootfs
-# For cases where build is run inside of a container.
-docker-compile:
-	go build -o ${BINDIR}/bin/boot -a -installsuffix cgo -ldflags ${LDFLAGS} boot.go
+	docker build -t $(IMAGEDF) rootfs
+	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/df${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGEDF}|g" ${RCDF}
+	rm -rf pkg/etcd
+	rm rootfs/entrypoint.sh
 
-# For cases where we're building from local
-# We also alter the RC file to set the image name.
-docker-build:
-	docker build --rm -t ${IMAGE} rootfs
-	perl -pi -e "s|[a-z0-9.:]+\/deis\/${SHORT_NAME}:[0-9a-z-.]+|${IMAGE}|g" ${RC}
 
 # Push to a registry that Kubernetes can access.
-docker-push:
-	docker push ${IMAGE}
+docker-push-bp:
+	docker push ${IMAGEBP}
 
 # Deploy is a Kubernetes-oriented target
 deploy: kube-service kube-rc
@@ -78,3 +104,12 @@ kube-clean:
 	kubectl delete rc deis-example
 
 .PHONY: all build docker-compile kube-up kube-down deploy
+
+define check-static-binary
+	  if file $(1) | egrep -q "(statically linked|Mach-O)"; then \
+	    echo ""; \
+	  else \
+	    echo "The binary file $(1) is not statically linked. Build canceled"; \
+	    exit 1; \
+	  fi
+endef

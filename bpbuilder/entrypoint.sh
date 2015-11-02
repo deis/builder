@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 
-builder & 
+bpbuilder & 
 exec fetcher

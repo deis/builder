@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  # Change the name
+  name: deis-builderdf-rc
+  labels:
+    heritage: deis
+spec:
+  replicas: 1
+
+  # Change the selector name
+  selector:
+    app: deis-builder
+  template:
+    metadata:
+      labels:
+        # Important: these labels need to match the selector above
+        app: deis-builder
+    spec:
+      containers:
+        - name: deis-dfbuilder
+        image: 1.2.3.4:5000/deis/dfbuilder:1.2.3
+          ports:
+            - containerPort: 2222
+        command:
+          - entrypoint.sh  

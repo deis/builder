@@ -64,31 +64,18 @@ TMP_DIR=$(mktemp -d -p $BUILD_DIR)
 cd $REPO_DIR
 # use Procfile if provided, otherwise try default process types from ./release
 
-
 git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 TAR_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/tar
 PUSH_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/push
+if [ "$nosecret" == true ]; then
+    head -n 21 /etc/slugbuilder.yaml > /etc/tmp.yaml
+    mv /etc/tmp.yaml /etc/slugbuilder.yaml
+fi
+sed -i -- 's/puturl/${PUSH_URL}/g' /etc/deis-slugbuilder.yaml
+sed -i -- 's/tar-url/${TAR_URL}/g' /etc/deis-slugbuilder.yaml
 
-docker -H ${HOST}:2375 run -e TAR_URL=${TAR_URL} smothiki/slugbuilder ${PUSH_URL}
+kubectl create -f /etc/deis-slugbuilder.yaml
 
-# pull config from controller to be used during build
-# if [ -f Procfile ]; then
-#     echo "here1"
-#     PROCFILE=$(cat Procfile | yaml2json-procfile)
-# elif [ -f ${APP_NAME}.tgz ]; then
-#     echo "here2"
-#     # Sometimes, the buildpack will generate a Procfile instead of populating /bin/release
-#     # /bin/release was unofficially deprecated for declaring default process types
-#     if tar -xzf ${APP_NAME}.tar.gz ./Procfile &> /dev/null;
-#     then
-#         PROCFILE="$(tar --to-stdout -xzf ${APP_NAME}.tar.gz ./Procfile | yaml2json-procfile)"
-#     else
-#         PROCFILE=$(tar --to-stdout -xzf ${APP_NAME}.tar.gz ./.release | extract-types)
-#     fi
-# else
-#     echo "here3"
-#     PROCFILE={"web":"example-go"}
-# fi
 PROCFILE='{"web":"example-go"}'
 URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)

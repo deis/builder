@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Give this a useful name.
+  name: deis-builder
+  labels:
+    heritage: deis
+    release: 2.0.0
+spec:
+  ports:
+    - port: 2222
+      targetPort: 2222
+      name: ssh
+      protocol: TCP
+    - port: 2223
+      targetPort: 2222
+      name: ssh
+      protocol: TCP
+  selector:
+    # Match the selector in the RC
+    app: deis-builder
