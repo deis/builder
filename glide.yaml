@@ -1,0 +1,20 @@
+package: main
+import:
+- package: github.com/coreos/go-etcd
+  subpackages:
+  - /etcd
+- package: github.com/deis/deis
+  subpackages:
+  - /buildpack/builder/sshd
+  - /pkg/time
+- package: github.com/gorilla/mux
+- package: github.com/gorilla/context
+- package: github.com/Masterminds/cookoo
+  subpackages:
+  - /log
+  - /safely
+  - /fmt
+- package: golang.org/x/crypto
+  subpackages:
+  - /ssh
+- package: gopkg.in/yaml.v2
