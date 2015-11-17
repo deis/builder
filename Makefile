@@ -40,10 +40,13 @@ all:
 # This illustrates a two-stage Docker build. docker-compile runs inside of
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
-build:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder cli/builder.go || exit 1
-	mkdir -p ${BINDIR}/bin
-	docker run --rm -v ${PWD}:/app -w /app golang:1.5.1 make docker-compile
+#
+# Aaron(2015-11-17) doesn't work, commented out. use 'make docker-build-bpb' instead
+#
+# build:
+# 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
+# 	mkdir -p ${BINDIR}/bin
+# 	docker run --rm -v ${PWD}:/app -w /app golang:1.5.1 make docker-compile
 
 docker-build-bpb:
 	cp -r bpbuilder/etcd pkg/
