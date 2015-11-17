@@ -8,7 +8,7 @@ package pkg
 import (
 	"github.com/Masterminds/cookoo"
 	clog "github.com/Masterminds/cookoo/log"
-	"github.com/deis/deis/buildpack/builder/sshd"
+	"github.com/deis/builder/pkg/sshd"
 
 	"log"
 	"os"
