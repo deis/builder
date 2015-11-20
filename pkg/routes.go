@@ -32,7 +32,8 @@ func routes(reg *cookoo.Registry) {
 				Fn:   env.Get,
 				Using: []cookoo.Param{
 					{Name: "HOST", DefaultValue: "127.0.0.1"},
-					{Name: "ETCD_PORT", DefaultValue: "4001"},
+					{Name: "DEIS_ETCD_1_SERVICE_HOST", DefaultValue: "127.0.0.1"},
+					{Name: "DEIS_ETCD_1_SERVICE_PORT_CLIENT", DefaultValue: "4001"},
 					{Name: "ETCD_PATH", DefaultValue: "/deis/builder"},
 					{Name: "ETCD_TTL", DefaultValue: "20"},
 				},
@@ -41,7 +42,7 @@ func routes(reg *cookoo.Registry) {
 				Name: "vars2",
 				Fn:   env.Get,
 				Using: []cookoo.Param{
-					{Name: "ETCD", DefaultValue: "$HOST:$ETCD_PORT"},
+					{Name: "ETCD", DefaultValue: "$DEIS_ETCD_1_SERVICE_HOST:$DEIS_ETCD_1_SERVICE_PORT_CLIENT"},
 				},
 			},
 
@@ -136,7 +137,7 @@ func routes(reg *cookoo.Registry) {
 				Fn:   etcd.UpdateHostPort,
 				Using: []cookoo.Param{
 					{Name: "base", From: "cxt:ETCD_PATH"},
-					{Name: "host", From: "cxt:HOST"},
+					{Name: "host", From: "cxt:ETCD_HOST"},
 					{Name: "port", From: "cxt:EXTERNAL_PORT"},
 					{Name: "client", From: "cxt:client"},
 					{Name: "sshdPid", From: "cxt:sshd"},

@@ -7,6 +7,7 @@ set -eo pipefail
 
 ARGS=3
 
+HOST=`ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
 indent() {
     echo "       $@"
 }
@@ -55,7 +56,7 @@ CACHE_DIR="${REPO_DIR}/cache"
 
 # define image names
 SLUG_NAME="$APP_NAME:git-$SHORT_SHA"
-
+META_NAME=`echo ${SLUG_NAME}| tr ":" "-"`
 # create app directories
 mkdir -p $BUILD_DIR $CACHE_DIR
 # create temporary directory inside the build dir for this push
@@ -65,19 +66,41 @@ cd $REPO_DIR
 # use Procfile if provided, otherwise try default process types from ./release
 
 git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-TAR_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/tar
-PUSH_URL=http://${HOST}:3000/git/home/${SLUG_NAME}/push
-if [ "$nosecret" == true ]; then
-    head -n 21 /etc/slugbuilder.yaml > /etc/tmp.yaml
-    mv /etc/tmp.yaml /etc/slugbuilder.yaml
+
+
+if [[ ! -f /var/run/secrets/object/store/access-key-id  ]]; then
+    head -n 21 /etc/deis-slugbuilder.yaml > /etc/${SLUG_NAME}.yaml
+else
+    cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
 fi
-sed -i -- 's/puturl/${PUSH_URL}/g' /etc/deis-slugbuilder.yaml
-sed -i -- 's/tar-url/${TAR_URL}/g' /etc/deis-slugbuilder.yaml
 
-kubectl create -f /etc/deis-slugbuilder.yaml
+if [ -z "$S3EP" ]; then
+    S3EP=${HOST}:3000
+fi
 
-PROCFILE='{"web":"example-go"}'
-URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/config"
+TAR_URL=http://$S3EP/git/home/${SLUG_NAME}/tar
+PUSH_URL=http://$S3EP/git/home/${SLUG_NAME}/push
+
+sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
+sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
+sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
+
+kubectl create -f /etc/${SLUG_NAME}.yaml
+
+while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
+do
+  sleep 2
+  echo "no file"
+done
+
+cp /apps/${SLUG_NAME}/slug.tgz $TMP_DIR/
+if tar -tzf $TMP_DIR/slug.tgz ./Procfile &> /dev/null; then
+  PROCFILE="$(tar --to-stdout -xzf $TMP_DIR/slug.tgz ./Procfile | yaml2json-procfile)"
+else
+  PROCFILE="$(tar --to-stdout -xzf $TMP_DIR/slug.tgz ./.release | extract-types)"
+fi
+
+URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
 CODE=$?
 echo $URL
@@ -91,7 +114,7 @@ fi
 echo $PROCFILE
 USING_DOCKERFILE=false
 puts-step "Launching... "
-URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/build"
+URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/build"
 DATA="$(generate-buildhook "$SHORT_SHA" "$USER" "$APP_NAME" "$APP_NAME" "$PROCFILE" "$USING_DOCKERFILE")"
 echo $DATA
 PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key={{ getv "/deis/controller/builderKey" }})

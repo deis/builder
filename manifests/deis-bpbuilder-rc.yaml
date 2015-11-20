@@ -18,9 +18,11 @@ spec:
         app: deis-builder
     spec:
       containers:
-        - name: deis-bpbuilder
-        image: deis/bpbuilder:2.0.0
-          ports:
-            - containerPort: 2222
-        command:
-          - entrypoint.sh  
+      - name: deis-bpbuilder
+        image: smothiki/bpbuilder:2.3.1
+        ports:
+          - containerPort: 2223
+          - containerPort: 3000
+        env:
+          - name: "EXTERNAL_PORT"
+            value: "2223"

@@ -9,12 +9,12 @@ metadata:
 spec:
   ports:
     - port: 2222
-      targetPort: 2222
-      name: ssh
+      targetPort: 2223
+      name: sshbp
       protocol: TCP
     - port: 2223
       targetPort: 2222
-      name: ssh
+      name: sshdf
       protocol: TCP
   selector:
     # Match the selector in the RC

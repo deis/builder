@@ -56,7 +56,7 @@ CACHE_DIR="${REPO_DIR}/cache"
 
 # define image names
 IMAGE_NAME="$APP_NAME:git-$SHORT_SHA"
-TMP_IMAGE="{{ getv "/deis/registry/host" }}:{{ getv "/deis/registry/port" }}/$IMAGE_NAME"
+TMP_IMAGE="$DEIS_REGISTRY_SERVICE_HOST:$DEIS_REGISTRY_SERVICE_PORT/$IMAGE_NAME"
 
 # create app directories
 mkdir -p $BUILD_DIR $CACHE_DIR
@@ -72,7 +72,7 @@ cd $TMP_DIR
 USING_DOCKERFILE=true
 
 # pull config from controller to be used during build
-URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/config"
+URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
 CODE=$?
 
@@ -94,15 +94,15 @@ echo "ENV GIT_SHA $GIT_SHA" >> Dockerfile
 
 echo
 puts-step "Building Docker image"
-docker -H ${HOST}:2375 build -t $TMP_IMAGE . 2>&1
+docker build -t $TMP_IMAGE . 2>&1
 puts-step "Pushing image to private registry"
-docker -H ${HOST}:2375 push $TMP_IMAGE  &>/dev/null
+docker push $TMP_IMAGE  &>/dev/null
 echo
 
 PROCFILE="{}"
 
 puts-step "Launching... "
-URL="{{ getv "/deis/controller/protocol" }}://{{ getv "/deis/controller/host" }}:{{ getv "/deis/controller/port" }}/v1/hooks/build"
+URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/build"
 DATA=$(generate-buildhook "$SHORT_SHA" "$USER" "$APP_NAME" "$APP_NAME" "$PROCFILE" "$USING_DOCKERFILE")
 PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key={{ getv "/deis/controller/builderKey" }})
 

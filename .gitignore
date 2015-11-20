@@ -1,3 +1,4 @@
 rootfs/bin/boot
+rootfs/usr/bin/*
 vendor/
 rootfs/usr/bin/

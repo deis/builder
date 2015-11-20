@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-export ETCD=${ETCD:-$HOST:4001}
+
+export ETCD=$DEIS_ETCD_1_SERVICE_HOST:$DEIS_ETCD_1_SERVICE_PORT_CLIENT
 
 cd $(dirname $0) # absolute path
 
@@ -11,7 +12,7 @@ do
     if [[ $? -eq 4 ]]
     then
         rm -rf "$repo"
-        appname="{{ getv "/deis/registry/host" }}:{{ getv "/deis/registry/port" }}/$reponame"
+        appname="$DEIS_REGISTRY_SERVICE_HOST:$DEIS_REGISTRY_SERVICE_PORT/$reponame"
         docker images | grep $appname | awk '{ print $3 }' | xargs -r docker rmi -f
         # remove any dangling images left over from the cleanup
         docker images --filter "dangling=true" | awk '{ print $3 }' | grep -v IMAGE | xargs -r docker rmi -f
