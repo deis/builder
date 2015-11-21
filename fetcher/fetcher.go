@@ -1,4 +1,4 @@
-package main
+package fetcher
 
 import (
 	"fmt"
@@ -18,19 +18,18 @@ const (
 	cmdstring     = "/tmp/builder/build.sh"
 )
 
-func main() {
+// Serve will start the fetcher server and block until it stops. Since it blocks, it's a best practice to execute this func in a goroutine.
+func Serve(port int) {
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/git/home/{name}/tar", getTar).Methods("GET")
 	rtr.HandleFunc("/git/home/{name}/slug", getSlug).Methods("GET")
 	rtr.HandleFunc("/git/home/health", health).Methods("GET")
 	rtr.HandleFunc("/git/home/{name}/push", putSlug).Methods("PUT")
-	http.Handle("/", rtr)
-	log.Println("Listening... on 3000")
-	http.ListenAndServe(":3000", nil)
+	hostStr := fmt.Sprintf(":%d", port)
+	http.ListenAndServe(hostStr, rtr)
 }
 
 func getTar(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Hello, world! gettar")
 	params := mux.Vars(r)
 	name := strings.Split(params["name"], ":")[0]
 	dat, err := ioutil.ReadFile(appdirectory + name + ".git/" + name + ".tar.gz")
@@ -45,7 +44,6 @@ func health(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSlug(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Hello, world! getslug")
 	params := mux.Vars(r)
 	name := params["name"]
 	dat, err := ioutil.ReadFile(slugdirectory + name + "/slug.tgz")
@@ -56,7 +54,6 @@ func getSlug(w http.ResponseWriter, r *http.Request) {
 }
 
 func putSlug(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Hello, world! putslug")
 	params := mux.Vars(r)
 	name := params["name"]
 	log.Println(name)

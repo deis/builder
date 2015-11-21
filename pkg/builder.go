@@ -4,6 +4,8 @@
 package pkg
 
 import (
+	"fmt"
+
 	"github.com/Masterminds/cookoo"
 	clog "github.com/Masterminds/cookoo/log"
 	"github.com/deis/builder/pkg/sshd"
@@ -26,7 +28,7 @@ const (
 // Git.
 //
 // Run returns on of the Status* status code constants.
-func Run(cmd string) int {
+func Run(sshHostIP string, sshHostPort int, cmd string) int {
 	reg, router, ocxt := cookoo.Cookoo()
 	log.SetFlags(0) // Time is captured elsewhere.
 
@@ -45,17 +47,7 @@ func Run(cmd string) int {
 		return StatusLocalError
 	}
 
-	// Set up the SSH service.
-	ip := os.Getenv("SSH_HOST_IP")
-	if ip == "" {
-		ip = "0.0.0.0"
-	}
-	port := os.Getenv("SSH_HOST_PORT")
-	if port == "" {
-		port = "2223"
-	}
-
-	cxt.Put(sshd.Address, ip+":"+port)
+	cxt.Put(sshd.Address, fmt.Sprintf("%s:%d", sshHostIP, sshHostPort))
 
 	// Supply route names for handling various internal routing. While this
 	// isn't necessary for Cookoo, it makes it easy for us to mock these

@@ -1,5 +1,7 @@
+parent: null
 package: main
 import:
+- package: github.com/kelseyhightower/envconfig
 - package: github.com/coreos/go-etcd
   subpackages:
   - /etcd
