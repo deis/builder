@@ -6,6 +6,4 @@ gid = 0
 mode  = "0755"
 keys = [
   "/deis/controller",
-  "/deis/builder",
-  "/deis/registry",
 ]
