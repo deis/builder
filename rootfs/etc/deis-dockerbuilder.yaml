@@ -1,0 +1,36 @@
+# A debugging utility for testing Minio from within k8s.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: repo_name
+  labels:
+    heritage: deis
+    version: 2015-sept
+spec:
+  restartPolicy: Never
+  containers:
+    - name: repo_name
+      imagePullPolicy: Always
+      image: smothiki/dockerbuilder:5.5
+      env:
+        - name: DEBUG
+          value: "1"
+        - name: TAR_URL
+          value: tar-url
+        - name: IMAGE
+          value: imagename
+        # - name : REG_URL
+        #   value: puturl
+      volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket
+        - name: object-store
+          mountPath: /var/run/secrets/object/store
+          readOnly: true
+  volumes:
+    - name: object-store
+      secret:
+        secretName: object-store
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock

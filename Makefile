@@ -25,14 +25,11 @@ DEV_REGISTRY ?= $$DEV_REGISTRY
 DEIS_REGISTY ?= ${DEV_REGISTRY}
 
 # Kubernetes-specific information for RC, Service, and Image.
-RCBP := manifests/deis-bp${SHORT_NAME}-rc.yaml
-SVCBP := manifests/deis-bp${SHORT_NAME}-service.yaml
+RC := manifests/deis-${SHORT_NAME}-rc.yaml
+SVC := manifests/deis-${SHORT_NAME}-service.yaml
 # IMAGEBP := ${DEV_REGISTRY}/deis/bp${SHORT_NAME}:${VERSION}
-IMAGEBP := deis/bp${SHORT_NAME}:${VERSION}
+IMAGE := smothiki/${SHORT_NAME}:${VERSION}
 
-RCDF := manifests/deis-df${SHORT_NAME}-rc.yaml
-SVCDF := manifests/deis-df${SHORT_NAME}-service.yaml
-IMAGEDF := ${DEV_REGISTRY}/deis/df${SHORT_NAME}:${VERSION}
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -40,22 +37,11 @@ all:
 # This illustrates a two-stage Docker build. docker-compile runs inside of
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
-#
-# Aaron(2015-11-17) doesn't work, commented out. use 'make docker-build-bpb' instead
-#
-# build:
-# 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
-# 	mkdir -p ${BINDIR}/bin
-# 	docker run --rm -v ${PWD}:/app -w /app golang:1.5.1 make docker-compile
 
-docker-build-bpb:
-	cp -r bpbuilder/etcd pkg/
-	cp bpbuilder/kubectl rootfs/bin/
-	cp bpbuilder/entrypoint.sh rootfs/
-	cp bpbuilder/deis-slugbuilder.yaml rootfs/etc/
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/bpbuilder boot.go || exit 1
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher bpbuilder/fetcher/fetcher.go || exit 1
-	@$(call check-static-binary,$(BINARY_DEST_DIR)/bpbuilder)
+build:
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
+	@$(call check-static-binary,$(BINARY_DEST_DIR)/builder)
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/fetcher)
 	for i in $(BINARIES); do \
 		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
@@ -64,32 +50,16 @@ docker-build-bpb:
 	@for i in $(BINARIES); do \
 		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
 	done
-	docker build -t $(IMAGEBP) rootfs
-	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGEBP}|g" ${RCBP}
-	rm -rf pkg/etcd
-	rm rootfs/entrypoint.sh
-# For cases where build is run inside of a container.
 
-docker-build-dfb:
-	cp -r dfbuilder/etcd pkg/
-	cp bpbuilder/entrypoint.sh rootfs/
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/dfbuilder boot.go || exit 1
-	@$(call check-static-binary,$(BINARY_DEST_DIR)/dfbuilder)
-	for i in $(BINARIES); do \
-		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 godep go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
-	done
-	@for i in $(BINARIES); do \
-		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
-	done
-	docker build -t $(IMAGEDF) rootfs
-	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/df${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGEDF}|g" ${RCDF}
-	rm -rf pkg/etcd
-	rm rootfs/entrypoint.sh
+docker-build: 
+	docker build -t $(IMAGE) rootfs
+	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGE}|g" ${RC}
+# For cases where build is run inside of a container.
 
 
 # Push to a registry that Kubernetes can access.
 docker-push-bp:
-	docker push ${IMAGEBP}
+	docker push ${IMAGE}
 
 # Deploy is a Kubernetes-oriented target
 deploy: kube-service kube-rc
@@ -104,7 +74,7 @@ kube-rc:
 	kubectl create -f ${RC}
 
 kube-clean:
-	kubectl delete rc deis-example
+	kubectl delete rc deis-builder
 
 .PHONY: all build docker-compile kube-up kube-down deploy
 

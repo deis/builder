@@ -25,8 +25,6 @@ RUN apk add --update-cache \
     xz \
     && rm -rf /var/cache/apk/*
 
-RUN curl -sSL https://get.docker.com/builds/Linux/x86_64/docker-1.5.0 -o /usr/bin/docker && \
-    chmod +x /usr/bin/docker
 
 # configure ssh server
 RUN mkdir -p /var/run/sshd && rm -rf /etc/ssh/ssh_host*
@@ -42,6 +40,7 @@ RUN chown -R $GITUSER:$GITUSER $GITHOME
 
 CMD ["/bin/boot"]
 COPY ./entrypoint.sh /
+ADD ./check-repos /home/git/
 ENTRYPOINT ["/entrypoint.sh"]
 EXPOSE 2223
 EXPOSE 3000
