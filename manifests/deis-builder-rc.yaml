@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: deis-builder
-          image: smothiki/builder:2.5.2
+          image: quay.io/deisci/builder:v2-alpha
           ports:
             - containerPort: 2223
             - containerPort: 3000
