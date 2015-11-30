@@ -2,19 +2,18 @@
 # Some uses for short name:
 # - Docker image name
 # - Kubernetes service, rc, pod, secret, volume names
-SHORT_NAME := builder
+SHORT_NAME ?= builder
 
 # Enable vendor/ directory support.
 export GO15VENDOREXPERIMENT=1
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
-# VERSION := 0.0.1-$(shell date "+%Y%m%d%H%M%S")
-
-VERSION := 2.0.0
+VERSION ?= 0.0.1-$(shell date "+%Y%m%d%H%M%S")
 BINARY_DEST_DIR := rootfs/usr/bin
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
+IMAGE_PREFIX ?= deis
 BINARIES := extract-domain extract-types extract-version generate-buildhook get-app-config get-app-values publish-release-controller yaml2json-procfile
 STANDALONE := extract-types  generate-buildhook yaml2json-procfile
 # Docker Root FS
@@ -22,22 +21,23 @@ BINDIR := ./rootfs
 
 # Legacy support for DEV_REGISTRY, plus new support for DEIS_REGISTRY.
 DEV_REGISTRY ?= $$DEV_REGISTRY
-DEIS_REGISTY ?= ${DEV_REGISTRY}
+DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
 # Kubernetes-specific information for RC, Service, and Image.
 RC := manifests/deis-${SHORT_NAME}-rc.yaml
 SVC := manifests/deis-${SHORT_NAME}-service.yaml
-# IMAGEBP := ${DEV_REGISTRY}/deis/bp${SHORT_NAME}:${VERSION}
-IMAGE := smothiki/${SHORT_NAME}:${VERSION}
+IMAGE := ${DEIS_REGISTRY}${IMAGE_PREFIX}/${SHORT_NAME}:${VERSION}
 
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
 
+bootstrap:
+	glide up
+
 # This illustrates a two-stage Docker build. docker-compile runs inside of
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
-
 build:
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
@@ -46,19 +46,16 @@ build:
 	for i in $(BINARIES); do \
 		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
 	done
-	@echo "Past go compiling"
 	@for i in $(BINARIES); do \
 		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
 	done
 
-docker-build: 
-	docker build -t $(IMAGE) rootfs
+docker-build: build
+	docker build --rm -t $(IMAGE) rootfs
 	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGE}|g" ${RC}
-# For cases where build is run inside of a container.
-
 
 # Push to a registry that Kubernetes can access.
-docker-push-bp:
+docker-push:
 	docker push ${IMAGE}
 
 # Deploy is a Kubernetes-oriented target
@@ -75,6 +72,9 @@ kube-rc:
 
 kube-clean:
 	kubectl delete rc deis-builder
+
+test:
+	@echo "Implement functional tests in _tests directory"
 
 .PHONY: all build docker-compile kube-up kube-down deploy
 
