@@ -64,17 +64,18 @@ TMP_DIR=$(mktemp -d -p $BUILD_DIR)
 
 cd $REPO_DIR
 # use Procfile if provided, otherwise try default process types from ./release
+git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
+tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
 USING_DOCKERFILE=true
-if [ -f Procfile ]; then
-    PROCFILE=$(cat Procfile | yaml2json-procfile)
+if [ -f $TMP_DIR/Procfile ]; then
+    PROCFILE=$(cat $TMP_DIR/Procfile | yaml2json-procfile)
     USING_DOCKERFILE=false
-    POD="slugbuilder"
 else
     PROCFILE="{}"
 fi
 
 if [[ ! -f /var/run/secrets/object/store/access-key-id  ]]; then
-  if [ -f Dockerfile ]; then
+  if $USING_DOCKERFILE ; then
     l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
     l2=$(($l1+3))
     sed "$l1,$l2 d" /etc/deis-dockerbuilder.yaml > /etc/${SLUG_NAME}.yaml.tmp
@@ -86,16 +87,13 @@ if [[ ! -f /var/run/secrets/object/store/access-key-id  ]]; then
     head -n 21 /etc/deis-slugbuilder.yaml > /etc/${SLUG_NAME}.yaml
   fi
 else
-  if [ -f Dockerfile ]; then
+  if $USING_DOCKERFILE ; then
     cp /etc/deis-dockerbuilder.yaml /etc/${SLUG_NAME}.yaml
     sed -i -- "s#repo_name#$TMP_IMAGE#g" /etc/${SLUG_NAME}.yaml
   else
     cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
   fi
 fi
-
-git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-
 
 # if minio is in the cluster, use it. otherwise use fetcher
 if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
@@ -124,22 +122,17 @@ done
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
 CODE=$?
-echo $URL
-echo $RESPONSE
 if [ $CODE -ne 0 ]; then
     puts-warn $RESPONSE
     exit 1
 fi
 
 # use Procfile if provided, otherwise try default process types from ./release
-echo $PROCFILE
 
 puts-step "Launching... "
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v1/hooks/build"
 DATA="$(generate-buildhook "$SHORT_SHA" "$USER" "$APP_NAME" "$APP_NAME" "$PROCFILE" "$USING_DOCKERFILE")"
-echo $DATA
 PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key={{ getv "/deis/controller/builderKey" }})
-echo $PUBLISH_RELEASE
 CODE=$?
 if [ $CODE -ne 0 ]; then
     puts-warn "ERROR: Failed to launch container"
