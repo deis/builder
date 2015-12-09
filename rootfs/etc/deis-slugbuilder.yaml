@@ -1,17 +1,16 @@
-# A debugging utility for testing Minio from within k8s.
 apiVersion: v1
 kind: Pod
 metadata:
-  name: repo_name
+  name: deis-slugbuilder
   labels:
     heritage: deis
-    version: 2015-sept
+    version: v2-alpha
 spec:
   restartPolicy: Never
   containers:
-    - name: repo_name
+    - name: deis-slugbuilder
       imagePullPolicy: Always
-      image: smothiki/slugbuilder:5.5
+      image: quay.io/deisci/slugbuilder:v2-alpha
       env:
         - name: DEBUG
           value: "1"
@@ -20,10 +19,10 @@ spec:
         - name : put_url
           value: puturl
       volumeMounts:
-        - name: object-store
+        - name: minio-user
           mountPath: /var/run/secrets/object/store
           readOnly: true
   volumes:
-    - name: object-store
+    - name: minio-user
       secret:
-        secretName: object-store
+        secretName: minio-user

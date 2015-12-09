@@ -1,36 +1,37 @@
-# A debugging utility for testing Minio from within k8s.
 apiVersion: v1
 kind: Pod
 metadata:
-  name: repo_name
+  name: deis-dockerbuilder
   labels:
     heritage: deis
-    version: 2015-sept
+    version: v2-alpha
 spec:
   restartPolicy: Never
   containers:
-    - name: repo_name
+    - name: deis-dockerbuilder
       imagePullPolicy: Always
-      image: smothiki/dockerbuilder:5.5
+      image: quay.io/deisci/dockerbuilder:v2-alpha
       env:
         - name: DEBUG
           value: "1"
         - name: TAR_URL
           value: tar-url
-        - name: IMAGE
+        - name: IMG_NAME
           value: imagename
-        # - name : REG_URL
-        #   value: puturl
+        - name: ACCESS_KEY_FILE
+          value: /var/run/secrets/object/store/access_key
+        - name: ACCESS_SECRET_FILE
+          value: /var/run/secrets/object/store/access_secret
       volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
-        - name: object-store
+        - name: minio-user
           mountPath: /var/run/secrets/object/store
           readOnly: true
   volumes:
-    - name: object-store
+    - name: minio-user
       secret:
-        secretName: object-store
+        secretName: minio-user
     - name: docker-socket
       hostPath:
         path: /var/run/docker.sock
