@@ -1,5 +1,4 @@
-/*Package etcd is a library for performing common Etcd tasks.
- */
+// Package etcd is a library for performing common Etcd tasks.
 package etcd
 
 import (
@@ -21,6 +20,12 @@ import (
 var (
 	retryCycles = 2
 	retrySleep  = 200 * time.Millisecond
+)
+
+const (
+	hostEnvVar  = "DEIS_ETCD_1_SERVICE_HOST"
+	portEnvVar  = "DEIS_ETCD_1_SERVICE_PORT_CLIENT"
+	defaultHost = "http://localhost"
 )
 
 // Getter describes the Get behavior of an Etcd client.
@@ -65,7 +70,11 @@ type GetterSetter interface {
 // Returns:
 // 	This puts an *etcd.Client into the context.
 func CreateClient(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	url := p.Get("url", "http://localhost:4001").(string)
+	url, ok := p.Get("url", "http://localhost:4001").(string)
+	if !ok {
+		fmt.Println("ERROR: 'url' param was not a string")
+		os.Exit(1)
+	}
 
 	// Backed this out because it's unnecessary so far.
 	//hosts := p.Get("urls", []string{"http://localhost:4001"}).([]string)
@@ -136,7 +145,7 @@ func IsRunning(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrup
 		time.Sleep(250 * time.Millisecond)
 	}
 	log.Errf(c, "Etcd is not answering after %d attempts.", count)
-	return false, &cookoo.FatalError{"Could not connect to Etcd."}
+	return false, &cookoo.FatalError{Message: "Could not connect to Etcd."}
 }
 
 // Set sets a value in etcd.
@@ -399,7 +408,7 @@ func MakeDir(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 
 	res, err := client.CreateDir(name, ttl)
 	if err != nil {
-		return res, &cookoo.RecoverableError{err.Error()}
+		return res, &cookoo.RecoverableError{Message: err.Error()}
 	}
 
 	return res, nil

@@ -95,7 +95,10 @@ else
   fi
 fi
 
+git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
+
 # if minio is in the cluster, use it. otherwise use fetcher
+# TODO: figure out something for using S3 also
 if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
 elif [ -z "$S3EP" ]; then
@@ -108,6 +111,16 @@ PUSH_URL=http://$S3EP/git/home/${SLUG_NAME}/push
 sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
 sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
 sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
+
+ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
+ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
+mkdir -p /var/minio-conf
+CONFIG_DIR=/var/minio-conf
+echo "mc -C $CONFIG_DIR config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET"
+mc -C $CONFIG_DIR --quiet config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET
+mc -C $CONFIG_DIR --quiet mb "${S3EP}/git"
+mc -C $CONFIG_DIR --quiet cp ${APP_NAME}.tar.gz $TAR_URL
+echo "stored tarfile in $TAR_URL"
 
 kubectl create -f /etc/${SLUG_NAME}.yaml
 
