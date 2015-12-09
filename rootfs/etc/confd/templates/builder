@@ -116,10 +116,10 @@ ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
 ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
 mkdir -p /var/minio-conf
 CONFIG_DIR=/var/minio-conf
-echo "/bin/mc -C $CONFIG_DIR config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET"
-/bin/mc -C $CONFIG_DIR --quiet config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET
-/bin/mc -C $CONFIG_DIR --quiet mb "${S3EP}/git"
-/bin/mc -C $CONFIG_DIR --quiet cp ${APP_NAME}.tar.gz $TAR_URL
+echo "mc -C $CONFIG_DIR config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET"
+mc -C $CONFIG_DIR --quiet config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET
+mc -C $CONFIG_DIR --quiet mb "${S3EP}/git"
+mc -C $CONFIG_DIR --quiet cp ${APP_NAME}.tar.gz $TAR_URL
 echo "stored tarfile in $TAR_URL"
 
 kubectl create -f /etc/${SLUG_NAME}.yaml
