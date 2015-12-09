@@ -110,6 +110,9 @@ func ParseControllerConfig(bytes []byte) ([]string, error) {
 	}
 	return retVal, nil
 }
+
+// Extract opens sourcefile and, if it has a '.gz' extension, unzips it using a gzip.Reader.
+// then, it untars it using a tar.Reader
 func Extract(sourcefile string) (err error) {
 
 	file, err := os.Open(sourcefile)

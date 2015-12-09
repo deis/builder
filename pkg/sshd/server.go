@@ -31,7 +31,7 @@ const (
 	ServerConfig string = "ssh.ServerConfig"
 )
 
-// PrereceiveHookTmpl is a pre-receive hook.
+// PrereceiveHookTpl is a pre-receive hook.
 const PrereceiveHookTpl = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
@@ -169,7 +169,7 @@ func sshConnection(conn net.Conn) string {
 	rhost, rport, _ := net.SplitHostPort(remote)
 	lhost, lport, _ := net.SplitHostPort(local)
 
-	return fmt.Sprintf("%s %d %s %d", rhost, rport, lhost, lport)
+	return fmt.Sprintf("%s %s %s %s", rhost, rport, lhost, lport)
 }
 
 func sendExitStatus(status uint32, channel ssh.Channel) error {

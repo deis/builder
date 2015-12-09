@@ -9,28 +9,32 @@ metadata:
 spec:
   restartPolicy: Never
   containers:
-    - name: repo_name
+    - name: deis-dockerbuilder
       imagePullPolicy: Always
-      image: smothiki/dockerbuilder:5.5
+      image: arschles/dockerbuilder:0.0.1-20151124102330
       env:
         - name: DEBUG
           value: "1"
         - name: TAR_URL
           value: tar-url
-        - name: IMAGE
+        - name: IMG_NAME
           value: imagename
+        - name: ACCESS_KEY_FILE
+          value: /var/run/secrets/object/store/access_key
+        - name: ACCESS_SECRET_FILE
+          value: /var/run/secrets/object/store/access_secret
         # - name : REG_URL
         #   value: puturl
       volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
-        - name: object-store
+        - name: minio-user
           mountPath: /var/run/secrets/object/store
           readOnly: true
   volumes:
-    - name: object-store
+    - name: minio-user
       secret:
-        secretName: object-store
+        secretName: minio-user
     - name: docker-socket
       hostPath:
         path: /var/run/docker.sock

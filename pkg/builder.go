@@ -1,7 +1,5 @@
-// Package builder provides libraries for the Deis builder.
-//
+// Package pkg provides common libraries for the Deis builder.
 // The Deis builder is responsible for packaging Docker images for consumers.
-//
 // The builder/cli package contains command line clients for this library.
 package pkg
 

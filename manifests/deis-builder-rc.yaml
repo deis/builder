@@ -1,24 +1,21 @@
 apiVersion: v1
 kind: ReplicationController
 metadata:
-  # Change the name
   name: deis-builder
   labels:
     heritage: deis
 spec:
   replicas: 1
-
-  # Change the selector name
   selector:
     app: deis-builder
   template:
     metadata:
       labels:
-        # Important: these labels need to match the selector above
         app: deis-builder
     spec:
       containers:
         - name: deis-builder
+          imagePullPolicy: Always
           image: quay.io/deisci/builder:v2-alpha
           ports:
             - containerPort: 2223
@@ -26,11 +23,11 @@ spec:
           env:
             - name: "EXTERNAL_PORT"
               value: "2223"
-  #     volumeMounts:
-  #       - name: object-store
-  #         mountPath: /var/run/secrets/object/store
-  #         readOnly: true
-  # volumes:
-  #   - name: object-store
-  #     secret:
-  #       secretName: object-store
+          volumeMounts:
+            - name: minio-user
+              mountPath: /var/run/secrets/object/store
+              readOnly: true
+      volumes:
+        - name: minio-user
+          secret:
+            secretName: minio-user
