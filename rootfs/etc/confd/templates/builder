@@ -74,7 +74,7 @@ else
     PROCFILE="{}"
 fi
 
-if [[ ! -f /var/run/secrets/object/store/access-key-id  ]]; then
+if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
   if $USING_DOCKERFILE ; then
     l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
     l2=$(($l1+3))
@@ -101,6 +101,8 @@ git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 # TODO: figure out something for using S3 also
 if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
+elif [[ -n "$DEIS_OUTSIDE_STORAGE_HOST" && -n "$DEIS_OUTSIDE_STORAGE_HOST" ]]; then
+  S3EP=${DEIS_OUTSIDE_STORAGE_HOST}:${DEIS_OUTSIDE_STORAGE_HOST}
 elif [ -z "$S3EP" ]; then
   S3EP=${HOST}:3000
 fi
