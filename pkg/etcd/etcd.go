@@ -154,7 +154,7 @@ func IsRunning(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrup
 		time.Sleep(250 * time.Millisecond)
 	}
 	log.Errf(c, "Etcd is not answering after %d attempts.", count)
-	return false, &cookoo.FatalError{"Could not connect to Etcd."}
+	return false, &cookoo.FatalError{Error: "Could not connect to Etcd."}
 }
 
 // Set sets a value in etcd.
@@ -417,7 +417,7 @@ func MakeDir(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 
 	res, err := client.CreateDir(name, ttl)
 	if err != nil {
-		return res, &cookoo.RecoverableError{err.Error()}
+		return res, &cookoo.RecoverableError{Message: err.Error()}
 	}
 
 	return res, nil
