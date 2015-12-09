@@ -168,7 +168,7 @@ func sshConnection(conn net.Conn) string {
 	rhost, rport, _ := net.SplitHostPort(remote)
 	lhost, lport, _ := net.SplitHostPort(local)
 
-	return fmt.Sprintf("%s %d %s %d", rhost, rport, lhost, lport)
+	return fmt.Sprintf("%s %s %s %s", rhost, rport, lhost, lport)
 }
 
 func sendExitStatus(status uint32, channel ssh.Channel) error {
