@@ -20,7 +20,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// PrereceiveHookTmpl is a pre-receive hook.
+// PrereceiveHookTpl is a pre-receive hook.
 //
 // This is overridable. The following template variables are passed into it:
 //
