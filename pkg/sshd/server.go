@@ -31,7 +31,7 @@ const (
 	ServerConfig string = "ssh.ServerConfig"
 )
 
-// PrereceiveHookTmpl is a pre-receive hook.
+// PrereceiveHookTpl is a pre-receive hook.
 const PrereceiveHookTpl = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
