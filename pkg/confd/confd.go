@@ -45,14 +45,14 @@ func RunOnce(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	var lasterr error
 	start := time.Now()
 	for i := 0; i < limit; i++ {
-		if out, err := exec.Command("confd", dargs...).CombinedOutput(); err == nil {
+		out, err := exec.Command("confd", dargs...).CombinedOutput()
+		if err == nil {
 			log.Infof(c, "Templates generated for %s on run %d", node, i)
 			return out, nil
-		} else {
-			log.Debugf(c, "Recoverable error: %s", err)
-			log.Debugf(c, "Output: %q", out)
-			lasterr = err
 		}
+		log.Debugf(c, "Recoverable error: %s", err)
+		log.Debugf(c, "Output: %q", out)
+		lasterr = err
 
 		time.Sleep(timeout)
 		log.Infof(c, "Re-trying template build. (Elapsed time: %d)", time.Now().Sub(start)/time.Second)
