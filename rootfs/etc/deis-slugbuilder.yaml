@@ -1,4 +1,3 @@
-# A debugging utility for testing Minio from within k8s.
 apiVersion: v1
 kind: Pod
 metadata:
