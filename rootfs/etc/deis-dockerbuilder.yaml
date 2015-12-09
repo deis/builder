@@ -10,7 +10,7 @@ spec:
   containers:
     - name: deis-dockerbuilder
       imagePullPolicy: Always
-      image: smothiki/dockerbuilder:5.5
+      image: quay.io/deisci/dockerbuilder:v2-alpha
       env:
         - name: DEBUG
           value: "1"

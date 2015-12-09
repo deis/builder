@@ -10,7 +10,7 @@ spec:
   containers:
     - name: deis-slugbuilder
       imagePullPolicy: Always
-      image: smothiki/slugbuilder:5.5
+      image: quay.io/deisci/slugbuilder:v2-alpha
       env:
         - name: DEBUG
           value: "1"
