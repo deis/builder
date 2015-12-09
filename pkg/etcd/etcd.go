@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,6 +21,12 @@ import (
 var (
 	retryCycles = 2
 	retrySleep  = 200 * time.Millisecond
+)
+
+const (
+	hostEnvVar  = "DEIS_ETCD_1_SERVICE_HOST"
+	portEnvVar  = "DEIS_ETCD_1_SERVICE_PORT_CLIENT"
+	defaultHost = "http://localhost"
 )
 
 // Getter describes the Get behavior of an Etcd client.
@@ -64,7 +71,19 @@ type GetterSetter interface {
 // Returns:
 // 	This puts an *etcd.Client into the context.
 func CreateClient(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	url := p.Get("url", "http://localhost:4001").(string)
+	host := os.Getenv(hostEnvVar)
+	port, err := strconv.Atoi(os.Getenv(portEnvVar))
+	if host == "" {
+		host = defaultHost
+	}
+	if err != nil {
+		port = 4001
+	}
+
+	// Aaron(12/9/2015): to shame me into fixing this later, but it's a bigger change
+	fmt.Println("Aaron hasn't fixed the env var collection stage in the cookoo route yet...")
+	// url := p.Get("url", "http://localhost:4001").(string)
+	url := fmt.Sprintf("%s:%d", host, port)
 
 	// Backed this out because it's unnecessary so far.
 	//hosts := p.Get("urls", []string{"http://localhost:4001"}).([]string)
