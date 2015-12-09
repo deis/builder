@@ -15,7 +15,6 @@ STANDALONE := extract-types  generate-buildhook yaml2json-procfile
 # Docker Root FS
 BINDIR := ./rootfs
 
-DEV_REGISTRY ?= $(shell docker-machine ip deis):5000
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
 # Kubernetes-specific information for RC, Service, and Image.
