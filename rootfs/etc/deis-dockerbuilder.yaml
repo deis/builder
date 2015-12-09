@@ -16,7 +16,7 @@ spec:
           value: "1"
         - name: TAR_URL
           value: tar-url
-        - name: IMAGE
+        - name: IMG_NAME
           value: imagename
         # - name : REG_URL
         #   value: puturl
