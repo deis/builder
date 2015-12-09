@@ -1,7 +1,3 @@
-# Short name: Short name, following [a-zA-Z_], used all over the place.
-# Some uses for short name:
-# - Docker image name
-# - Kubernetes service, rc, pod, secret, volume names
 SHORT_NAME ?= builder
 
 # Enable vendor/ directory support.
@@ -9,7 +5,7 @@ export GO15VENDOREXPERIMENT=1
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
-VERSION ?= 0.0.1-$(shell date "+%Y%m%d%H%M%S")
+VERSION ?= git-$(shell git rev-parse --short HEAD)
 BINARY_DEST_DIR := rootfs/usr/bin
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
@@ -19,8 +15,6 @@ STANDALONE := extract-types  generate-buildhook yaml2json-procfile
 # Docker Root FS
 BINDIR := ./rootfs
 
-# Legacy support for DEV_REGISTRY, plus new support for DEIS_REGISTRY.
-DEV_REGISTRY ?= $$DEV_REGISTRY
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
 # Kubernetes-specific information for RC, Service, and Image.
@@ -50,8 +44,11 @@ build:
 		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
 	done
 
-docker-build: build
-	docker build --rm -t $(IMAGE) rootfs
+test:
+	go test ./pkg && go test ./pkg/confd && go test ./pkg/env && go test ./pkg/etcd && go test ./pkg/git && go test ./pkg/sshd
+
+docker-build:
+	docker build --rm -t ${IMAGE} rootfs
 	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGE}|g" ${RC}
 
 # Push to a registry that Kubernetes can access.
@@ -71,10 +68,8 @@ kube-rc:
 	kubectl create -f ${RC}
 
 kube-clean:
-	kubectl delete rc deis-builder
-
-test:
-	@echo "Implement functional tests in _tests directory"
+	kubectl delete rc deis-${SHORT_NAME}
+	kubectl delete svc deis-${SHORT_NAME}
 
 .PHONY: all build docker-compile kube-up kube-down deploy
 
