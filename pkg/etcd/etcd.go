@@ -1,5 +1,4 @@
-/*Package etcd is a library for performing common Etcd tasks.
- */
+// Package etcd is a library for performing common Etcd tasks.
 package etcd
 
 import (

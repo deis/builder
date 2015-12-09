@@ -1,11 +1,10 @@
-/*Package sshd implements an SSH server.
-
-See https://tools.ietf.org/html/rfc4254
-
-This was copied over (and effectively forked from) cookoo-ssh. Mainly this
-differs from the cookoo-ssh version in that this does not act like a
-stand-alone SSH server.
-*/
+// Package sshd implements an SSH server.
+//
+// See https://tools.ietf.org/html/rfc4254
+//
+// This was copied over (and effectively forked from) cookoo-ssh. Mainly this
+// differs from the cookoo-ssh version in that this does not act like a
+// stand-alone SSH server.
 package sshd
 
 import (
