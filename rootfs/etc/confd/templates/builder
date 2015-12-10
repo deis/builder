@@ -74,7 +74,7 @@ else
     PROCFILE="{}"
 fi
 
-if [[ ! -f /var/run/secrets/object/store/access-key-id  ]]; then
+if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
   if $USING_DOCKERFILE ; then
     l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
     l2=$(($l1+3))
@@ -97,16 +97,20 @@ fi
 
 git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 
+HTTP_PREFIX="http"
 # if minio is in the cluster, use it. otherwise use fetcher
 # TODO: figure out something for using S3 also
 if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
+elif [[ -n "$DEIS_OUTSIDE_STORAGE_HOST" && -n "$DEIS_OUTSIDE_STORAGE_HOST" ]]; then
+  HTTP_PREFIX="https"
+  S3EP=${DEIS_OUTSIDE_STORAGE_HOST}:${DEIS_OUTSIDE_STORAGE_HOST}
 elif [ -z "$S3EP" ]; then
   S3EP=${HOST}:3000
 fi
 
-TAR_URL=http://$S3EP/git/home/${SLUG_NAME}/tar
-PUSH_URL=http://$S3EP/git/home/${SLUG_NAME}/push
+TAR_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/tar
+PUSH_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/push
 
 sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
 sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
@@ -114,12 +118,17 @@ sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
 
 ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
 ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
+# copy the self signed cert into the CA directory for alpine.
+# note: we're not running minio with SSL at all right now, so no need for this.
+# future SSL rollouts for in-cluster storage may not need it either if we set up an intermediate CA
+# CERT_FILE="/var/run/secrets/object/ssl/access-cert"
+# cp $CERT_FILE /etc/ssl/certs/deis-minio-self-signed-cert.crt
 mkdir -p /var/minio-conf
 CONFIG_DIR=/var/minio-conf
-echo "mc -C $CONFIG_DIR config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET"
-mc -C $CONFIG_DIR --quiet config host add "http://$S3EP" $ACCESS_KEY $ACCESS_SECRET
-mc -C $CONFIG_DIR --quiet mb "${S3EP}/git"
-mc -C $CONFIG_DIR --quiet cp ${APP_NAME}.tar.gz $TAR_URL
+MC_PREFIX="mc -C $CONFIG_DIR --quiet"
+$MC_PREFIX config host all "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET
+$MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git"
+$MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL
 echo "stored tarfile in $TAR_URL"
 
 kubectl create -f /etc/${SLUG_NAME}.yaml
