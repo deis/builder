@@ -52,7 +52,12 @@ build:
 	done
 
 test:
-	${DEV_ENV_CMD} go test ./pkg && go test ./pkg/confd && go test ./pkg/env && go test ./pkg/etcd && go test ./pkg/git && go test ./pkg/sshd
+	${DEV_ENV_CMD} go test ./pkg && \
+	${DEV_ENV_CMD} go test ./pkg/confd && \
+	${DEV_ENV_CMD} go test ./pkg/env && \
+	${DEV_ENV_CMD} go test ./pkg/etcd && \
+	${DEV_ENV_CMD} go test ./pkg/git && \
+	${DEV_ENV_CMD} go test ./pkg/sshd
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
