@@ -27,13 +27,15 @@ spec:
         - name: minio-user
           mountPath: /var/run/secrets/object/store
           readOnly: true
-        - name: minio-ssl
-          mountPath: /var/run/secrets/object/ssl
-          readOnly: true
+        # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
+        # - name: minio-ssl
+        #   mountPath: /var/run/secrets/object/ssl
+        #   readOnly: true
   volumes:
     - name: minio-user
       secret:
         secretName: minio-user
-    - name: minio-ssl
-      secret:
-        secretName: minio-ssl
+    # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
+    # - name: minio-ssl
+    #   secret:
+    #     secretName: minio-ssl
