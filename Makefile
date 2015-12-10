@@ -3,6 +3,13 @@ SHORT_NAME ?= builder
 # Enable vendor/ directory support.
 export GO15VENDOREXPERIMENT=1
 
+# dockerized development environment variables
+REPO_PATH := github.com/deis/${SHORT_NAME}
+DEV_ENV_IMAGE := quay.io/deis/go-dev:0.2.0
+DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
+DEV_ENV_PREFIX := docker run --rm -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
+DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
+
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
 VERSION ?= git-$(shell git rev-parse --short HEAD)
@@ -27,25 +34,30 @@ all:
 	@echo "Use a Makefile to control top-level building of the project."
 
 bootstrap:
-	glide up
+	${DEV_ENV_CMD} glide up
 
 # This illustrates a two-stage Docker build. docker-compile runs inside of
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
 build:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0  go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
+	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/builder boot.go || exit 1
+	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/fetcher fetcher/fetcher.go || exit 1
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/builder)
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/fetcher)
 	for i in $(BINARIES); do \
-		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
+		${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/$$i pkg/src/$$i.go || exit 1; \
 	done
 	@for i in $(BINARIES); do \
 		$(call check-static-binary,$(BINARY_DEST_DIR)/$$i); \
 	done
 
 test:
-	go test ./pkg && go test ./pkg/confd && go test ./pkg/env && go test ./pkg/etcd && go test ./pkg/git && go test ./pkg/sshd
+	${DEV_ENV_CMD} go test ./pkg && \
+	${DEV_ENV_CMD} go test ./pkg/confd && \
+	${DEV_ENV_CMD} go test ./pkg/env && \
+	${DEV_ENV_CMD} go test ./pkg/etcd && \
+	${DEV_ENV_CMD} go test ./pkg/git && \
+	${DEV_ENV_CMD} go test ./pkg/sshd
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
