@@ -118,9 +118,11 @@ sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
 
 ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
 ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
-# copy the self signed cert into the CA directory for alpine
-CERT_FILE="/var/run/secrets/object/ssl/access-cert"
-cp $CERT_FILE /etc/ssl/certs/deis-minio-self-signed-cert.crt
+# copy the self signed cert into the CA directory for alpine.
+# note: we're not running minio with SSL at all right now, so no need for this.
+# future SSL rollouts for in-cluster storage may not need it either if we set up an intermediate CA
+# CERT_FILE="/var/run/secrets/object/ssl/access-cert"
+# cp $CERT_FILE /etc/ssl/certs/deis-minio-self-signed-cert.crt
 mkdir -p /var/minio-conf
 CONFIG_DIR=/var/minio-conf
 MC_PREFIX="mc -C $CONFIG_DIR --quiet"
