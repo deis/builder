@@ -1,6 +1,6 @@
 # Deis Builder v2
 
-[![Build Status](https://travis-ci.org/deis/minio.svg?branch=master)](https://travis-ci.org/deis/minio) [![Go Report Card](http://goreportcard.com/badge/deis/builder)](http://goreportcard.com/report/deis/builder)
+[![Build Status](https://travis-ci.org/deis/builder.svg?branch=master)](https://travis-ci.org/deis/builder) [![Go Report Card](http://goreportcard.com/badge/deis/builder)](http://goreportcard.com/report/deis/builder)
 
 This repository holds the Deis Builder. Builder runs a git server to respond to `git push`es from clients. When it receives a push, it takes the following high level steps:
 
