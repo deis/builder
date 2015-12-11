@@ -2,7 +2,20 @@
 
 [![Build Status](https://travis-ci.org/deis/builder.svg?branch=master)](https://travis-ci.org/deis/builder) [![Go Report Card](http://goreportcard.com/badge/deis/builder)](http://goreportcard.com/report/deis/builder)
 
-This repository holds the Deis Builder. Builder runs a git server to respond to `git push`es from clients. When it receives a push, it takes the following high level steps:
+Deis (pronounced DAY-iss) is an open source PaaS that makes it easy to deploy and manage
+applications on your own servers. Deis builds on [Kubernetes](http://kubernetes.io/) to provide
+a lightweight, [Heroku-inspired](http://heroku.com) workflow.
+
+## Work in Progress
+
+![Deis Graphic](https://s3-us-west-2.amazonaws.com/get-deis/deis-graphic-small.png)
+
+Deis Builder v2 is changing quickly. Your feedback and participation are more than welcome, but be
+aware that this project is considered a work in progress.
+
+# About
+
+This package provides a the Deis Builder, a git server to respond to `git push`es from clients. When it receives a push, it takes the following high level steps:
 
 1. Accepts the code and writes to the local file system
 2. Calls `git archive` to produce a tarball (i.e. a `.tar.gz` file) on the local file system
