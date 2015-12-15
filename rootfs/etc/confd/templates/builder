@@ -131,7 +131,8 @@ $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git"
 $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL
 echo "stored tarfile in $TAR_URL"
 
-kubectl create -f /etc/${SLUG_NAME}.yaml
+echo "creating slugbuilder in namespace $POD_NAMESPACE"
+kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
 
 #check for image creation or slug existence in S3EP
 
