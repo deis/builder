@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: deis-slugbuilder
+  name: repo_name
   labels:
     heritage: deis
     version: v2-alpha
