@@ -140,12 +140,10 @@ kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
 #check for image creation or slug existence in S3EP
 
 if [[ "$REMOTE_STORAGE" == "1" ]]; then
-  $MC_PREFIX ls $PUSH_URL
-  while [ "$?" == "1" ]
-  do
-    sleep 2
+  LS_CMD="$MC_PREFIX ls $PUSH_URL"
+  until $LS_CMD &> /dev/null; do
     echo "no file"
-    $MC_PREFIX ls $PUSH_URL
+    sleep 2
   done
 else
   while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
