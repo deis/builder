@@ -126,7 +126,7 @@ ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
 mkdir -p /var/minio-conf
 CONFIG_DIR=/var/minio-conf
 MC_PREFIX="mc -C $CONFIG_DIR --quiet"
-$MC_PREFIX config host all "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET
+$MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET
 $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git"
 $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL
 echo "stored tarfile in $TAR_URL"
