@@ -129,9 +129,9 @@ MC_PREFIX="mc -C $CONFIG_DIR --quiet"
 $MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET
 $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git"
 $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL
-echo "stored tarfile in $TAR_URL"
+puts-step "stored tarfile in $TAR_URL"
 
-echo "creating slugbuilder in namespace $POD_NAMESPACE"
+puts-step "creating builder pod in namespace $POD_NAMESPACE"
 kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
 
 #check for image creation or slug existence in S3EP
