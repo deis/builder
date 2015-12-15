@@ -98,13 +98,16 @@ fi
 git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 
 HTTP_PREFIX="http"
+REMOTE_STORAGE="0"
 # if minio is in the cluster, use it. otherwise use fetcher
 # TODO: figure out something for using S3 also
 if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
+  REMOTE_STORAGE="1"
 elif [[ -n "$DEIS_OUTSIDE_STORAGE_HOST" && -n "$DEIS_OUTSIDE_STORAGE_PORT" ]]; then
   HTTP_PREFIX="https"
   S3EP=${DEIS_OUTSIDE_STORAGE_HOST}:${DEIS_OUTSIDE_STORAGE_PORT}
+  REMOTE_STORAGE="1"
 elif [ -z "$S3EP" ]; then
   S3EP=${HOST}:3000
 fi
@@ -136,11 +139,21 @@ kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
 
 #check for image creation or slug existence in S3EP
 
-while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
-do
-  sleep 2
-  echo "no file"
-done
+if [[ "$REMOTE_STORAGE" == "1" ]]; then
+  $MC_PREFIX ls $PUSH_URL
+  while [ "$?" == "1" ]
+  do
+    sleep 2
+    echo "no file"
+    $MC_PREFIX ls $PUSH_URL
+  done
+else
+  while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
+  do
+    sleep 2
+    echo "no file"
+  done
+fi
 
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
