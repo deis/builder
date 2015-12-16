@@ -141,17 +141,21 @@ kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
 
 if [[ "$REMOTE_STORAGE" == "1" ]]; then
   LS_CMD="$MC_PREFIX ls $PUSH_URL"
+  echo "Waiting for build to complete..."
   until $LS_CMD &> /dev/null; do
-    echo "no file"
+    echo -ne "."
     sleep 2
   done
 else
+  echo -ne "Waiting for build to complete..."
   while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
   do
+    echo -ne "."
     sleep 2
-    echo "no file"
   done
 fi
+echo ""
+echo "Build complete."
 
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
