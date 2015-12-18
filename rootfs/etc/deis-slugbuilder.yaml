@@ -12,8 +12,6 @@ spec:
       imagePullPolicy: Always
       image: quay.io/deisci/slugbuilder:v2-alpha
       env:
-        - name: DEBUG
-          value: "1"
         - name: TAR_URL
           value: tar-url
         - name : put_url

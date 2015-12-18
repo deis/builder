@@ -129,33 +129,35 @@ ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
 mkdir -p /var/minio-conf
 CONFIG_DIR=/var/minio-conf
 MC_PREFIX="mc -C $CONFIG_DIR --quiet"
-$MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET
-$MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git"
-$MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL
-puts-step "stored tarfile in $TAR_URL"
+$MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET &>/dev/null
+$MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
+$MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
 
-puts-step "creating builder pod in namespace $POD_NAMESPACE"
-kubectl --namespace=$POD_NAMESPACE create -f /etc/${SLUG_NAME}.yaml
+kubectl --namespace=${POD_NAMESPACE} create -f /etc/${SLUG_NAME}.yaml >/dev/null
+
+# wait for pod to be running and then pull its logs
+until [ "`kubectl --namespace=${POD_NAMESPACE} get pods -o yaml ${META_NAME} | grep "phase: " | awk {'print $2'}`" == "Running" ]; do
+    sleep 0.1
+done
+kubectl --namespace=${POD_NAMESPACE} logs -f ${META_NAME} 2>/dev/null &
 
 #check for image creation or slug existence in S3EP
 
 if [[ "$REMOTE_STORAGE" == "1" ]]; then
   LS_CMD="$MC_PREFIX ls $PUSH_URL"
-  echo "Waiting for build to complete..."
   until $LS_CMD &> /dev/null; do
     echo -ne "."
     sleep 2
   done
 else
-  echo -ne "Waiting for build to complete..."
   while [ ! -f /apps/${SLUG_NAME}/slug.tgz ]
   do
     echo -ne "."
     sleep 2
   done
 fi
-echo ""
-echo "Build complete."
+
+# build completed
 
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
