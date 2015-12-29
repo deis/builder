@@ -53,4 +53,4 @@ RUN passwd -u git
 
 COPY . /
 
-ENV DEIS_RELEASE 2.0.0-alpha1
+ENV DEIS_RELEASE 2.0.0-dev
