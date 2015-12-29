@@ -119,6 +119,8 @@ sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
 sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
 sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
 
+puts-step "Pushing slug to storage..."
+
 ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
 ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
 # copy the self signed cert into the CA directory for alpine.
@@ -132,6 +134,8 @@ MC_PREFIX="mc -C $CONFIG_DIR --quiet"
 $MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET &>/dev/null
 $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
 $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
+
+puts-step "Waiting for build pod '${META_NAME}' to start..."
 
 kubectl --namespace=${POD_NAMESPACE} create -f /etc/${SLUG_NAME}.yaml >/dev/null
 
