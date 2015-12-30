@@ -133,6 +133,7 @@ $MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET &>/
 $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
 $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
 
+puts-step "Starting build"
 kubectl --namespace=${POD_NAMESPACE} create -f /etc/${SLUG_NAME}.yaml >/dev/null
 
 # wait for pod to be running and then pull its logs
@@ -158,6 +159,9 @@ else
 fi
 
 # build completed
+
+puts-step "Build complete."
+puts-step "Launching app."
 
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
 RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
