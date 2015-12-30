@@ -32,6 +32,8 @@ RUN mkdir -p /var/run/sshd && rm -rf /etc/ssh/ssh_host*
 # install git and configure gituser
 ENV GITHOME /home/git
 ENV GITUSER git
+# this is so the minio client (https://github.com/minio/mc) works properly
+ENV DOCKERIMAGE=1
 RUN mkdir /apps
 RUN adduser -D -h $GITHOME $GITUSER
 RUN mkdir -p $GITHOME/.ssh && chown git:git $GITHOME/.ssh
