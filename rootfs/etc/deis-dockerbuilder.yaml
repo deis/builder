@@ -4,13 +4,13 @@ metadata:
   name: deis-dockerbuilder
   labels:
     heritage: deis
-    version: 2.0.0-alpha
+    version: 2.0.0-alpha2
 spec:
   restartPolicy: Never
   containers:
     - name: deis-dockerbuilder
-      imagePullPolicy: IfNotPresent
-      image: quay.io/deis/dockerbuilder:2.0.0-alpha
+      imagePullPolicy: Always
+      image: quay.io/deisci/dockerbuilder:v2-alpha2
       env:
         - name: DEBUG
           value: "1"
