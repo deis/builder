@@ -191,4 +191,6 @@ imports:
   version: dd632973f1e7218eb1089048e0798ec9ae7dceb8
 - name: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
+- name: github.com/kelseyhightower/envconfig
+  version: 12c18e8343f6eb5fc3a9d5c8dc353e42e6bb40b9
 devImports: []
