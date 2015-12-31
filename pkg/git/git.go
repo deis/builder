@@ -20,10 +20,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// prereceiveHookTpl is the template for a pre-receive hook. The following template variables are passed into it:
+// prereceiveHookTplStr is the template for a pre-receive hook. The following template variables are passed into it:
 //
 // 	.GitHome: the path to Git's home directory.
-const prereceiveHookTpl = `#!/bin/bash
+const preReceiveHookTplStr = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
@@ -56,6 +56,8 @@ do
   fi
 done
 `
+
+var preReceiveHookTpl = template.Must(template.New("hooks").Parse(preReceiveHookTplStr))
 
 // Receive receives a Git repo.
 // This will only work for git-receive-pack.
@@ -211,11 +213,8 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 func prereceiveHook(vars map[string]string) ([]byte, error) {
 	var out bytes.Buffer
 	// We parse the template anew each receive in case it has changed.
-	t, err := template.New("hooks").Parse(prereceiveHookTpl)
-	if err != nil {
-		return []byte{}, err
+	if err := preReceiveHookTpl.Execute(&out, vars); err != nil {
+		return nil, err
 	}
-
-	err = t.Execute(&out, vars)
-	return out.Bytes(), err
+	return out.Bytes(), nil
 }
