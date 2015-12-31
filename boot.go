@@ -22,11 +22,11 @@ type Config struct {
 
 func main() {
 	var conf Config
-	if err := envconfig.Process("builder", &config); err != nil {
+	if err := envconfig.Process("builder", &conf); err != nil {
 		log.Fatalf("error fetching config [%s]", err)
 		os.Exit(1)
 	}
 	log.Printf("starting fetcher on port %d", conf.FetcherPort)
 	go fetcher.Serve(conf.FetcherPort)
-	os.Exit(pkg.Run("boot"))
+	os.Exit(pkg.Run(conf.SSHHostIP, conf.SSHHostPort, "boot"))
 }
