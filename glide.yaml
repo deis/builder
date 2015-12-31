@@ -20,3 +20,4 @@ import:
   subpackages:
   - /ssh
 - package: gopkg.in/yaml.v2
+- package: github.com/helm/helm/log
