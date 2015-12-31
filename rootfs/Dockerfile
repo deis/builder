@@ -40,10 +40,8 @@ RUN mkdir -p $GITHOME/.ssh && chown git:git $GITHOME/.ssh
 RUN chown -R $GITUSER:$GITUSER $GITHOME
 
 
-CMD ["/bin/boot"]
-COPY ./entrypoint.sh /
 ADD ./check-repos /home/git/
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/bin/boot"]
 EXPOSE 2223
 EXPOSE 3000
 RUN addgroup -g 2000 slug && adduser -D -u 2000 -G slug slug
