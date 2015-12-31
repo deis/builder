@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/arschles/builder/fetcher"
+	"github.com/deis/builder/fetcher"
 	"github.com/deis/builder/pkg"
 	"github.com/kelseyhightower/envconfig"
 )
