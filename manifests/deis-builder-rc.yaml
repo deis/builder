@@ -21,6 +21,12 @@ spec:
             - containerPort: 2223
             - containerPort: 3000
           env:
+            - name: BUILDER_FETCHER_PORT
+              value: "3000"
+            - name: BUILDER_SSH_HOST_IP
+              value: "0.0.0.0"
+            - name: BUILDER_SSH_HOST_PORT
+              value: "2223"
             - name: "EXTERNAL_PORT"
               value: "2223"
             - name: POD_NAMESPACE
