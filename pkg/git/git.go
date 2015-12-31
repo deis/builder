@@ -196,7 +196,7 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 			return false, err
 		}
 
-		// parse the template anew each receive for each new git home
+		// parse & generate the template anew each receive for each new git home
 		var hookByteBuf bytes.Buffer
 		if err := preReceiveHookTpl.Execute(&hookByteBuf, map[string]string{"GitHome": gitHome}); err != nil {
 			return true, err
