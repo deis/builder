@@ -160,7 +160,7 @@ func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) *sy
 	}()
 
 	cmd.Stdout = channel
-	cmd.Stderr = channel.Stderr()
+	cmd.Stderr = io.MultiWriter(channel.Stderr(), sidechannel)
 
 	return &wg
 }
