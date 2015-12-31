@@ -20,12 +20,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// PrereceiveHookTpl is a pre-receive hook.
-//
-// This is overridable. The following template variables are passed into it:
+// prereceiveHookTpl is the template for a pre-receive hook. The following template variables are passed into it:
 //
 // 	.GitHome: the path to Git's home directory.
-var prereceiveHookTpl = `#!/bin/bash
+const prereceiveHookTpl = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
