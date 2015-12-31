@@ -25,7 +25,7 @@ import (
 // This is overridable. The following template variables are passed into it:
 //
 // 	.GitHome: the path to Git's home directory.
-var PrereceiveHookTpl = `#!/bin/bash
+var prereceiveHookTpl = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
@@ -213,7 +213,7 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 func prereceiveHook(vars map[string]string) ([]byte, error) {
 	var out bytes.Buffer
 	// We parse the template anew each receive in case it has changed.
-	t, err := template.New("hooks").Parse(PrereceiveHookTpl)
+	t, err := template.New("hooks").Parse(prereceiveHookTpl)
 	if err != nil {
 		return []byte{}, err
 	}
