@@ -1,11 +1,10 @@
-package main
+package gitreceive
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/helm/helm/log"
-	"io"
 	"os"
+	"strings"
 )
 
 // #!/bin/bash
@@ -41,19 +40,6 @@ import (
 //   fi
 // done
 
-const newline = "\n"
-
-// readLine reads from bio until it reaches a "\n". returns the line, not including the "\n"
-func getLine(bio *bufio.Reader) (string, error) {
-	line, err := bio.ReadString(newline)
-	if err != nil {
-		return "", err
-	}
-	if strings.HasSuffix(line, newline) {
-		return line[0 : len(line)-len(newline)]
-	}
-}
-
 func readLine(line string) (string, string, string, error) {
 	spl := strings.Split(line, " ")
 	if len(spl) != 3 {
@@ -62,22 +48,24 @@ func readLine(line string) (string, string, string, error) {
 	return spl[0], spl[1], spl[2], nil
 }
 
-func main() {
-	conf, err := getConfig("gitreceive")
-	if err != nil {
-		log.Msg("config error [%s]", err)
-		os.Exit(1)
-	}
-	bio := bufio.NewReader(os.Stdin)
-	for line, err := getLine(bio); err != nil; {
-		oldRev, newRev, refName, err := readLine(line)
+func Run(conf *Config) error {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// oldRev, newRev, refName, err := readLine(line)
+		_, newRev, _, err := readLine(line)
+		if err != nil {
+			return err
+		}
 		if err := receive(conf, newRev); err != nil {
-			log.Die("failed on rev %s - push denied", newRev)
-			os.Exit(1)
+			return err
 		}
 		if err := build(conf, newRev); err != nil {
-			log.Die("error building %s [%s]", newRev, err)
-			os.Exit(1)
+			return err
 		}
 	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return nil
 }

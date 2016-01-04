@@ -1,10 +1,6 @@
-package main
+package gitreceive
 
-import (
-	"github.com/kelseyhightower/envconfig"
-)
-
-type config struct {
+type Config struct {
 	WorkflowHost       string `envconfig:"deis_workflow_service_host"`
 	WorkflowPort       string `envconfig:"deis_workflow_service_port"`
 	GitHome            string `envconfig:"git_home"`
@@ -15,12 +11,4 @@ type config struct {
 	Username           string `envconfig:"username"`
 	App                string `envconfing:"app"`
 	Fingerprint        string `envconfing:"fingerprint"`
-}
-
-func getConfig(appName string) (*config, error) {
-	conf := &config{}
-	if err := envconfig(appName, conf); err != nil {
-		return nil, err
-	}
-	return conf, nil
 }

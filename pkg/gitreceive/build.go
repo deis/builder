@@ -1,4 +1,4 @@
-package main
+package gitreceive
 
 // #!/usr/bin/env bash
 // #
@@ -198,3 +198,7 @@ package main
 // # cleanup
 // cd $REPO_DIR
 // git gc &>/dev/null
+
+func build(conf *Config, newRev string) error {
+	return nil
+}
