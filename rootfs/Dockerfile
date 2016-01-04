@@ -41,7 +41,7 @@ RUN chown -R $GITUSER:$GITUSER $GITHOME
 
 
 ADD ./check-repos /home/git/
-ENTRYPOINT ["/bin/boot"]
+ENTRYPOINT ["/bin/boot", "server"]
 EXPOSE 2223
 EXPOSE 3000
 RUN addgroup -g 2000 slug && adduser -D -u 2000 -G slug slug
