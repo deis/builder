@@ -84,10 +84,10 @@ fi
 
 if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
   if $USING_DOCKERFILE ; then
-    l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
+    l1=`grep -n "minio-user" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
     l2=$(($l1+3))
     sed "$l1,$l2 d" /etc/deis-dockerbuilder.yaml > /etc/${SLUG_NAME}.yaml.tmp
-    l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml.tmp | head -n1 |cut -d ":" -f1`
+    l1=`grep -n "minio-user" /etc/deis-dockerbuilder.yaml.tmp | head -n1 |cut -d ":" -f1`
     l2=$(($l1+3))
     sed "$l1,$l2 d" /etc/${SLUG_NAME}.yaml.tmp > /etc/${SLUG_NAME}.yaml
     sed -i -- "s#repo_name#$TMP_IMAGE#g" /etc/${SLUG_NAME}.yaml
