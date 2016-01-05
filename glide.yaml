@@ -26,3 +26,5 @@ import:
 - package: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - package: github.com/labstack/gommon
+- package: code.google.com/p/go-uuid/uuid
+  version: 35bc42037350f0078e3c974c6ea690f1926603ab

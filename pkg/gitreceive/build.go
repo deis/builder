@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"code.google.com/p/go-uuid"
+	"code.google.com/p/go-uuid/uuid"
 )
 
 const (
