@@ -29,10 +29,11 @@ func main() {
 	builderKey := flag.String("key", "", "Builder Key")
 	user := flag.String("user", "", "Controller username")
 	app := flag.String("app", "", "Controller application name")
+	value := flag.String("value", "", "key value from config values")
 
 	flag.Parse()
 
-	if flag.NFlag() < 4 {
+	if flag.NFlag() < 5 {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -104,6 +105,18 @@ func main() {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
 	}
+
 	toString, err := json.Marshal(config)
-	fmt.Println(string(toString))
+	if err != nil {
+		fmt.Printf("failed JSON marshal (%v)\n", err)
+		os.Exit(1)
+	}
+
+	if *value == "all" {
+		fmt.Println(string(toString))
+	}
+	val, present := config.Values[*value]
+	if present {
+		fmt.Println(val)
+	}
 }
