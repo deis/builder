@@ -6,7 +6,9 @@ import (
 	"strings"
 )
 
-const shortShaIdx = 8
+const (
+	shortShaIdx = 8
+)
 
 type errGitShaTooShort struct {
 	sha string
@@ -102,14 +104,30 @@ func build(conf *Config, newRev string) error {
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return errMkdir{dir: buildDir, err: err}
 	}
-
-	//TODO: make tmp_dir
+	tmpDir := os.TempDir()
 
 	//
 	// cd $REPO_DIR
 	// # use Procfile if provided, otherwise try default process types from ./release
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
+	cmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	cmd.Path = repoDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Err("running %s", strings.Join(cmd.Args, " "))
+		os.Exit(1)
+	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
+	cmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
+	cmd.Path = repoDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Err("running %s", strings.Join(cmd.Args, " "))
+		os.Exit(1)
+	}
+
 	// USING_DOCKERFILE=true
 	// if [ -f $TMP_DIR/Procfile ]; then
 	//     PROCFILE=$(cat $TMP_DIR/Procfile | yaml2json-procfile)
@@ -117,7 +135,18 @@ func build(conf *Config, newRev string) error {
 	// else
 	//     PROCFILE="{}"
 	// fi
-	//
+
+	usingDockerfile := true
+	rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
+	if err != nil {
+		usingDockerfile = false
+	}
+	procFile, err := pkg.YamlToJSON(rawProcfile)
+	if err != nil {
+		log.Err("procfile %s/Procfile is not valid JSON [%s]", tmpDir, err)
+		os.Exit(1)
+	}
+
 	// if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
 	//   if $USING_DOCKERFILE ; then
 	//     l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
@@ -138,6 +167,18 @@ func build(conf *Config, newRev string) error {
 	//     cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
 	//   fi
 	// fi
+	creds, err := getStorageCreds()
+	if err == errMissingKey || err == errMissingSecret {
+		log.Err(err.Error())
+		os.Exit(1)
+	}
+
+	// both key and secret are missing, so proceed as if using fetcher
+	if err == os.ErrNotExist {
+
+	}
+
+	//
 	//
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 	//
