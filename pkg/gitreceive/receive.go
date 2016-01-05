@@ -52,7 +52,7 @@ func receive(conf *Config, newRev string) error {
 	}
 
 	// TODO: use ctxhttp here (https://godoc.org/golang.org/x/net/context/ctxhttp)
-	resp, err = http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
