@@ -1,5 +1,21 @@
 package gitreceive
 
+import (
+	"fmt"
+	"path/filepath"
+	"strings"
+)
+
+const shortShaIdx = 8
+
+type errGitShaTooShort struct {
+	sha string
+}
+
+func (e errGitShaTooShort) Error() string {
+	return fmt.Sprintf("git sha %s was too short", e.sha)
+}
+
 func build(conf *Config, newRev string) error {
 	// #!/usr/bin/env bash
 	// #
@@ -43,11 +59,20 @@ func build(conf *Config, newRev string) error {
 	//     exit 1
 	// fi
 	//
+
 	// USER=$1
 	// REPO=$2
 	// GIT_SHA=$3
 	// SHORT_SHA=${GIT_SHA:0:8}
 	// APP_NAME="${REPO%.*}"
+	user := conf.Username
+	repo := conf.Repository
+	gitSha := conf.SHA
+	if len(gitSha) <= shortShaIdx {
+		return errGitShaTooShort{sha: gitSha}
+	}
+	shortSha := conf.SHA[0:8]
+	appName := conf.App
 	//
 	// cd $(dirname $0) # ensure we are in the root dir
 	//
@@ -55,6 +80,13 @@ func build(conf *Config, newRev string) error {
 	// REPO_DIR="${ROOT_DIR}/${REPO}"
 	// BUILD_DIR="${REPO_DIR}/build"
 	// CACHE_DIR="${REPO_DIR}/cache"
+	rootDir, err := os.Getwd()
+	if err != nil {
+		return nil
+	}
+	repoDir := filepath.Join(rootDir, repo)
+	buildDir := filepath.Join(repoDir, "build")
+	cacheDir := filepath.Join(repoDir, "cache")
 	//
 	// # define image names
 	// SLUG_NAME="$APP_NAME:git-$SHORT_SHA"
@@ -64,6 +96,15 @@ func build(conf *Config, newRev string) error {
 	// mkdir -p $BUILD_DIR $CACHE_DIR
 	// # create temporary directory inside the build dir for this push
 	// TMP_DIR=$(mktemp -d -p $BUILD_DIR)
+	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
+	metaName := strings.Replace(slugName, ":", "-")
+	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, conf.ImageName)
+	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
+		return errMkdir{dir: buildDir, err: err}
+	}
+
+	//TODO: make tmp_dir
+
 	//
 	// cd $REPO_DIR
 	// # use Procfile if provided, otherwise try default process types from ./release
