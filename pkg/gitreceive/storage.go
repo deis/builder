@@ -32,30 +32,30 @@ func getStorageConfig() (storageConfig, error) {
 	mHost := os.Getenv(minioHostEnvVar)
 	mPort := os.Getenv(minioPortEnvVar)
 	oHost := os.Getenv(outsideStorageHostEnvVar)
-	oPost := os.Getenv(outsideStoragePortEnvVar)
-	if mHost != "" && mPost != "" {
-		return minioConfig{host: mHost, port: mPort}, nil
+	oPort := os.Getenv(outsideStoragePortEnvVar)
+	if mHost != "" && mPort != "" {
+		return minioConfig{hst: mHost, prt: mPort}, nil
 	} else if oHost != "" && oPort != "" {
-		return outsideConfig{host: oHost, port: oPort}, nil
+		return outsideConfig{hst: oHost, prt: oPort}, nil
 	} else {
 		return nil, errNoStorageConfig
 	}
 }
 
 type minioConfig struct {
-	host string
-	port string
+	hst string
+	prt string
 }
 
 func (m minioConfig) schema() string { return "http" }
-func (m minioConfig) host() string   { return m.host }
-func (m minioConfig) port() string   { return m.port }
+func (m minioConfig) host() string   { return m.hst }
+func (m minioConfig) port() string   { return m.prt }
 
 type outsideConfig struct {
-	host string
-	port string
+	hst string
+	prt string
 }
 
 func (o outsideConfig) schema() string { return "https" }
-func (o outsideConfig) host() string   { return o.host }
-func (o outsideConfig) port() string   { return o.port }
+func (o outsideConfig) host() string   { return o.hst }
+func (o outsideConfig) port() string   { return o.prt }

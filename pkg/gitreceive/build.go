@@ -1,11 +1,18 @@
 package gitreceive
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/log"
 )
 
 const (
@@ -48,9 +55,6 @@ func build(conf *Config, newRev string) error {
 		log.Err(err.Error())
 		os.Exit(1)
 	}
-
-	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
-	pushURL := fmt.Sprintf("%s://%s:%s/git/hom/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
 
 	// #!/usr/bin/env bash
 	// #
@@ -132,12 +136,16 @@ func build(conf *Config, newRev string) error {
 	// # create temporary directory inside the build dir for this push
 	// TMP_DIR=$(mktemp -d -p $BUILD_DIR)
 	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
-	metaName := strings.Replace(slugName, ":", "-")
+	metaName := strings.Replace(slugName, ":", "-", -1)
 	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, conf.ImageName)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
-		return errMkdir{dir: buildDir, err: err}
+		log.Err("making the build directory %s (%s)", buildDir, err)
+		os.Exit(1)
 	}
 	tmpDir := os.TempDir()
+
+	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
+	pushURL := fmt.Sprintf("%s://%s:%s/git/hom/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
 
 	//
 	// cd $REPO_DIR
@@ -152,11 +160,11 @@ func build(conf *Config, newRev string) error {
 		os.Exit(1)
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
-	cmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
-	cmd.Dir = repoDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	tarCmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
+	tarCmd.Dir = repoDir
+	tarCmd.Stdout = os.Stdout
+	tarCmd.Stderr = os.Stderr
+	if err := tarCmd.Run(); err != nil {
 		log.Err("running %s", strings.Join(cmd.Args, " "))
 		os.Exit(1)
 	}
@@ -174,7 +182,7 @@ func build(conf *Config, newRev string) error {
 	if err != nil {
 		usingDockerfile = false
 	}
-	procFile, err := pkg.YamlToJSON(rawProcfile)
+	procFile, err := pkg.YamlToJSON(rawProcFile)
 	if err != nil {
 		log.Err("procfile %s/Procfile is not valid JSON [%s]", tmpDir, err)
 		os.Exit(1)
@@ -236,14 +244,14 @@ func build(conf *Config, newRev string) error {
 	var finalManifest string
 	if usingDockerfile {
 		buildPodName = fmt.Sprintf("%s-%s", tmpImage, uuid.New())
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
 	} else {
 		buildPodName = fmt.Sprintf("%s-%s", slugName, uuid.New())
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
 	}
 
 	if err := ioutil.WriteFile(finalManifestFileName, []byte(finalManifest), os.ModePerm); err != nil {
@@ -253,11 +261,11 @@ func build(conf *Config, newRev string) error {
 	//
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 
-	cmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
-	cmd.Dir = repoDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	gitArchiveCmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	gitArchiveCmd.Dir = repoDir
+	gitArchiveCmd.Stdout = os.Stdout
+	gitArchiveCmd.Stderr = os.Stderr
+	if err := gitArchiveCmd.Run(); err != nil {
 		log.Err("running %s", strings.Join(cmd.Args, " "))
 		os.Exit(1)
 	}
@@ -273,7 +281,7 @@ func build(conf *Config, newRev string) error {
 	// mkdir -p /var/minio-conf
 	// CONFIG_DIR=/var/minio-conf
 	// MC_PREFIX="mc -C $CONFIG_DIR --quiet"
-	configDir = "/var/minio-conf"
+	configDir := "/var/minio-conf"
 	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
 		log.Err("creating minio config file (%s)", err)
 		os.Exit(1)
@@ -289,8 +297,8 @@ func build(conf *Config, newRev string) error {
 		"host",
 		"add",
 		fmt.Sprintf("%s://%s:%s", storage.schema(), storage.host(), storage.port()),
-		storageCreds.key,
-		storageCreds.secret,
+		creds.key,
+		creds.secret,
 	)
 	if err := configCmd.Run(); err != nil {
 		log.Err("configuring the minio client (%s)", err)
@@ -317,7 +325,7 @@ func build(conf *Config, newRev string) error {
 	)
 	cpCmd.Dir = repoDir
 	if err := cpCmd.Run(); err != nil {
-		log.Err("copying %s.tar.gz to %s (%s)", apName, tarURL, err)
+		log.Err("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
 		os.Exit(1)
 	}
 
@@ -351,15 +359,15 @@ func build(conf *Config, newRev string) error {
 	getCmd := exec.Command(
 		"kubectl",
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		fmt.SPrintf("get"),
-		fmt.SPrintf("pods"),
+		fmt.Sprintf("get"),
+		fmt.Sprintf("pods"),
 		"-o",
 		"yaml",
 		buildPodName,
 	)
 	for {
 		var out bytes.Buffer
-		getCmd.Stdout = out
+		getCmd.Stdout = &out
 		if err := getCmd.Run(); err != nil {
 			log.Err("running %s while determining if builder pod %s is running (%s)", buildPodName, err)
 			os.Exit(1)
@@ -380,7 +388,7 @@ func build(conf *Config, newRev string) error {
 	)
 	logsCmd.Stdout = os.Stdout
 	if err := logsCmd.Run(); err != nil {
-		log.Err("running %s to get builder logs (%s)", strings.Join(logsCmd.Args), err)
+		log.Err("running %s to get builder logs (%s)", strings.Join(logsCmd.Args, " "), err)
 		os.Exit(1)
 	}
 

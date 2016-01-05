@@ -1,13 +1,19 @@
 package gitreceive
 
+import (
+	"fmt"
+	"io/ioutil"
+	"os"
+)
+
 const (
 	accessKeyIDFile     = "/var/run/secrets/object/store/access-key-id"
 	accessSecretKeyFile = "/var/run/secrets/object/store/access-secret-key"
 )
 
 var (
-	errMissingKey    = fmt.Sprintf("missing %s", accessKeyIDFile)
-	errMissingSecret = fmt.Sprintf("missing %s", accessSecretKeyFile)
+	errMissingKey    = fmt.Errorf("missing %s", accessKeyIDFile)
+	errMissingSecret = fmt.Errorf("missing %s", accessSecretKeyFile)
 )
 
 type storageCreds struct {
@@ -30,7 +36,7 @@ func getStorageCreds() (*storageCreds, error) {
 	if accessKeyErr == nil && accessSecretKeyErr != nil {
 		return nil, errMissingSecret
 	}
-	return storageCreds{
+	return &storageCreds{
 		key:    string(accessKeyIDBytes),
 		secret: string(accessSecretKeyBytes),
 	}, nil
