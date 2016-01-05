@@ -26,15 +26,6 @@ func Msg(format string, v ...interface{}) {
 	fmt.Fprintf(Stdout, appendNewLine(format), v...)
 }
 
-// Die prints an error and then call os.Exit(1).
-func Die(format string, v ...interface{}) {
-	Err(format, v...)
-	if IsDebugging {
-		panic(fmt.Sprintf(format, v...))
-	}
-	os.Exit(1)
-}
-
 // CleanExit prints a message and then exits with 0.
 func CleanExit(format string, v ...interface{}) {
 	Info(format, v...)
