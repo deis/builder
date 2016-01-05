@@ -74,6 +74,14 @@ else
     PROCFILE="{}"
 fi
 
+URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
+RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME -value="BUILDPACK_URL")
+CODE=$?
+if [ $CODE -ne 0 ]; then
+    puts-warn $RESPONSE
+    exit 1
+fi
+
 if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
   if $USING_DOCKERFILE ; then
     l1=`grep -n "object-store" /etc/deis-dockerbuilder.yaml | head -n1 |cut -d ":" -f1`
@@ -84,14 +92,24 @@ if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
     sed "$l1,$l2 d" /etc/${SLUG_NAME}.yaml.tmp > /etc/${SLUG_NAME}.yaml
     sed -i -- "s#repo_name#$TMP_IMAGE#g" /etc/${SLUG_NAME}.yaml
   else
-    head -n 21 /etc/deis-slugbuilder.yaml > /etc/${SLUG_NAME}.yaml
+    if [ -n "$RESPONSE" ] ; then
+      head -n 20 /etc/deis-slugbuilder.yaml > /etc/${SLUG_NAME}.yaml
+      sed -i -- "s#buildurl#$RESPONSE#g" /etc/${SLUG_NAME}.yaml
+    else
+      head -n 18 /etc/deis-slugbuilder.yaml > /etc/${SLUG_NAME}.yaml
+    fi
   fi
 else
   if $USING_DOCKERFILE ; then
     cp /etc/deis-dockerbuilder.yaml /etc/${SLUG_NAME}.yaml
     sed -i -- "s#repo_name#$TMP_IMAGE#g" /etc/${SLUG_NAME}.yaml
   else
-    cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
+    if [ -n "$RESPONSE" ] ; then
+      cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
+      sed -i -- "s#buildurl#$RESPONSE#g" /etc/${SLUG_NAME}.yaml
+    else
+      sed "19,20 d" /etc/deis-slugbuilder.yaml> /etc/${SLUG_NAME}.yaml
+    fi
   fi
 fi
 
@@ -163,13 +181,6 @@ fi
 puts-step "Build complete."
 puts-step "Launching app."
 
-URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
-RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
-CODE=$?
-if [ $CODE -ne 0 ]; then
-    puts-warn $RESPONSE
-    exit 1
-fi
 
 # use Procfile if provided, otherwise try default process types from ./release
 

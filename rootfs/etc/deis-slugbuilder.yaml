@@ -16,6 +16,8 @@ spec:
           value: tar-url
         - name : put_url
           value: puturl
+        - name: BUILDPACK_URL
+          value: buildurl
       volumeMounts:
         - name: minio-user
           mountPath: /var/run/secrets/object/store
