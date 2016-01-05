@@ -232,13 +232,16 @@ func build(conf *Config, newRev string) error {
 	// sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
 	// sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
 	finalManifestFileName := fmt.Sprintf("/etc/%s", slugName)
+	var buildPodName string
 	var finalManifest string
 	if usingDockerfile {
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", fmt.Sprintf("%s-%s", tmpImage, uuid.New()))
+		buildPodName = fmt.Sprintf("%s-%s", tmpImage, uuid.New())
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
 	} else {
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", fmt.Sprintf("%s-%s", slugName, uuid.New()))
+		buildPodName = fmt.Sprintf("%s-%s", slugName, uuid.New())
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
 	}
@@ -342,6 +345,45 @@ func build(conf *Config, newRev string) error {
 	//     sleep 0.1
 	// done
 	// kubectl --namespace=${POD_NAMESPACE} logs -f ${META_NAME} 2>/dev/null &
+
+	// poll kubectl every 100ms to determine when the build pod is running
+	// TODO: use the k8s client and watch the event stream instead (https://github.com/deis/builder/issues/65)
+	getCmd := exec.Command(
+		"kubectl",
+		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
+		fmt.SPrintf("get"),
+		fmt.SPrintf("pods"),
+		"-o",
+		"yaml",
+		buildPodName,
+	)
+	for {
+		var out bytes.Buffer
+		getCmd.Stdout = out
+		if err := getCmd.Run(); err != nil {
+			log.Err("running %s while determining if builder pod %s is running (%s)", buildPodName, err)
+			os.Exit(1)
+		}
+		if strings.Contains(string(out.Bytes()), "phase: Running") {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// get logs from the builder pod
+	logsCmd := exec.Command(
+		"kubectl",
+		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
+		"logs",
+		"-f",
+		buildPodName,
+	)
+	logsCmd.Stdout = os.Stdout
+	if err := logsCmd.Run(); err != nil {
+		log.Err("running %s to get builder logs (%s)", strings.Join(logsCmd.Args), err)
+		os.Exit(1)
+	}
+
 	//
 	// #check for image creation or slug existence in S3EP
 	//
@@ -358,12 +400,28 @@ func build(conf *Config, newRev string) error {
 	//     sleep 2
 	//   done
 	// fi
+
+	// poll the s3 server to ensure the slug exists
+	lsCmd := baseMinioCmd
+	lsCmd.Args = append(lsCmd.Args, "ls", pushURL)
+	for {
+		// for now, assume the error indicates that the slug wasn't there, nothing else
+		// TODO: implement https://github.com/deis/builder/issues/80, which will clean this up siginficantly
+		if err := lsCmd.Run(); err == nil {
+			break
+		}
+	}
+
 	//
 	// # build completed
 	//
 	// puts-step "Build complete."
 	// puts-step "Launching app."
 	//
+
+	log.Info("Build complete.")
+	log.Info("Launching app.")
+
 	// URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
 	// RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME)
 	// CODE=$?
