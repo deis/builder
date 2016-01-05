@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"code.google.com/p/go-uuid"
 )
 
 const (
@@ -19,6 +21,37 @@ func (e errGitShaTooShort) Error() string {
 }
 
 func build(conf *Config, newRev string) error {
+	// HTTP_PREFIX="http"
+	// REMOTE_STORAGE="0"
+	// # if minio is in the cluster, use it. otherwise use fetcher
+	// # TODO: figure out something for using S3 also
+	// if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
+	//   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
+	//   REMOTE_STORAGE="1"
+	// elif [[ -n "$DEIS_OUTSIDE_STORAGE_HOST" && -n "$DEIS_OUTSIDE_STORAGE_PORT" ]]; then
+	//   HTTP_PREFIX="https"
+	//   S3EP=${DEIS_OUTSIDE_STORAGE_HOST}:${DEIS_OUTSIDE_STORAGE_PORT}
+	//   REMOTE_STORAGE="1"
+	// elif [ -z "$S3EP" ]; then
+	//   S3EP=${HOST}:3000
+	// fi
+	//
+	// TAR_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/tar
+	// PUSH_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/push
+	storage, err := getStorageConfig()
+	if err != nil {
+		log.Err(err.Error())
+		os.Exit(1)
+	}
+	creds, err := getStorageCreds()
+	if err == errMissingKey || err == errMissingSecret {
+		log.Err(err.Error())
+		os.Exit(1)
+	}
+
+	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
+	pushURL := fmt.Sprintf("%s://%s:%s/git/hom/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
+
 	// #!/usr/bin/env bash
 	// #
 	// # builder hook called on every git receive-pack
@@ -111,7 +144,7 @@ func build(conf *Config, newRev string) error {
 	// # use Procfile if provided, otherwise try default process types from ./release
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 	cmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
-	cmd.Path = repoDir
+	cmd.Dir = repoDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -120,7 +153,7 @@ func build(conf *Config, newRev string) error {
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
 	cmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
-	cmd.Path = repoDir
+	cmd.Dir = repoDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -167,42 +200,65 @@ func build(conf *Config, newRev string) error {
 	//     cp /etc/deis-slugbuilder.yaml /etc/${SLUG_NAME}.yaml
 	//   fi
 	// fi
-	creds, err := getStorageCreds()
-	if err == errMissingKey || err == errMissingSecret {
-		log.Err(err.Error())
+
+	var srcManifest string
+	if err == os.ErrNotExist {
+		// both key and secret are missing, proceed with no credentials
+		if usingDockerfile {
+			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
+		} else {
+			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
+		}
+	} else if err == nil {
+		// both key and secret are in place, so proceed with credentials
+		if usingDockerfile {
+			srcManifest = "/etc/deis-dockerbuilder.yaml"
+		} else {
+			srcManifest = "/etc/deis-slugbuilder.yaml"
+		}
+	} else if err != nil {
+		// unexpected error, fail
+		log.Err("unexpected error (%s)", err)
 		os.Exit(1)
 	}
 
-	// both key and secret are missing, so proceed as if using fetcher
-	if err == os.ErrNotExist {
-
+	fileBytes, err := ioutil.ReadFile(srcManifest)
+	if err != nil {
+		log.Err("reading kubernetes manifest %s (%s)", srcManifest, err)
+		os.Exit(1)
 	}
 
-	//
-	//
-	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-	//
-	// HTTP_PREFIX="http"
-	// REMOTE_STORAGE="0"
-	// # if minio is in the cluster, use it. otherwise use fetcher
-	// # TODO: figure out something for using S3 also
-	// if [[ -n "$DEIS_MINIO_SERVICE_HOST" && -n "$DEIS_MINIO_SERVICE_PORT" ]]; then
-	//   S3EP=${DEIS_MINIO_SERVICE_HOST}:${DEIS_MINIO_SERVICE_PORT}
-	//   REMOTE_STORAGE="1"
-	// elif [[ -n "$DEIS_OUTSIDE_STORAGE_HOST" && -n "$DEIS_OUTSIDE_STORAGE_PORT" ]]; then
-	//   HTTP_PREFIX="https"
-	//   S3EP=${DEIS_OUTSIDE_STORAGE_HOST}:${DEIS_OUTSIDE_STORAGE_PORT}
-	//   REMOTE_STORAGE="1"
-	// elif [ -z "$S3EP" ]; then
-	//   S3EP=${HOST}:3000
-	// fi
-	//
-	// TAR_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/tar
-	// PUSH_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/push
-	//
 	// sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
 	// sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
 	// sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
+	finalManifestFileName := fmt.Sprintf("/etc/%s", slugName)
+	var finalManifest string
+	if usingDockerfile {
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", fmt.Sprintf("%s-%s", tmpImage, uuid.New()))
+		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
+		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
+	} else {
+		finalManifest = strings.Replace(string(fileBytes), "repo_name", fmt.Sprintf("%s-%s", slugName, uuid.New()))
+		finalManifest = strings.Replace(finalManifest, "puturl", pushURL)
+		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL)
+	}
+
+	if err := ioutil.WriteFile(finalManifestFileName, []byte(finalManifest), os.ModePerm); err != nil {
+		log.Err("writing final manifest %s (%s)", finalManifestFileName, err)
+		os.Exit(1)
+	}
+	//
+	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
+
+	cmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	cmd.Dir = repoDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Err("running %s", strings.Join(cmd.Args, " "))
+		os.Exit(1)
+	}
+
 	//
 	// ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
 	// ACCESS_SECRET=`cat /var/run/secrets/object/store/access-secret-key`
@@ -214,12 +270,72 @@ func build(conf *Config, newRev string) error {
 	// mkdir -p /var/minio-conf
 	// CONFIG_DIR=/var/minio-conf
 	// MC_PREFIX="mc -C $CONFIG_DIR --quiet"
+	configDir = "/var/minio-conf"
+	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
+		log.Err("creating minio config file (%s)", err)
+		os.Exit(1)
+	}
+	baseMinioCmd := exec.Command("mc", "-C", configDir, "--quiet")
+	baseMinioCmd.Stderr = os.Stderr
+
 	// $MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET &>/dev/null
+	configCmd := baseMinioCmd
+	configCmd.Args = append(
+		configCmd.Args,
+		"config",
+		"host",
+		"add",
+		fmt.Sprintf("%s://%s:%s", storage.schema(), storage.host(), storage.port()),
+		storageCreds.key,
+		storageCreds.secret,
+	)
+	if err := configCmd.Run(); err != nil {
+		log.Err("configuring the minio client (%s)", err)
+		os.Exit(1)
+	}
+
 	// $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
+	makeBucketCmd := baseMinioCmd
+	makeBucketCmd.Args = append(
+		makeBucketCmd.Args,
+		"mb",
+		fmt.Sprintf("%s://%s:%s/git", storage.schema(), storage.host(), storage.port()),
+	)
+	// Don't look for errors here. Buckets may already exist
+	makeBucketCmd.Run()
+
 	// $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
+	cpCmd := baseMinioCmd
+	cpCmd.Args = append(
+		cpCmd.Args,
+		"cp",
+		fmt.Sprintf("%s.tar.gz", appName),
+		tarURL,
+	)
+	cpCmd.Dir = repoDir
+	if err := cpCmd.Run(); err != nil {
+		log.Err("copying %s.tar.gz to %s (%s)", apName, tarURL, err)
+		os.Exit(1)
+	}
+
 	//
 	// puts-step "Starting build"
 	// kubectl --namespace=${POD_NAMESPACE} create -f /etc/${SLUG_NAME}.yaml >/dev/null
+
+	log.Info("Starting build")
+	kubectlCmd := exec.Command(
+		"kubectl",
+		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
+		"create",
+		"-f",
+		fmt.Sprintf("/etc/%s.yaml", slugName),
+	)
+	kubectlCmd.Stderr = os.Stderr
+	if err := kubectlCmd.Run(); err != nil {
+		log.Err("creating builder pod (%s)", err)
+		os.Exit(1)
+	}
+
 	//
 	// # wait for pod to be running and then pull its logs
 	// until [ "`kubectl --namespace=${POD_NAMESPACE} get pods -o yaml ${META_NAME} | grep "phase: " | awk {'print $2'}`" == "Running" ]; do

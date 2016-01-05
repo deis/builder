@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: deis-dockerbuilder
+  labels:
+    heritage: deis
+    version: 2.0.0-beta
+spec:
+  restartPolicy: Never
+  containers:
+    - name: deis-dockerbuilder
+      imagePullPolicy: Always
+      image: quay.io/deisci/dockerbuilder:v2-beta
+      env:
+        - name: DEBUG
+          value: "1"
+        - name: TAR_URL
+          value: tar-url
+        - name: IMG_NAME
+          value: imagename
+        - name: ACCESS_KEY_FILE
+          value: /var/run/secrets/object/store/access_key
+        - name: ACCESS_SECRET_FILE
+          value: /var/run/secrets/object/store/access_secret
+      volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
