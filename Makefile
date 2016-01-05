@@ -17,7 +17,7 @@ BINARY_DEST_DIR := rootfs/usr/bin
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
 IMAGE_PREFIX ?= deis
-BINARIES := extract-domain extract-types extract-version generate-buildhook get-app-config get-app-values publish-release-controller yaml2json-procfile
+BINARIES := extract-types extract-version generate-buildhook get-app-config get-app-values publish-release-controller yaml2json-procfile
 STANDALONE := extract-types  generate-buildhook yaml2json-procfile
 # Docker Root FS
 BINDIR := ./rootfs

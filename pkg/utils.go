@@ -36,24 +36,6 @@ func ParseConfig(body []byte) (*Config, error) {
 	return &config, err
 }
 
-// ParseDomain returns the domain field from the bytes of a build hook response.
-func ParseDomain(bytes []byte) (string, error) {
-	var hook BuildHookResponse
-	if err := json.Unmarshal(bytes, &hook); err != nil {
-		return "", err
-	}
-
-	if hook.Domains == nil {
-		return "", fmt.Errorf("invalid application domain")
-	}
-
-	if len(hook.Domains) < 1 {
-		return "", fmt.Errorf("invalid application domain")
-	}
-
-	return hook.Domains[0], nil
-}
-
 // ParseReleaseVersion returns the version field from the bytes of a build hook response.
 func ParseReleaseVersion(bytes []byte) (int, error) {
 	var hook BuildHookResponse

@@ -86,20 +86,6 @@ func TestParseConfigGood(t *testing.T) {
 	}
 }
 
-func TestParseDomainGood(t *testing.T) {
-	// mock controller build-hook response
-	resp := []byte(`{"release": {"version": 1},
-"domains": ["test.example.com", "test2.example.com"]}`)
-
-	domain, err := ParseDomain(resp)
-	if err != nil {
-		t.Errorf("expected to parse domain, got '%v'", err)
-	}
-	if domain != "test.example.com" {
-		t.Errorf("expected 'test.example.com', got '%s'", domain)
-	}
-}
-
 func TestParseReleaseVersionGood(t *testing.T) {
 	// mock controller build-hook response
 	resp := []byte(`{"release": {"version": 1},

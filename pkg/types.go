@@ -29,7 +29,6 @@ type BuildHook struct {
 // BuildHookResponse represents a controller's build-hook response object.
 type BuildHookResponse struct {
 	Release map[string]int `json:"release"`
-	Domains []string       `json:"domains"`
 }
 
 // Config represents a Deis application's configuration.
