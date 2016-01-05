@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+// replaces the following shell script:
+//
 // #!/usr/bin/env bash
 // set -eo pipefail
 //
