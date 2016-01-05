@@ -196,10 +196,9 @@ if [ $CODE -ne 0 ]; then
 fi
 
 RELEASE=$(echo $PUBLISH_RELEASE | extract-version)
-DOMAIN=$(echo $PUBLISH_RELEASE | extract-domain)
 indent "done, $APP_NAME:v$RELEASE deployed to Deis"
 echo
-indent "http://$DOMAIN"
+indent "Use \`deis open\` to view this application in your browser."
 echo
 indent "To learn more, use \`deis help\` or visit http://deis.io"
 echo
