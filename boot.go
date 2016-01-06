@@ -38,7 +38,7 @@ func main() {
 				}
 				log.Info("starting fetcher on port %d", cnf.FetcherPort)
 				go fetcher.Serve(cnf.FetcherPort)
-				log.Info("starting SSH server on %s:%s", cnf.SSHHostIP, cnf.SSHHostPort)
+				log.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				os.Exit(pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot"))
 			},
 		},
