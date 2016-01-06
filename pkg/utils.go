@@ -12,23 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// YamlToJSON takes an input yaml string, parses it and returns a string formatted as json.
-func YamlToJSON(bytes []byte) (string, error) {
-	var anomaly map[string]string
-
-	if err := yaml.Unmarshal(bytes, &anomaly); err != nil {
-		return "", err
-	}
-
-	retVal, err := json.Marshal(&anomaly)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(retVal), nil
-}
-
 // ParseConfig takes a response body from the controller and returns a Config object.
 func ParseConfig(body []byte) (*Config, error) {
 	var config Config
