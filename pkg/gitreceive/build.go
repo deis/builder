@@ -13,6 +13,7 @@ import (
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/log"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -177,9 +178,9 @@ func build(conf *Config, newRev string) error {
 	if err != nil {
 		usingDockerfile = false
 	}
-	procFile, err := pkg.YamlToJSON(rawProcFile)
-	if err != nil {
-		return fmt.Errorf("procfile %s/Procfile is not valid JSON [%s]", tmpDir, err)
+	var procType pkg.ProcessType
+	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
+		return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
 	}
 
 	// if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
@@ -454,8 +455,8 @@ func build(conf *Config, newRev string) error {
 		ReceiveUser: conf.Username,
 		ReceiveRepo: conf.Repository,
 		Image:       conf.ImageName,
-		Procfile:    procFile,
-		Dockerfile:  usingDockerfile,
+		Procfile:    procType,
+		Dockerfile:  strings.Title(fmt.Sprintf("%t", usingDockerfile)),
 	}
 	buildHookResp, err := publishRelease(
 		conf,
