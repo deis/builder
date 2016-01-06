@@ -437,7 +437,6 @@ func build(conf *Config, newRev string) error {
 	)
 	if err != nil {
 		return fmt.Errorf("getting app config for %s (%s)", conf.App, err)
-		os.Exit(1)
 	}
 
 	// # use Procfile if provided, otherwise try default process types from ./release
