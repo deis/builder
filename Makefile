@@ -38,7 +38,7 @@ bootstrap:
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
 build:
-	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags '-s' -o $(BINARY_DEST_DIR)/boot boot.go || exit 1
+	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go || exit 1
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
 
 test:
