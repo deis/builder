@@ -47,13 +47,11 @@ func build(conf *Config, newRev string) error {
 	// PUSH_URL=$HTTP_PREFIX://$S3EP/git/home/${SLUG_NAME}/push
 	storage, err := getStorageConfig()
 	if err != nil {
-		log.Err(err.Error())
-		os.Exit(1)
+		return err
 	}
 	creds, err := getStorageCreds()
 	if err == errMissingKey || err == errMissingSecret {
-		log.Err(err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	// #!/usr/bin/env bash
@@ -139,8 +137,7 @@ func build(conf *Config, newRev string) error {
 	metaName := strings.Replace(slugName, ":", "-", -1)
 	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, conf.ImageName)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
-		log.Err("making the build directory %s (%s)", buildDir, err)
-		os.Exit(1)
+		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
 	tmpDir := os.TempDir()
 
@@ -156,8 +153,7 @@ func build(conf *Config, newRev string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Err("running %s", strings.Join(cmd.Args, " "))
-		os.Exit(1)
+		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
 	tarCmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
@@ -165,8 +161,7 @@ func build(conf *Config, newRev string) error {
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
 	if err := tarCmd.Run(); err != nil {
-		log.Err("running %s", strings.Join(cmd.Args, " "))
-		os.Exit(1)
+		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
 	}
 
 	// USING_DOCKERFILE=true
@@ -184,8 +179,7 @@ func build(conf *Config, newRev string) error {
 	}
 	procFile, err := pkg.YamlToJSON(rawProcFile)
 	if err != nil {
-		log.Err("procfile %s/Procfile is not valid JSON [%s]", tmpDir, err)
-		os.Exit(1)
+		return fmt.Errorf("procfile %s/Procfile is not valid JSON [%s]", tmpDir, err)
 	}
 
 	// if [[ ! -f /var/run/secrets/object/store/access-key-id ]]; then
@@ -226,14 +220,12 @@ func build(conf *Config, newRev string) error {
 		}
 	} else if err != nil {
 		// unexpected error, fail
-		log.Err("unexpected error (%s)", err)
-		os.Exit(1)
+		return fmt.Errorf("unexpected error (%s)", err)
 	}
 
 	fileBytes, err := ioutil.ReadFile(srcManifest)
 	if err != nil {
-		log.Err("reading kubernetes manifest %s (%s)", srcManifest, err)
-		os.Exit(1)
+		return fmt.Errorf("reading kubernetes manifest %s (%s)", srcManifest, err)
 	}
 
 	// sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
@@ -255,8 +247,7 @@ func build(conf *Config, newRev string) error {
 	}
 
 	if err := ioutil.WriteFile(finalManifestFileName, []byte(finalManifest), os.ModePerm); err != nil {
-		log.Err("writing final manifest %s (%s)", finalManifestFileName, err)
-		os.Exit(1)
+		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileName, err)
 	}
 	//
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
@@ -266,8 +257,7 @@ func build(conf *Config, newRev string) error {
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := gitArchiveCmd.Run(); err != nil {
-		log.Err("running %s", strings.Join(cmd.Args, " "))
-		os.Exit(1)
+		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
 	}
 
 	//
@@ -283,8 +273,7 @@ func build(conf *Config, newRev string) error {
 	// MC_PREFIX="mc -C $CONFIG_DIR --quiet"
 	configDir := "/var/minio-conf"
 	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
-		log.Err("creating minio config file (%s)", err)
-		os.Exit(1)
+		return fmt.Errorf("creating minio config file (%s)", err)
 	}
 	baseMinioCmd := exec.Command("mc", "-C", configDir, "--quiet")
 	baseMinioCmd.Stderr = os.Stderr
@@ -301,8 +290,7 @@ func build(conf *Config, newRev string) error {
 		creds.secret,
 	)
 	if err := configCmd.Run(); err != nil {
-		log.Err("configuring the minio client (%s)", err)
-		os.Exit(1)
+		return fmt.Errorf("configuring the minio client (%s)", err)
 	}
 
 	// $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
@@ -325,8 +313,7 @@ func build(conf *Config, newRev string) error {
 	)
 	cpCmd.Dir = repoDir
 	if err := cpCmd.Run(); err != nil {
-		log.Err("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
-		os.Exit(1)
+		return fmt.Errorf("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
 	}
 
 	//
@@ -343,8 +330,7 @@ func build(conf *Config, newRev string) error {
 	)
 	kubectlCmd.Stderr = os.Stderr
 	if err := kubectlCmd.Run(); err != nil {
-		log.Err("creating builder pod (%s)", err)
-		os.Exit(1)
+		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
 	//
@@ -369,8 +355,7 @@ func build(conf *Config, newRev string) error {
 		var out bytes.Buffer
 		getCmd.Stdout = &out
 		if err := getCmd.Run(); err != nil {
-			log.Err("running %s while determining if builder pod %s is running (%s)", buildPodName, err)
-			os.Exit(1)
+			return fmt.Errorf("running %s while determining if builder pod %s is running (%s)", buildPodName, err)
 		}
 		if strings.Contains(string(out.Bytes()), "phase: Running") {
 			break
@@ -388,8 +373,7 @@ func build(conf *Config, newRev string) error {
 	)
 	logsCmd.Stdout = os.Stdout
 	if err := logsCmd.Run(); err != nil {
-		log.Err("running %s to get builder logs (%s)", strings.Join(logsCmd.Args, " "), err)
-		os.Exit(1)
+		return fmt.Errorf("running %s to get builder logs (%s)", strings.Join(logsCmd.Args, " "), err)
 	}
 
 	//
@@ -438,6 +422,18 @@ func build(conf *Config, newRev string) error {
 	//     exit 1
 	// fi
 	//
+
+	cfg, err := getAppConfig(
+		conf,
+		getBuilderKey(),
+		conf.Username,
+		conf.App,
+	)
+	if err != nil {
+		return fmt.Errorf("getting app config for %s (%s)", conf.App, err)
+		os.Exit(1)
+	}
+
 	// # use Procfile if provided, otherwise try default process types from ./release
 	//
 	// puts-step "Launching... "
@@ -450,6 +446,25 @@ func build(conf *Config, newRev string) error {
 	//     puts-warn $PUBLISH_RELEASE
 	//     exit 1
 	// fi
+
+	log.Info("Launching...")
+
+	buildHook := &pkg.BuildHook{
+		Sha:         conf.SHA,
+		ReceiveUser: conf.Username,
+		ReceiveRepo: conf.Repository,
+		Image:       conf.ImageName,
+		Procfile:    procFile,
+		Dockerfile:  usingDockerfile,
+	}
+	buildHookResp, err := publishRelease(
+		conf,
+		getBuilderKey(),
+		buildHook,
+	)
+	if err != nil {
+		return fmt.Errorf("publishing release (%s)", err)
+	}
 	//
 	// RELEASE=$(echo $PUBLISH_RELEASE | extract-version)
 	// DOMAIN=$(echo $PUBLISH_RELEASE | extract-domain)
@@ -459,10 +474,30 @@ func build(conf *Config, newRev string) error {
 	// echo
 	// indent "To learn more, use \`deis help\` or visit http://deis.io"
 	// echo
+
+	release, ok := buildHookResp.Release["version"]
+	if !ok {
+		return fmt.Errorf("No release returned from Deis controller")
+	}
+	if buildHookResp.Domains == nil || len(buildHookResp.Domains) == 0 {
+		return fmt.Errorf("No domains returned from Deis controller")
+	}
+	domain := buildHookResp.Domains[0]
+
+	log.Info(fmt.Sprintf("http://%s", domain))
+	log.Info("To learn more, use 'deis help' or visit http://deis.io")
+
 	//
 	// # cleanup
 	// cd $REPO_DIR
 	// git gc &>/dev/null
+
+	gcCmd := exec.Command("git", "gc")
+	gcCmd.Dir = repoDir
+	if err := gcCmd.Run(); err != nil {
+		return fmt.Errorf("cleaning up the repository with %s (%s)", strings.Join(gcCmd.Args, " "), err)
+		// TODO: is it ok not to exit even if the repo was not cleaned up
+	}
 
 	return nil
 }

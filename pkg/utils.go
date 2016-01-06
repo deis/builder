@@ -36,18 +36,22 @@ func ParseConfig(body []byte) (*Config, error) {
 	return &config, err
 }
 
-// ParseReleaseVersion returns the version field from the bytes of a build hook response.
-func ParseReleaseVersion(bytes []byte) (int, error) {
+// ParseDomain returns the domain field from the bytes of a build hook response.
+func ParseDomain(bytes []byte) (string, error) {
 	var hook BuildHookResponse
 	if err := json.Unmarshal(bytes, &hook); err != nil {
-		return 0, fmt.Errorf("invalid application json configuration")
+		return "", err
 	}
 
-	if hook.Release == nil {
-		return 0, fmt.Errorf("invalid application version")
+	if hook.Domains == nil {
+		return "", fmt.Errorf("invalid application domain")
 	}
 
-	return hook.Release["version"], nil
+	if len(hook.Domains) < 1 {
+		return "", fmt.Errorf("invalid application domain")
+	}
+
+	return hook.Domains[0], nil
 }
 
 // GetDefaultType returns the default process types given a YAML byte array.

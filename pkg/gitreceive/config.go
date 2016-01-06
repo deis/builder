@@ -16,5 +16,5 @@ type Config struct {
 	App                string `envconfing:"app"`
 	Fingerprint        string `envconfing:"fingerprint"`
 	ImageName          string `envconfig:"image_name"`
-	PodNamespace       string `envconfig:"POD_NAMESPACE"`
+	PodNamespace       string `envconfig:"pod_namespace"`
 }

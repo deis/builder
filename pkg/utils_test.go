@@ -86,20 +86,6 @@ func TestParseConfigGood(t *testing.T) {
 	}
 }
 
-func TestParseReleaseVersionGood(t *testing.T) {
-	// mock controller build-hook response
-	resp := []byte(`{"release": {"version": 1},
-"domains": ["test.example.com", "test2.example.com"]}`)
-
-	version, err := ParseReleaseVersion(resp)
-	if err != nil {
-		t.Errorf("expected to parse version, got '%v'", err)
-	}
-	if version != 1 {
-		t.Errorf("expected '1', got '%d'", version)
-	}
-}
-
 func TestGetDefaultTypeGood(t *testing.T) {
 	goodData := [][]byte{[]byte(`default_process_types:
   web: while true; do echo hello; sleep 1; done`),
