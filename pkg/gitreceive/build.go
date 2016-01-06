@@ -435,13 +435,8 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	// fi
 	//
 
-	cfg, err := getAppConfig(
-		conf,
-		builderKey,
-		conf.Username,
-		conf.App,
-	)
-	if err != nil {
+	// Ensure that the app config can be gotten from workflow. We don't do anything with this information
+	if _, err := getAppConfig(conf, builderKey, conf.Username, conf.App); err != nil {
 		return fmt.Errorf("getting app config for %s (%s)", conf.App, err)
 	}
 
