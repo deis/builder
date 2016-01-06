@@ -3,10 +3,6 @@ package gitreceive
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"flag"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 

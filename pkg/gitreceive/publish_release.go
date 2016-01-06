@@ -3,13 +3,8 @@ package gitreceive
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"regexp"
-	"strings"
 
 	"github.com/deis/builder/pkg"
 )
