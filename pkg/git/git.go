@@ -35,17 +35,27 @@ do
 	trap 'rm -f "$LOCKFILE"; exit 1' INT TERM EXIT
 
 	# check for authorization on this repo
-	{{.GitHome}}/receiver "$RECEIVE_REPO" "$newrev" "$RECEIVE_USER" "$RECEIVE_FINGERPRINT"
-	rc=$?
-	if [[ $rc != 0 ]] ; then
-	  echo "      ERROR: failed on rev $newrev - push denied"
-	  exit $rc
-	fi
+	#{{.GitHome}}/receiver "$RECEIVE_REPO" "$newrev" "$RECEIVE_USER" "$RECEIVE_FINGERPRINT"
+	#rc=$?
+	#if [[ $rc != 0 ]] ; then
+	  #echo "      ERROR: failed on rev $newrev - push denied"
+	  #exit $rc
+	#fi
 	# builder assumes that we are running this script from $GITHOME
 	cd {{.GitHome}}
 	# if we're processing a receive-pack on an existing repo, run a build
 	if [[ $SSH_ORIGINAL_COMMAND == git-receive-pack* ]]; then
-		{{.GitHome}}/builder "$RECEIVE_USER" "$RECEIVE_REPO" "$newrev" 2>&1 | strip_remote_prefix
+		#{{.GitHome}}/builder "$RECEIVE_USER" "$RECEIVE_REPO" "$newrev" 2>&1 | strip_remote_prefix
+
+		GIT_HOME={{.GitHome}} \
+		SSH_CONNECTION= \
+		SSH_ORIGINAL_COMMAND=$SSH_ORIGINAL_COMMAND \
+		REPOSITORY=$RECEIVE_REPO \
+		SHA= $newrev \
+		USERNAME=$RECEIVE_USER \
+		FINGERPRINT=$RECEIVE_FINGERPRINT \
+		POD_NAMESPACE=$POD_NAMESPACE \
+		/bin/boot git-receive
 	fi
 
 	rm -f "$LOCKFILE"
