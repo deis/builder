@@ -356,7 +356,12 @@ func build(conf *Config, newRev string) error {
 		var out bytes.Buffer
 		getCmd.Stdout = &out
 		if err := getCmd.Run(); err != nil {
-			return fmt.Errorf("running %s while determining if builder pod %s is running (%s)", buildPodName, err)
+			return fmt.Errorf(
+				"running %s while determining if builder pod %s is running (%s)",
+				strings.Join(getCmd.Args, " "),
+				buildPodName,
+				err,
+			)
 		}
 		if strings.Contains(string(out.Bytes()), "phase: Running") {
 			break
