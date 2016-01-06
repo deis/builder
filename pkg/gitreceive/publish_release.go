@@ -15,7 +15,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 		return nil, err
 	}
 	url := controllerURLStr(conf, "v2", "hooks", "build")
-	req, err := http.NewRequest("POST", url, b)
+	req, err := http.NewRequest("POST", url, &b)
 	if err != nil {
 		return nil, err
 	}
