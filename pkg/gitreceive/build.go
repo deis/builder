@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/coreos/go-etcd/etcd"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/log"
 	"gopkg.in/yaml.v2"
@@ -28,7 +29,13 @@ func (e errGitShaTooShort) Error() string {
 	return fmt.Sprintf("git sha %s was too short", e.sha)
 }
 
-func build(conf *Config, newRev string) error {
+func build(conf *Config, etcdClient *etcd.Client) error {
+	// TODO: replace etcd usage here with something else. See https://github.com/deis/builder/issues/81
+	builderKey, err := getBuilderKey(etcdClient)
+	if err != nil {
+		return fmt.Errorf("couldn't get builder key %s (%s)", builderKey, err)
+	}
+
 	// HTTP_PREFIX="http"
 	// REMOTE_STORAGE="0"
 	// # if minio is in the cluster, use it. otherwise use fetcher
@@ -431,7 +438,7 @@ func build(conf *Config, newRev string) error {
 
 	cfg, err := getAppConfig(
 		conf,
-		getBuilderKey(),
+		builderKey,
 		conf.Username,
 		conf.App,
 	)
@@ -464,7 +471,7 @@ func build(conf *Config, newRev string) error {
 	}
 	buildHookResp, err := publishRelease(
 		conf,
-		getBuilderKey(),
+		builderKey,
 		buildHook,
 	)
 	if err != nil {

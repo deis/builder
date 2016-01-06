@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/deis/builder/pkg/gitreceive/etcd"
 )
 
 // #!/bin/bash
@@ -49,6 +51,10 @@ func readLine(line string) (string, string, string, error) {
 }
 
 func Run(conf *Config) error {
+	etcdClient, err := etcd.CreateClientFromEnv()
+	if err != nil {
+		return err
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -60,7 +66,7 @@ func Run(conf *Config) error {
 		if err := receive(conf, newRev); err != nil {
 			return err
 		}
-		if err := build(conf, newRev); err != nil {
+		if err := build(conf, etcdClient); err != nil {
 			return err
 		}
 	}
