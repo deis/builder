@@ -496,6 +496,7 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	}
 	domain := buildHookResp.Domains[0]
 
+	log.Info("Done, %s:v%s deployed to Deis", appName, release)
 	log.Info(fmt.Sprintf("http://%s", domain))
 	log.Info("To learn more, use 'deis help' or visit http://deis.io")
 
