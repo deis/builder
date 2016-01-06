@@ -141,8 +141,8 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	// # create temporary directory inside the build dir for this push
 	// TMP_DIR=$(mktemp -d -p $BUILD_DIR)
 	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
-	// metaName := strings.Replace(slugName, ":", "-", -1)
-	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, conf.ImageName)
+	imageName := strings.Replace(slugName, ":", "-", -1)
+	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, imageName)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
