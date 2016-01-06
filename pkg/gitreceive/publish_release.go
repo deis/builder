@@ -23,7 +23,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 	req.Header.Add("Content-Type", contentType)
 	req.Header.Add("Accept", contentType)
 	req.Header.Add("User-Agent", userAgent)
-	req.Header.Add("X-Deis-Builder-Auth", *builderKey)
+	req.Header.Add("X-Deis-Builder-Auth", builderKey)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
