@@ -1,7 +1,7 @@
 package gitreceive
 
 import (
-	"error"
+	"errors"
 	"strings"
 )
 
