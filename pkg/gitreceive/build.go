@@ -116,7 +116,7 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 		return errGitShaTooShort{sha: gitSha}
 	}
 	shortSha := conf.SHA[0:8]
-	appName := conf.App
+	appName := conf.App()
 	//
 	// cd $(dirname $0) # ensure we are in the root dir
 	//
@@ -436,8 +436,8 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	//
 
 	// Ensure that the app config can be gotten from workflow. We don't do anything with this information
-	if _, err := getAppConfig(conf, builderKey, conf.Username, conf.App); err != nil {
-		return fmt.Errorf("getting app config for %s (%s)", conf.App, err)
+	if _, err := getAppConfig(conf, builderKey, conf.Username, appName); err != nil {
+		return fmt.Errorf("getting app config for %s (%s)", appName, err)
 	}
 
 	// # use Procfile if provided, otherwise try default process types from ./release
@@ -459,7 +459,7 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 		Sha:         conf.SHA,
 		ReceiveUser: conf.Username,
 		ReceiveRepo: conf.Repository,
-		Image:       conf.ImageName,
+		Image:       imageName,
 		Procfile:    procType,
 		Dockerfile:  strings.Title(fmt.Sprintf("%t", usingDockerfile)),
 	}

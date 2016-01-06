@@ -1,5 +1,9 @@
 package gitreceive
 
+import (
+	"strings"
+)
+
 type Config struct {
 	// k8s service discovery env vars
 	WorkflowHost string `envconfig:"deis_workflow_service_host"`
@@ -13,7 +17,14 @@ type Config struct {
 	Repository         string `envconfig:"repository"`
 	SHA                string `envconfing:"sha"`
 	Username           string `envconfig:"username"`
-	App                string `envconfing:"app"`
 	Fingerprint        string `envconfing:"fingerprint"`
 	PodNamespace       string `envconfig:"pod_namespace"`
+}
+
+func (c Config) App() string {
+	li := strings.LastIndex(c.Repository, ".")
+	if li == -1 {
+		return c.Repository
+	}
+	return c.Repository[0:li]
 }

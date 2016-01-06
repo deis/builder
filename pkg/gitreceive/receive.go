@@ -38,7 +38,7 @@ func receive(conf *Config, newRev string) error {
 	urlStr := fmt.Sprintf("http://%s:%s/v2/hooks/push", conf.WorkflowHost, conf.WorkflowPort)
 	bodyMap := map[string]string{
 		"receive_user":         conf.Username,
-		"receive_repo":         conf.App,
+		"receive_repo":         conf.App(),
 		"sha":                  conf.SHA,
 		"fingerprint":          conf.Fingerprint,
 		"ssh_connection":       conf.SSHConnection,
