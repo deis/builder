@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"os"
 
 	"github.com/deis/builder/pkg"
 )
@@ -48,5 +47,5 @@ func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Conf
 	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
 		return nil, err
 	}
-	return nil, ret
+	return ret, nil
 }
