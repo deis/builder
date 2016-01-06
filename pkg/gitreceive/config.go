@@ -6,19 +6,19 @@ import (
 
 type Config struct {
 	// k8s service discovery env vars
-	WorkflowHost string `envconfig:"deis_workflow_service_host"`
-	WorkflowPort string `envconfig:"deis_workflow_service_port"`
-	RegistryHost string `envconfig:"deis_registry_service_host"`
-	RegistryPort string `envconfig:"deis_registry_service_port"`
+	WorkflowHost string `envconfig:"DEIS_WORKFLOW_SERVICE_HOST" required:"true"`
+	WorkflowPort string `envconfig:"DEIS_WORKFLOW_SERVICE_PORT" required:"true"`
+	RegistryHost string `envconfig:"DEIS_REGISTRY_SERVICE_HOST" required:"true"`
+	RegistryPort string `envconfig:"DEIS_REGISTRY_SERVICE_PORT" required:"true"`
 
-	GitHome            string `envconfig:"git_home"`
-	SSHConnection      string `envconfig:"ssh_connection"`
-	SSHOriginalCommand string `envconfig:"ssh_original_command"`
-	Repository         string `envconfig:"repository"`
-	SHA                string `envconfing:"sha"`
-	Username           string `envconfig:"username"`
-	Fingerprint        string `envconfing:"fingerprint"`
-	PodNamespace       string `envconfig:"pod_namespace"`
+	GitHome            string `envconfig:"GIT_HOME" required:"true"`
+	SSHConnection      string `envconfig:"SSH_CONNECTION" required:"true"`
+	SSHOriginalCommand string `envconfig:"SSH_ORIGINAL_COMMAND" required:"true"`
+	Repository         string `envconfig:"REPOSITORY" required:"true"`
+	SHA                string `envconfing:"SHA" required:"true"`
+	Username           string `envconfig:"USERNAME" required:"true"`
+	Fingerprint        string `envconfing:"FINGERPRINT" required:"true"`
+	PodNamespace       string `envconfig:"POD_NAMESPACE" required:"true"`
 }
 
 func (c Config) App() string {
