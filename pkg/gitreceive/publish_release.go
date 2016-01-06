@@ -1,9 +1,8 @@
 package gitreceive
 
 import (
+	"bytes"
 	"encoding/json"
-	"flag"
-	"log"
 	"net/http"
 
 	"github.com/deis/builder/pkg"
