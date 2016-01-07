@@ -58,6 +58,11 @@ func Run(conf *Config) error {
 	if err != nil {
 		return err
 	}
+	// TODO: replace etcd usage here with something else. See https://github.com/deis/builder/issues/81
+	builderKey, err := getBuilderKey(etcdClient)
+	if err != nil {
+		return fmt.Errorf("couldn't get builder key %s (%s)", builderKey, err)
+	}
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -69,7 +74,7 @@ func Run(conf *Config) error {
 		if err := receive(conf, newRev); err != nil {
 			return err
 		}
-		if err := build(conf, etcdClient, newRev); err != nil {
+		if err := build(conf, builderKey, newRev); err != nil {
 			return err
 		}
 	}
