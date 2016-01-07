@@ -17,6 +17,7 @@ import (
 
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
+	pkglog "github.com/deis/builder/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -122,6 +123,10 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 
 	done := plumbCommand(cmd, channel, &errbuff)
 
+	pkglog.Debug("Running %s", strings.Join(cmd.Args, " "))
+	pkglog.Debug("Working Dir: %s", cmd.Dir)
+	pkglog.Debug("Environment: %s", strings.Join(cmd.Env, ","))
+
 	if err := cmd.Start(); err != nil {
 		log.Warnf(c, "Failed git receive immediately: %s %s", err, errbuff.Bytes())
 		return nil, err
@@ -212,7 +217,9 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 			return true, err
 		}
 
-		ioutil.WriteFile(filepath.Join(repoPath, "hooks", "pre-receive"), hookByteBuf.Bytes(), 0755)
+		writePath := filepath.Join(repoPath, "hooks", "pre-receive")
+		pkglog.Debug("Writing pre-receive hook to %s", writePath)
+		ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755)
 
 		return true, nil
 	} else if err == nil {

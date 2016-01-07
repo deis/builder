@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/etcd"
+	"github.com/deis/builder/pkg/log"
 )
 
 // #!/bin/bash
@@ -51,6 +52,8 @@ func readLine(line string) (string, string, string, error) {
 }
 
 func Run(conf *Config) error {
+	log.Debug("Running git hook")
+
 	etcdClient, err := etcd.CreateClientFromEnv()
 	if err != nil {
 		return err
