@@ -29,7 +29,7 @@ func (e errGitShaTooShort) Error() string {
 	return fmt.Sprintf("git sha %s was too short", e.sha)
 }
 
-func build(conf *Config, etcdClient *etcd.Client) error {
+func build(conf *Config, etcdClient *etcd.Client, gitSha string) error {
 	// TODO: replace etcd usage here with something else. See https://github.com/deis/builder/issues/81
 	builderKey, err := getBuilderKey(etcdClient)
 	if err != nil {
@@ -111,11 +111,10 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	// SHORT_SHA=${GIT_SHA:0:8}
 	// APP_NAME="${REPO%.*}"
 	repo := conf.Repository
-	gitSha := conf.SHA
 	if len(gitSha) <= shortShaIdx {
 		return errGitShaTooShort{sha: gitSha}
 	}
-	shortSha := conf.SHA[0:8]
+	shortSha := gitSha[0:8]
 	appName := conf.App()
 	//
 	// cd $(dirname $0) # ensure we are in the root dir
@@ -456,7 +455,7 @@ func build(conf *Config, etcdClient *etcd.Client) error {
 	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
-		Sha:         conf.SHA,
+		Sha:         gitSha,
 		ReceiveUser: conf.Username,
 		ReceiveRepo: conf.Repository,
 		Image:       imageName,

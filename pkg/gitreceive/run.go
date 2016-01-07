@@ -69,7 +69,7 @@ func Run(conf *Config) error {
 		if err := receive(conf, newRev); err != nil {
 			return err
 		}
-		if err := build(conf, etcdClient); err != nil {
+		if err := build(conf, etcdClient, newRev); err != nil {
 			return err
 		}
 	}
