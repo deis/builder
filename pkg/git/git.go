@@ -55,7 +55,7 @@ do
 		USERNAME=$RECEIVE_USER \
 		FINGERPRINT=$RECEIVE_FINGERPRINT \
 		POD_NAMESPACE=$POD_NAMESPACE \
-		/bin/boot git-receive
+		boot git-receive
 	fi
 
 	rm -f "$LOCKFILE"
