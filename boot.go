@@ -23,6 +23,11 @@ func init() {
 }
 
 func main() {
+	if os.Getenv("DEBUG") == "true" {
+		log.IsDebugging = true
+	}
+	log.Debug("Running in debug mode")
+
 	app := cli.NewApp()
 
 	app.Commands = []cli.Command{
