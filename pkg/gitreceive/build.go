@@ -28,6 +28,12 @@ func (e errGitShaTooShort) Error() string {
 	return fmt.Sprintf("git sha %s was too short", e.sha)
 }
 
+func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
+	cmd := exec.Command(first, others...)
+	cmd.Dir = repoDir
+	return cmd
+}
+
 func build(conf *Config, builderKey, gitSha string) error {
 	// HTTP_PREFIX="http"
 	// REMOTE_STORAGE="0"
@@ -147,20 +153,18 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// cd $REPO_DIR
 	// # use Procfile if provided, otherwise try default process types from ./release
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-	cmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
-	cmd.Dir = repoDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("running %s (%s)", strings.Join(cmd.Args, " "), err)
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	gitArchiveCmd.Stdout = os.Stdout
+	gitArchiveCmd.Stderr = os.Stderr
+	if err := gitArchiveCmd.Run(); err != nil {
+		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd.Args, " "), err)
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
-	tarCmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
-	tarCmd.Dir = repoDir
+	tarCmd := repoCmd("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
 	if err := tarCmd.Run(); err != nil {
-		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
+		return fmt.Errorf("running %s", strings.Join(tarCmd.Args, " "))
 	}
 
 	// USING_DOCKERFILE=true
@@ -251,12 +255,12 @@ func build(conf *Config, builderKey, gitSha string) error {
 	//
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 
-	gitArchiveCmd := exec.Command("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
-	gitArchiveCmd.Dir = repoDir
-	gitArchiveCmd.Stdout = os.Stdout
-	gitArchiveCmd.Stderr = os.Stderr
-	if err := gitArchiveCmd.Run(); err != nil {
-		return fmt.Errorf("running %s (%s)", strings.Join(cmd.Args, " "), err)
+	// TODO: same command is done above, is this one necessary at all?
+	gitArchiveCmd2 := repoCmd("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	gitArchiveCmd2.Stdout = os.Stdout
+	gitArchiveCmd2.Stderr = os.Stderr
+	if err := gitArchiveCmd2.Run(); err != nil {
+		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd2.Args, " "), err)
 	}
 
 	//
@@ -299,6 +303,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		"mb",
 		fmt.Sprintf("%s://%s:%s/git", storage.schema(), storage.host(), storage.port()),
 	)
+
 	// Don't look for errors here. Buckets may already exist
 	makeBucketCmd.Run()
 
@@ -491,8 +496,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// cd $REPO_DIR
 	// git gc &>/dev/null
 
-	gcCmd := exec.Command("git", "gc")
-	gcCmd.Dir = repoDir
+	gcCmd := repoCmd("git", "gc")
 	if err := gcCmd.Run(); err != nil {
 		return fmt.Errorf("cleaning up the repository with %s (%s)", strings.Join(gcCmd.Args, " "), err)
 		// TODO: is it ok not to exit even if the repo was not cleaned up
