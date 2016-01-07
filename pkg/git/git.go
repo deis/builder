@@ -48,7 +48,7 @@ do
 		#{{.GitHome}}/builder "$RECEIVE_USER" "$RECEIVE_REPO" "$newrev" 2>&1 | strip_remote_prefix
 
 		GIT_HOME={{.GitHome}} \
-		SSH_CONNECTION= \
+		SSH_CONNECTION=$SSH_CONNECTION \
 		SSH_ORIGINAL_COMMAND=$SSH_ORIGINAL_COMMAND \
 		REPOSITORY=$RECEIVE_REPO \
 		SHA=$newrev \
