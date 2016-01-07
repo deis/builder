@@ -152,7 +152,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
+		return fmt.Errorf("running %s (%s)", strings.Join(cmd.Args, " "), err)
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
 	tarCmd := exec.Command("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
@@ -256,7 +256,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := gitArchiveCmd.Run(); err != nil {
-		return fmt.Errorf("running %s", strings.Join(cmd.Args, " "))
+		return fmt.Errorf("running %s (%s)", strings.Join(cmd.Args, " "), err)
 	}
 
 	//
