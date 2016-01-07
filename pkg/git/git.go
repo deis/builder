@@ -95,6 +95,8 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	fingerprint := p.Get("fingerprint", nil).(string)
 	user := p.Get("user", "").(string)
 
+	pkglog.Debug("receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, fingerprint, user)
+
 	repo, err := cleanRepoName(repoName)
 	if err != nil {
 		log.Warnf(c, "Illegal repo name: %s.", err)
@@ -120,6 +122,9 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 		fmt.Sprintf("SSH_CONNECTION=%s", c.Get("SSH_CONNECTION", "0 0 0 0").(string)),
 	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
+
+	pkglog.Debug("Working Dir: %s", cmd.Dir)
+	pkglog.Debug("Environment: %s", strings.Join(cmd.Env, ","))
 
 	plumbCommand(cmd, channel, &errbuff)
 
