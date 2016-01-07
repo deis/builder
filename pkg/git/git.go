@@ -123,14 +123,16 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 
 	plumbCommand(cmd, channel, &errbuff)
 
-	if err := cmd.Run(); err != nil {
-		log.Warnf(c, "Failed git receive: %s %s", err, errbuff.Bytes())
-		return nil, fmt.Errorf("Failed git receive immediately: %s (%s)", errbuff.Bytes(), err)
+	if err := cmd.Start(); err != nil {
+		err = fmt.Errorf("Failed to start git pre-receive hook: %s (%s)", err, errbuff.Bytes())
+		log.Warnf(c, err.Error())
+		return nil, err
 	}
-	fmt.Printf("Waiting for git-receive to run.\n")
-	fmt.Printf("Waiting for deploy.\n")
+	fmt.Println("Waiting for git-receive to run.")
+	fmt.Println("Waiting for deploy.")
 	if err := cmd.Wait(); err != nil {
-		log.Errf(c, "Error on command: %s %s", err, errbuff.Bytes())
+		err = fmt.Errorf("Failed to run git pre-receive hook: %s (%s)", errbuff.Bytes(), err)
+		log.Errf(c, err.Error())
 		return nil, err
 	}
 	if errbuff.Len() > 0 {
