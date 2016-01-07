@@ -17,7 +17,6 @@ import (
 
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
-	pkglog "github.com/deis/builder/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -62,7 +61,7 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	fingerprint := p.Get("fingerprint", nil).(string)
 	user := p.Get("user", "").(string)
 
-	pkglog.Debug("receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, fingerprint, user)
+	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, fingerprint, user)
 
 	repo, err := cleanRepoName(repoName)
 	if err != nil {
@@ -90,8 +89,8 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
-	pkglog.Debug("Working Dir: %s", cmd.Dir)
-	pkglog.Debug("Environment: %s", strings.Join(cmd.Env, ","))
+	log.Debugf(c, "Working Dir: %s", cmd.Dir)
+	log.Debugf(c, "Environment: %s", strings.Join(cmd.Env, ","))
 
 	plumbCommand(cmd, channel, &errbuff)
 
@@ -179,7 +178,7 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 		}
 
 		writePath := filepath.Join(repoPath, "hooks", "pre-receive")
-		pkglog.Debug("Writing pre-receive hook to %s", writePath)
+		log.Debugf(c, "Writing pre-receive hook to %s", writePath)
 		if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
 			return false, fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
 		}
