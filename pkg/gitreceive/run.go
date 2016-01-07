@@ -71,7 +71,7 @@ func Run(conf *Config) error {
 		if err != nil {
 			return err
 		}
-		if err := receive(conf, newRev); err != nil {
+		if err := receive(conf, builderKey, newRev); err != nil {
 			return err
 		}
 		if err := build(conf, builderKey, newRev); err != nil {
