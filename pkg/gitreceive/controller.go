@@ -12,12 +12,17 @@ var (
 )
 
 type unexpectedControllerStatusCode struct {
+	endpoint string
 	expected int
 	actual   int
 }
 
+func newUnexpectedControllerStatusCode(endpoint string, expectedCode, actualCode int) unexpectedControllerStatusCode {
+	return unexpectedControllerStatusCode{endpoint: endpoint, expected: expectedCode, actual: actualCode}
+}
+
 func (u unexpectedControllerStatusCode) Error() string {
-	return fmt.Sprintf("Expected status code %d from Deis controller, got %d", u.expected, u.actual)
+	return fmt.Sprintf("Deis controller endpoint %s: expected status code %d, got %d", u.endpoint, u.expected, u.actual)
 }
 
 func controllerURLStr(conf *Config, additionalPath ...string) string {

@@ -36,7 +36,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 	} else if res.StatusCode == http.StatusServiceUnavailable {
 		return nil, errControllerServiceUnavailable
 	} else if res.StatusCode != 200 {
-		return nil, unexpectedControllerStatusCode{expected: 200, actual: res.StatusCode}
+		return nil, newUnexpectedControllerStatusCode(url, 200, res.StatusCode)
 	}
 
 	ret := new(pkg.BuildHookResponse)
