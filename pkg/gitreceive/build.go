@@ -31,6 +31,7 @@ func (e errGitShaTooShort) Error() string {
 func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	cmd := exec.Command(first, others...)
 	cmd.Dir = repoDir
+	log.Debug("running [%s] in directory %s", strings.Join(cmd.Args, " "), cmd.Dir)
 	return cmd
 }
 
