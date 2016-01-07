@@ -219,7 +219,9 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 
 		writePath := filepath.Join(repoPath, "hooks", "pre-receive")
 		pkglog.Debug("Writing pre-receive hook to %s", writePath)
-		ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755)
+		if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
+			return false, fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
+		}
 
 		return true, nil
 	} else if err == nil {
