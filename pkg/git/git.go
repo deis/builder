@@ -121,18 +121,13 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
-	done := plumbCommand(cmd, channel, &errbuff)
+	plumbCommand(cmd, channel, &errbuff)
 
-	pkglog.Debug("Running %s", strings.Join(cmd.Args, " "))
-	pkglog.Debug("Working Dir: %s", cmd.Dir)
-	pkglog.Debug("Environment: %s", strings.Join(cmd.Env, ","))
-
-	if err := cmd.Start(); err != nil {
-		log.Warnf(c, "Failed git receive immediately: %s %s", err, errbuff.Bytes())
-		return nil, err
+	if err := cmd.Run(); err != nil {
+		log.Warnf(c, "Failed git receive: %s %s", err, errbuff.Bytes())
+		return nil, fmt.Errorf("Failed git receive immediately: %s (%s)", errbuff.Bytes(), err)
 	}
 	fmt.Printf("Waiting for git-receive to run.\n")
-	done.Wait()
 	fmt.Printf("Waiting for deploy.\n")
 	if err := cmd.Wait(); err != nil {
 		log.Errf(c, "Error on command: %s %s", err, errbuff.Bytes())
@@ -166,8 +161,7 @@ func cleanRepoName(name string) (string, error) {
 // plumbCommand connects the exec in/output and the channel in/output.
 //
 // The sidechannel is for sending errors to logs.
-func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) *sync.WaitGroup {
-	var wg sync.WaitGroup
+func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) {
 	inpipe, _ := cmd.StdinPipe()
 	go func() {
 		io.Copy(inpipe, channel)
@@ -176,8 +170,6 @@ func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) *sy
 
 	cmd.Stdout = channel
 	cmd.Stderr = io.MultiWriter(channel.Stderr(), sidechannel)
-
-	return &wg
 }
 
 var createLock sync.Mutex
