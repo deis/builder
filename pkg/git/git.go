@@ -141,11 +141,6 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	return nil, nil
 }
 
-func execAs(user, cmd string, args ...string) *exec.Cmd {
-	fullCmd := cmd + " " + strings.Join(args, " ")
-	return exec.Command("su", user, "-c", fullCmd)
-}
-
 // cleanRepoName cleans a repository name for a git-sh operation.
 func cleanRepoName(name string) (string, error) {
 	if len(name) == 0 {
