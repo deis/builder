@@ -15,9 +15,9 @@ type Config struct {
 	SSHConnection      string `envconfig:"SSH_CONNECTION" required:"true"`
 	SSHOriginalCommand string `envconfig:"SSH_ORIGINAL_COMMAND" required:"true"`
 	Repository         string `envconfig:"REPOSITORY" required:"true"`
-	SHA                string `envconfing:"SHA" required:"true"`
+	SHA                string `envconfig:"SHA" required:"true"`
 	Username           string `envconfig:"USERNAME" required:"true"`
-	Fingerprint        string `envconfing:"FINGERPRINT" required:"true"`
+	Fingerprint        string `envconfig:"FINGERPRINT" required:"true"`
 	PodNamespace       string `envconfig:"POD_NAMESPACE" required:"true"`
 }
 
