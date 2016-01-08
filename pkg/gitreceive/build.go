@@ -249,16 +249,6 @@ func build(conf *Config, builderKey, gitSha string) error {
 	if err := ioutil.WriteFile(finalManifestFileName, []byte(finalManifest), os.ModePerm); err != nil {
 		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileName, err)
 	}
-	//
-	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-
-	// TODO: same command is done above, is this one necessary at all?
-	gitArchiveCmd2 := repoCmd("git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
-	gitArchiveCmd2.Stdout = os.Stdout
-	gitArchiveCmd2.Stderr = os.Stderr
-	if err := gitArchiveCmd2.Run(); err != nil {
-		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd2.Args, " "), err)
-	}
 
 	//
 	// ACCESS_KEY=`cat /var/run/secrets/object/store/access-key-id`
