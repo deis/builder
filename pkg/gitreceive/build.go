@@ -45,7 +45,12 @@ func mcCmd(configDir string, args ...string) *exec.Cmd {
 
 // run prints the command it will execute to the debug log, then runs it and returns the result of run
 func run(cmd *exec.Cmd) error {
-	log.Debug("running [%s] in directory %s", strings.Join(cmd.Args, " "), cmd.Dir)
+	cmdStr := strings.Join(cmd.Args, " ")
+	if cmd.Dir != "" {
+		log.Debug("running [%s] in directory %s", cmdStr, cmd.Dir)
+	} else {
+		log.Debug("runninng [%s]", cmdStr)
+	}
 	return cmd.Run()
 }
 
