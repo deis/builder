@@ -278,44 +278,21 @@ func build(conf *Config, builderKey, gitSha string) error {
 	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating minio config file (%s)", err)
 	}
-	baseMinioCmd := exec.Command("mc", "-C", configDir, "--quiet")
-	baseMinioCmd.Stderr = os.Stderr
 
 	// $MC_PREFIX config host add "$HTTP_PREFIX://$S3EP" $ACCESS_KEY $ACCESS_SECRET &>/dev/null
-	configCmd := baseMinioCmd
-	configCmd.Args = append(
-		configCmd.Args,
-		"config",
-		"host",
-		"add",
-		fmt.Sprintf("%s://%s:%s", storage.schema(), storage.host(), storage.port()),
-		creds.key,
-		creds.secret,
-	)
-	if err := configCmd.Run(); err != nil {
+	configCmd := mcCmd(configDir, "config", "host", "add", fmt.Sprintf("%s://%s:%s", storage.schema(), storage.host(), storage.port()), creds.key, creds.secret)
+	if err := run(configCmd); err != nil {
 		return fmt.Errorf("configuring the minio client (%s)", err)
 	}
 
 	// $MC_PREFIX mb "$HTTP_PREFIX://${S3EP}/git" &>/dev/null
-	makeBucketCmd := baseMinioCmd
-	makeBucketCmd.Args = append(
-		makeBucketCmd.Args,
-		"mb",
-		fmt.Sprintf("%s://%s:%s/git", storage.schema(), storage.host(), storage.port()),
-	)
-
+	makeBucketCmd := mcCmd(configDir, "mb", fmt.Sprintf("%s://%s:%s/git", storage.schema(), storage.host(), storage.port()))
 	// Don't look for errors here. Buckets may already exist
 	// https://github.com/deis/builder/issues/80 will eliminate this distaste
 	run(makeBucketCmd)
 
 	// $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
-	cpCmd := baseMinioCmd
-	cpCmd.Args = append(
-		cpCmd.Args,
-		"cp",
-		fmt.Sprintf("%s.tar.gz", appName),
-		tarURL,
-	)
+	cpCmd := mcCmd(configDir, "cp", fmt.Sprintf("%s.tar.gz", appName), tarURL)
 	cpCmd.Dir = repoDir
 	if err := run(cpCmd); err != nil {
 		return fmt.Errorf("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
@@ -404,8 +381,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// fi
 
 	// poll the s3 server to ensure the slug exists
-	lsCmd := baseMinioCmd
-	lsCmd.Args = append(lsCmd.Args, "ls", pushURL)
+	lsCmd := mcCmd(configDir, "ls", pushURL)
 	for {
 		// for now, assume the error indicates that the slug wasn't there, nothing else
 		// TODO: implement https://github.com/deis/builder/issues/80, which will clean this up siginficantly
