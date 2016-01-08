@@ -71,9 +71,21 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	}
 	repo += ".git"
 
-	if _, err := createRepo(c, filepath.Join(gitHome, repo), gitHome); err != nil {
-		log.Infof(c, "Did not create new repo: %s", err)
+	repoPath := filepath.Join(gitHome, repo)
+	log.Debugf(c, "creating repo directory %s", repoPath)
+	if _, err := createRepo(c, repoPath); err != nil {
+		err = fmt.Errorf("Did not create new repo (%s)", err)
+		log.Warnf(c, err.Error())
+		return nil, err
 	}
+
+	log.Debugf(c, "writing pre-receive hook under %s", repoPath)
+	if err := createPreReceiveHook(c, gitHome, repoPath); err != nil {
+		err = fmt.Errorf("Did not write pre-receive hook (%s)", err)
+		log.Warnf(c, err.Error())
+		return nil, err
+	}
+
 	cmd := exec.Command("git-shell", "-c", fmt.Sprintf("%s '%s'", operation, repo))
 	log.Infof(c, strings.Join(cmd.Args, " "))
 
@@ -148,7 +160,7 @@ var createLock sync.Mutex
 //
 // Returns a bool indicating whether a project was created (true) or already
 // existed (false).
-func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
+func createRepo(c cookoo.Context, repoPath string) (bool, error) {
 	createLock.Lock()
 	defer createLock.Unlock()
 
@@ -171,21 +183,25 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 			return false, err
 		}
 
-		// parse & generate the template anew each receive for each new git home
-		var hookByteBuf bytes.Buffer
-		if err := preReceiveHookTpl.Execute(&hookByteBuf, map[string]string{"GitHome": gitHome}); err != nil {
-			return true, err
-		}
-
-		writePath := filepath.Join(repoPath, "hooks", "pre-receive")
-		log.Debugf(c, "Writing pre-receive hook to %s", writePath)
-		if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
-			return false, fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
-		}
-
 		return true, nil
 	} else if err == nil {
 		return false, errors.New("Expected directory, found file.")
 	}
 	return false, err
+}
+
+// createPreReceiveHook renders preReceiveHookTpl to repoPath/hooks/pre-receive
+func createPreReceiveHook(c cookoo.Context, gitHome, repoPath string) error {
+	// parse & generate the template anew each receive for each new git home
+	var hookByteBuf bytes.Buffer
+	if err := preReceiveHookTpl.Execute(&hookByteBuf, map[string]string{"GitHome": gitHome}); err != nil {
+		return err
+	}
+
+	writePath := filepath.Join(repoPath, "hooks", "pre-receive")
+	log.Debugf(c, "Writing pre-receive hook to %s", writePath)
+	if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
+		return fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
+	}
+	return nil
 }
