@@ -69,7 +69,7 @@ func Run(conf *Config) error {
 		// oldRev, newRev, refName, err := readLine(line)
 		_, newRev, _, err := readLine(line)
 		if err != nil {
-			return err
+			return fmt.Errorf("reading STDIN (%s)", err)
 		}
 		if err := receive(conf, builderKey, newRev); err != nil {
 			return err
