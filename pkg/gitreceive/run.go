@@ -74,8 +74,10 @@ func Run(conf *Config) error {
 		if err := receive(conf, builderKey, newRev); err != nil {
 			return err
 		}
-		if err := build(conf, builderKey, newRev); err != nil {
-			return err
+		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
+			if err := build(conf, builderKey, newRev); err != nil {
+				return err
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
