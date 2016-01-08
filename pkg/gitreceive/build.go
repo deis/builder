@@ -269,13 +269,9 @@ func build(conf *Config, builderKey, gitSha string) error {
 	if !ok {
 		return fmt.Errorf("No release returned from Deis controller")
 	}
-	if buildHookResp.Domains == nil || len(buildHookResp.Domains) == 0 {
-		return fmt.Errorf("No domains returned from Deis controller")
-	}
-	domain := buildHookResp.Domains[0]
 
 	log.Info("Done, %s:v%d deployed to Deis", appName, release)
-	log.Info(fmt.Sprintf("http://%s", domain))
+	log.Info("Use 'deis open' to view this application in your browser")
 	log.Info("To learn more, use 'deis help' or visit http://deis.io")
 
 	gcCmd := repoCmd(repoDir, "git", "gc")
