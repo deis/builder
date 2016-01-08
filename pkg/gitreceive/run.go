@@ -74,6 +74,7 @@ func Run(conf *Config) error {
 		if err := receive(conf, builderKey, newRev); err != nil {
 			return err
 		}
+		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
 			if err := build(conf, builderKey, newRev); err != nil {
 				return err
