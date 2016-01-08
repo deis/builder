@@ -35,6 +35,20 @@ func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	return cmd
 }
 
+// mcCmd returns a command to execute the 'mc' binary, so that it reads config from configDir.
+// the command outputs its stderr to os.Stderr
+func mcCmd(configDir string, args ...string) *exec.Cmd {
+	cmd := exec.Command("mc", "-C", configDir, "--quiet")
+	cmd.Stderr = os.Stderr
+	return cmd
+}
+
+// run prints the command it will execute to the debug log, then runs it and returns the result of run
+func run(cmd *exec.Cmd) error {
+	log.Debug("running [%s] in directory %s", strings.Join(cmd.Args, " "), cmd.Dir)
+	return cmd.Run()
+}
+
 func build(conf *Config, builderKey, gitSha string) error {
 	// HTTP_PREFIX="http"
 	// REMOTE_STORAGE="0"
