@@ -474,7 +474,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// git gc &>/dev/null
 
 	gcCmd := repoCmd(repoDir, "git", "gc")
-	if err := gcCmd.Run(); err != nil {
+	if err := run(gcCmd); err != nil {
 		return fmt.Errorf("cleaning up the repository with %s (%s)", strings.Join(gcCmd.Args, " "), err)
 		// TODO: is it ok not to exit even if the repo was not cleaned up
 	}
