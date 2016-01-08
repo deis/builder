@@ -321,6 +321,9 @@ func build(conf *Config, builderKey, gitSha string) error {
 		"-f",
 		finalManifestFileLocation,
 	)
+	if log.IsDebugging {
+		kCreateCmd.Stdout = os.Stdout
+	}
 	kCreateCmd.Stderr = os.Stderr
 	if err := run(kCreateCmd); err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
