@@ -137,7 +137,6 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// TMP_DIR=$(mktemp -d -p $BUILD_DIR)
 	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
 	imageName := strings.Replace(slugName, ":", "-", -1)
-	tmpImage := fmt.Sprintf("%s:%s/%s", conf.RegistryHost, conf.RegistryPort, imageName)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
@@ -235,12 +234,12 @@ func build(conf *Config, builderKey, gitSha string) error {
 	var buildPodName string
 	var finalManifest string
 	if usingDockerfile {
-		buildPodName = fmt.Sprintf("%s-%s", tmpImage, uuid.New())
+		buildPodName = fmt.Sprintf("dockerbuild-%s-%s", slugName, uuid.New())
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
 	} else {
-		buildPodName = fmt.Sprintf("%s-%s", slugName, uuid.New())
+		buildPodName = fmt.Sprintf("slugbuild-%s-%s", slugName, uuid.New())
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
