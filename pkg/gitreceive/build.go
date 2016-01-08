@@ -150,7 +150,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// cd $REPO_DIR
 	// # use Procfile if provided, otherwise try default process types from ./release
 	// git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
-	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("%s > %s.tar.gz", gitSha, appName))
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s.tar.gz", appName), gitSha)
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := gitArchiveCmd.Run(); err != nil {
