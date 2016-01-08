@@ -435,7 +435,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	buildHook := &pkg.BuildHook{
 		Sha:         gitSha,
 		ReceiveUser: conf.Username,
-		ReceiveRepo: conf.Repository,
+		ReceiveRepo: appName,
 		Image:       imageName,
 		Procfile:    procType,
 		Dockerfile:  strings.Title(fmt.Sprintf("%t", usingDockerfile)),
