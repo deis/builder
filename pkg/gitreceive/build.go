@@ -252,9 +252,14 @@ func build(conf *Config, builderKey, gitSha string) error {
 		Sha:         gitSha,
 		ReceiveUser: conf.Username,
 		ReceiveRepo: appName,
-		Image:       imageName,
 		Procfile:    procType,
-		Dockerfile:  strings.Title(fmt.Sprintf("%t", usingDockerfile)),
+	}
+	if !usingDockerfile {
+		buildHook.Dockerfile = ""
+		buildHook.Image = appName
+	} else {
+		buildHook.Dockerfile = "true"
+		buildHook.Image = imageName
 	}
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	if err != nil {
