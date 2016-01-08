@@ -5,9 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/deis/builder/pkg"
+)
+
+var (
+	potentialExploit = regexp.MustCompile(`\(\)\s+\{[^\}]+\};\s+(.*)`)
 )
 
 type unexpectedControllerStatusCode struct {
@@ -77,8 +82,14 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 	if err := json.NewEncoder(&b).Encode(buildHook); err != nil {
 		return nil, err
 	}
+
+	postBody := strings.Replace(string(b.Bytes()), "'", "", -1)
+	if potentialExploit.MatchString(postBody) {
+		return nil, fmt.Errorf("an environment variable in the app is trying to exploit Shellshock")
+	}
+
 	url := controllerURLStr(conf, "v2", "hooks", "build")
-	req, err := http.NewRequest("POST", url, &b)
+	req, err := http.NewRequest("POST", url, strings.NewReader(postBody))
 	if err != nil {
 		return nil, err
 	}
