@@ -309,7 +309,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
 		"create",
 		"-f",
-		fmt.Sprintf("/etc/%s.yaml", finalManifestFileName),
+		finalManifestFileLocation,
 	)
 	kCreateCmd.Stderr = os.Stderr
 	if err := run(kCreateCmd); err != nil {
