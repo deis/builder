@@ -303,15 +303,15 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// kubectl --namespace=${POD_NAMESPACE} create -f /etc/${SLUG_NAME}.yaml >/dev/null
 
 	log.Info("Starting build")
-	kubectlCmd := exec.Command(
+	kCreateCmd := exec.Command(
 		"kubectl",
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
 		"create",
 		"-f",
 		fmt.Sprintf("/etc/%s.yaml", slugName),
 	)
-	kubectlCmd.Stderr = os.Stderr
-	if err := kubectlCmd.Run(); err != nil {
+	kCreateCmd.Stderr = os.Stderr
+	if err := run(kCreateCmd); err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
@@ -324,7 +324,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 
 	// poll kubectl every 100ms to determine when the build pod is running
 	// TODO: use the k8s client and watch the event stream instead (https://github.com/deis/builder/issues/65)
-	getCmd := exec.Command(
+	kGetCmd := exec.Command(
 		"kubectl",
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
 		fmt.Sprintf("get"),
@@ -335,11 +335,11 @@ func build(conf *Config, builderKey, gitSha string) error {
 	)
 	for {
 		var out bytes.Buffer
-		getCmd.Stdout = &out
-		if err := getCmd.Run(); err != nil {
+		kGetCmd.Stdout = &out
+		if err := run(kGetCmd); err != nil {
 			return fmt.Errorf(
 				"running %s while determining if builder pod %s is running (%s)",
-				strings.Join(getCmd.Args, " "),
+				strings.Join(kGetCmd.Args, " "),
 				buildPodName,
 				err,
 			)
@@ -351,16 +351,16 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	// get logs from the builder pod
-	logsCmd := exec.Command(
+	kLogsCmd := exec.Command(
 		"kubectl",
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
 		"logs",
 		"-f",
 		buildPodName,
 	)
-	logsCmd.Stdout = os.Stdout
-	if err := logsCmd.Run(); err != nil {
-		return fmt.Errorf("running %s to get builder logs (%s)", strings.Join(logsCmd.Args, " "), err)
+	kLogsCmd.Stdout = os.Stdout
+	if err := run(kLogsCmd); err != nil {
+		return fmt.Errorf("running %s to get builder logs (%s)", strings.Join(kLogsCmd.Args, " "), err)
 	}
 
 	//
