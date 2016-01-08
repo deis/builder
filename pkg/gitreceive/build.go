@@ -247,13 +247,14 @@ func build(conf *Config, builderKey, gitSha string) error {
 	finalManifestFileLocation := fmt.Sprintf("/etc/%s", slugName)
 	var buildPodName string
 	var finalManifest string
+	uid := uuid.New()[:8]
 	if usingDockerfile {
-		buildPodName = fmt.Sprintf("dockerbuild-%s-%s", slugName, uuid.New())
+		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
 	} else {
-		buildPodName = fmt.Sprintf("slugbuild-%s-%s", slugName, uuid.New())
+		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
