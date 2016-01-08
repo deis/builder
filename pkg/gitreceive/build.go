@@ -440,11 +440,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		Procfile:    procType,
 		Dockerfile:  strings.Title(fmt.Sprintf("%t", usingDockerfile)),
 	}
-	buildHookResp, err := publishRelease(
-		conf,
-		builderKey,
-		buildHook,
-	)
+	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)
 	}
