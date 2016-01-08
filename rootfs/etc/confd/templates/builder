@@ -113,7 +113,6 @@ else
   fi
 fi
 
-git archive --format=tar.gz ${GIT_SHA} > ${APP_NAME}.tar.gz
 
 HTTP_PREFIX="http"
 REMOTE_STORAGE="0"
