@@ -182,6 +182,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	log.Info("Starting build")
+	log.Debug("Starting pod %s", buildPodName)
 	kCreateCmd := exec.Command(
 		"kubectl",
 		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
