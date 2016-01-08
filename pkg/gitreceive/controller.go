@@ -128,6 +128,7 @@ func receive(conf *Config, builderKey, gitSha string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 201 {
 		return newUnexpectedControllerStatusCode(urlStr, 201, resp.StatusCode)
 	}
