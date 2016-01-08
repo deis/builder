@@ -43,6 +43,10 @@ func mcCmd(configDir string, args ...string) *exec.Cmd {
 	return cmd
 }
 
+func kGetCmd(podNS, podName string) *exec.Cmd {
+	return exec.Command("kubectl", fmt.Sprintf("--namespace=%s", podNS), "get", "pods", "-o", "yaml", podName)
+}
+
 // run prints the command it will execute to the debug log, then runs it and returns the result of run
 func run(cmd *exec.Cmd) error {
 	cmdStr := strings.Join(cmd.Args, " ")
@@ -331,27 +335,14 @@ func build(conf *Config, builderKey, gitSha string) error {
 
 	// poll kubectl every 100ms to determine when the build pod is running
 	// TODO: use the k8s client and watch the event stream instead (https://github.com/deis/builder/issues/65)
-	kGetCmd := exec.Command(
-		"kubectl",
-		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		fmt.Sprintf("get"),
-		fmt.Sprintf("pods"),
-		"-o",
-		"yaml",
-		buildPodName,
-	)
 	for {
+		cmd := kGetCmd(conf.PodNamespace, buildPodName)
 		var out bytes.Buffer
-		kGetCmd.Stdout = &out
-		if err := run(kGetCmd); err != nil {
-			return fmt.Errorf(
-				"running %s while determining if builder pod %s is running (%s)",
-				strings.Join(kGetCmd.Args, " "),
-				buildPodName,
-				err,
-			)
-		}
-		if strings.Contains(string(out.Bytes()), "phase: Running") {
+		cmd.Stdout = &out
+		// ignore errors
+		run(cmd)
+		outStr := string(out.Bytes())
+		if strings.Contains(outStr, "phase: Running") {
 			break
 		} else if strings.Contains(outStr, "phase: Failed") {
 			return fmt.Errorf("build pod %s entered phase: Failed", buildPodName)
