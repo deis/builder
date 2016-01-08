@@ -244,7 +244,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// sed -i -- "s#repo_name#$META_NAME#g" /etc/${SLUG_NAME}.yaml
 	// sed -i -- "s#puturl#$PUSH_URL#g" /etc/${SLUG_NAME}.yaml
 	// sed -i -- "s#tar-url#$TAR_URL#g" /etc/${SLUG_NAME}.yaml
-	finalManifestFileName := fmt.Sprintf("/etc/%s", slugName)
+	finalManifestFileLocation := fmt.Sprintf("/etc/%s", slugName)
 	var buildPodName string
 	var finalManifest string
 	if usingDockerfile {
@@ -259,8 +259,9 @@ func build(conf *Config, builderKey, gitSha string) error {
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
 	}
 
-	if err := ioutil.WriteFile(finalManifestFileName, []byte(finalManifest), os.ModePerm); err != nil {
-		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileName, err)
+	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
+	if err := ioutil.WriteFile(finalManifestFileLocation, []byte(finalManifest), os.ModePerm); err != nil {
+		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
 	}
 
 	//
