@@ -10,39 +10,6 @@ import (
 	"github.com/deis/builder/pkg/log"
 )
 
-// #!/bin/bash
-// strip_remote_prefix() {
-//     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
-// }
-//
-// while read oldrev newrev refname
-// do
-//   LOCKFILE="/tmp/$RECEIVE_REPO.lock"
-//   if ( set -o noclobber; echo "$$" > "$LOCKFILE" ) 2> /dev/null; then
-// 	trap 'rm -f "$LOCKFILE"; exit 1' INT TERM EXIT
-//
-// 	# check for authorization on this repo
-// 	{{.GitHome}}/receiver "$RECEIVE_REPO" "$newrev" "$RECEIVE_USER" "$RECEIVE_FINGERPRINT"
-// 	rc=$?
-// 	if [[ $rc != 0 ]] ; then
-// 	  echo "      ERROR: failed on rev $newrev - push denied"
-// 	  exit $rc
-// 	fi
-// 	# builder assumes that we are running this script from $GITHOME
-// 	cd {{.GitHome}}
-// 	# if we're processing a receive-pack on an existing repo, run a build
-// 	if [[ $SSH_ORIGINAL_COMMAND == git-receive-pack* ]]; then
-// 		{{.GitHome}}/builder "$RECEIVE_USER" "$RECEIVE_REPO" "$newrev" 2>&1 | strip_remote_prefix
-// 	fi
-//
-// 	rm -f "$LOCKFILE"
-// 	trap - INT TERM EXIT
-//   else
-// 	echo "Another git push is ongoing. Aborting..."
-// 	exit 1
-//   fi
-// done
-
 func readLine(line string) (string, string, string, error) {
 	spl := strings.Split(line, " ")
 	if len(spl) != 3 {
