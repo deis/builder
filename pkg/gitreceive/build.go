@@ -157,7 +157,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd.Args, " "), err)
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
-	tarCmd := repoCmd("tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
+	tarCmd := repoCmd(repoDir, "tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
 	if err := tarCmd.Run(); err != nil {
@@ -483,7 +483,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// cd $REPO_DIR
 	// git gc &>/dev/null
 
-	gcCmd := repoCmd("git", "gc")
+	gcCmd := repoCmd(repoDir, "git", "gc")
 	if err := gcCmd.Run(); err != nil {
 		return fmt.Errorf("cleaning up the repository with %s (%s)", strings.Join(gcCmd.Args, " "), err)
 		// TODO: is it ok not to exit even if the repo was not cleaned up
