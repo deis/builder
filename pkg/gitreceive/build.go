@@ -86,7 +86,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	tmpDir := os.TempDir()
 
 	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
-	pushURL := fmt.Sprintf("%s://%s:%s/git/hom/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
+	pushURL := fmt.Sprintf("%s://%s:%s/git/home/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
 
 	// build a tarball from the new objects
 	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s.tar.gz", appName), gitSha)
