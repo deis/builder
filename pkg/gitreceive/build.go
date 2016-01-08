@@ -353,6 +353,8 @@ func build(conf *Config, builderKey, gitSha string) error {
 		}
 		if strings.Contains(string(out.Bytes()), "phase: Running") {
 			break
+		} else if strings.Contains(outStr, "phase: Failed") {
+			return fmt.Errorf("build pod %s entered phase: Failed", buildPodName)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
