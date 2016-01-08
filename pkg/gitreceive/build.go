@@ -123,11 +123,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// REPO_DIR="${ROOT_DIR}/${REPO}"
 	// BUILD_DIR="${REPO_DIR}/build"
 	// CACHE_DIR="${REPO_DIR}/cache"
-	rootDir, err := os.Getwd()
-	if err != nil {
-		return nil
-	}
-	repoDir := filepath.Join(rootDir, repo)
+	repoDir := filepath.Join(conf.GitHome, repo)
 	buildDir := filepath.Join(repoDir, "build")
 	// cacheDir := filepath.Join(repoDir, "cache")
 	//
