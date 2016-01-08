@@ -166,14 +166,14 @@ func build(conf *Config, builderKey, gitSha string) error {
 	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s.tar.gz", appName), gitSha)
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
-	if err := gitArchiveCmd.Run(); err != nil {
+	if err := run(gitArchiveCmd); err != nil {
 		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd.Args, " "), err)
 	}
 	// tar -xzf ${APP_NAME}.tar.gz -C $TMP_DIR/
 	tarCmd := repoCmd(repoDir, "tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
-	if err := tarCmd.Run(); err != nil {
+	if err := run(tarCmd); err != nil {
 		return fmt.Errorf("running %s (%s)", strings.Join(tarCmd.Args, " "), err)
 	}
 
@@ -305,7 +305,8 @@ func build(conf *Config, builderKey, gitSha string) error {
 	)
 
 	// Don't look for errors here. Buckets may already exist
-	makeBucketCmd.Run()
+	// https://github.com/deis/builder/issues/80 will eliminate this distaste
+	run(makeBucketCmd)
 
 	// $MC_PREFIX cp ${APP_NAME}.tar.gz $TAR_URL &>/dev/null
 	cpCmd := baseMinioCmd
@@ -316,7 +317,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		tarURL,
 	)
 	cpCmd.Dir = repoDir
-	if err := cpCmd.Run(); err != nil {
+	if err := run(cpCmd); err != nil {
 		return fmt.Errorf("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
 	}
 
@@ -408,7 +409,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	for {
 		// for now, assume the error indicates that the slug wasn't there, nothing else
 		// TODO: implement https://github.com/deis/builder/issues/80, which will clean this up siginficantly
-		if err := lsCmd.Run(); err == nil {
+		if err := run(lsCmd); err == nil {
 			break
 		}
 	}
