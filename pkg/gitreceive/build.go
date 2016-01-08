@@ -28,6 +28,7 @@ func (e errGitShaTooShort) Error() string {
 	return fmt.Sprintf("git sha %s was too short", e.sha)
 }
 
+// repoCmd returns exec.Command(first, others...) with its current working directory repoDir
 func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	cmd := exec.Command(first, others...)
 	cmd.Dir = repoDir
