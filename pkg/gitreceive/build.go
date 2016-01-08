@@ -161,7 +161,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
 	if err := tarCmd.Run(); err != nil {
-		return fmt.Errorf("running %s", strings.Join(tarCmd.Args, " "))
+		return fmt.Errorf("running %s (%s)", strings.Join(tarCmd.Args, " "), err)
 	}
 
 	// USING_DOCKERFILE=true
