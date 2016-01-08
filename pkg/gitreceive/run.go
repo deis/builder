@@ -66,11 +66,14 @@ func Run(conf *Config) error {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
-		// oldRev, newRev, refName, err := readLine(line)
-		_, newRev, _, err := readLine(line)
+		oldRev, newRev, refName, err := readLine(line)
+
 		if err != nil {
 			return fmt.Errorf("reading STDIN (%s)", err)
 		}
+
+		log.Debug("read [%s,%s,%s]", oldRev, newRev, refName)
+
 		if err := receive(conf, builderKey, newRev); err != nil {
 			return err
 		}
