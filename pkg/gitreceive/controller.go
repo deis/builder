@@ -3,17 +3,11 @@ package gitreceive
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/deis/builder/pkg"
-)
-
-var (
-	errControllerNotFound           = errors.New("Deis controller not found. Is it running?")
-	errControllerServiceUnavailable = errors.New("Deis controller was unavailable. Is it healthy?")
 )
 
 type unexpectedControllerStatusCode struct {
@@ -67,12 +61,9 @@ func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Conf
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == 404 {
-		return nil, errControllerNotFound
-	} else if res.StatusCode != 200 {
+	if res.StatusCode != 200 {
 		return nil, newUnexpectedControllerStatusCode(url, 200, res.StatusCode)
 	}
-
 	ret := &pkg.Config{}
 	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
 		return nil, err
@@ -100,11 +91,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusNotFound {
-		return nil, errControllerNotFound
-	} else if res.StatusCode == http.StatusServiceUnavailable {
-		return nil, errControllerServiceUnavailable
-	} else if res.StatusCode != 200 {
+	if res.StatusCode != 200 {
 		return nil, newUnexpectedControllerStatusCode(url, 200, res.StatusCode)
 	}
 
