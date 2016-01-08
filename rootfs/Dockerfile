@@ -40,7 +40,6 @@ RUN mkdir -p $GITHOME/.ssh && chown git:git $GITHOME/.ssh
 RUN chown -R $GITUSER:$GITUSER $GITHOME
 
 
-CMD ["/bin/boot"]
 COPY ./entrypoint.sh /
 ADD ./check-repos /home/git/
 ENTRYPOINT ["/entrypoint.sh"]
