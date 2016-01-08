@@ -187,7 +187,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 
 	usingDockerfile := true
 	rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
-	if err != nil {
+	if err == nil {
 		usingDockerfile = false
 	}
 	var procType pkg.ProcessType
