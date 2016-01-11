@@ -39,6 +39,7 @@ func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 // the command outputs its stderr to os.Stderr
 func mcCmd(configDir string, args ...string) *exec.Cmd {
 	cmd := exec.Command("mc", "-C", configDir, "--quiet")
+	cmd.Args = append(cmd.Args, args...)
 	cmd.Stderr = os.Stderr
 	return cmd
 }
