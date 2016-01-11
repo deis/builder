@@ -256,7 +256,6 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 	if !usingDockerfile {
 		buildHook.Dockerfile = ""
-		buildHook.Image = appName
 	} else {
 		buildHook.Dockerfile = "true"
 		buildHook.Image = imageName
