@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/log"
 )
 
 var (
@@ -60,6 +61,7 @@ func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Conf
 
 	setReqHeaders(builderKey, req)
 
+	log.Debug("Workflow request POST /v2/hooks/config\n%s", string(data))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -89,6 +91,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 	}
 
 	url := controllerURLStr(conf, "v2", "hooks", "build")
+	log.Debug("Workflow request POST /v2/hooks/build\n%s", postBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(postBody))
 	if err != nil {
 		return nil, err
@@ -128,6 +131,8 @@ func receive(conf *Config, builderKey, gitSha string) error {
 	if err := json.NewEncoder(&body).Encode(bodyMap); err != nil {
 		return err
 	}
+
+	log.Debug("Workflow request /v2/hooks/push (body elided)")
 	req, err := http.NewRequest("POST", urlStr, &body)
 	if err != nil {
 		return err
