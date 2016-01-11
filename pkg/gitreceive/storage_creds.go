@@ -36,8 +36,7 @@ func getStorageCreds() (*storageCreds, error) {
 	if accessKeyErr == nil && accessSecretKeyErr != nil {
 		return nil, errMissingSecret
 	}
-	return &storageCreds{
-		key:    string(accessKeyIDBytes),
-		secret: string(accessSecretKeyBytes),
-	}, nil
+	accessKeyID = strings.TrimSpace(string(accessKeyIDBytes))
+	accessSecretKey = strings.TrimSpace(string(accessSecretKeyBytes))
+	return &storageCreds{key: accessKeyID, secret: accessSecretKey}, nil
 }
