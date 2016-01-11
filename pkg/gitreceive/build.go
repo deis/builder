@@ -53,7 +53,7 @@ func run(cmd *exec.Cmd) error {
 	if cmd.Dir != "" {
 		log.Debug("running [%s] in directory %s", cmdStr, cmd.Dir)
 	} else {
-		log.Debug("runninng [%s]", cmdStr)
+		log.Debug("running [%s]", cmdStr)
 	}
 	return cmd.Run()
 }
