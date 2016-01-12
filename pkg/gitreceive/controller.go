@@ -42,14 +42,24 @@ func setReqHeaders(builderKey string, req *http.Request) {
 }
 
 func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Config, error) {
-	url := controllerURLStr(conf, "v2", "apps", appName, "config")
-	req, err := http.NewRequest("GET", url, nil)
+	url := controllerURLStr(conf, "v2", "hooks", "config")
+	data, err := json.Marshal(&pkg.ConfigHook{
+		ReceiveUser: userName,
+		ReceiveRepo: appName,
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	b := bytes.NewReader(data)
+	req, err := http.NewRequest("POST", url, b)
+	if err != nil {
+		return nil, err
+	}
+
 	setReqHeaders(builderKey, req)
 
-	log.Debug("Workflow request GET /v2/apps/%s/config", appName)
+	log.Debug("Workflow request POST /v2/hooks/config\n%s", string(data))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
