@@ -262,6 +262,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		Sha:         gitSha,
 		ReceiveUser: conf.Username,
 		ReceiveRepo: appName,
+		Image:       appName,
 		Procfile:    procType,
 	}
 	if !usingDockerfile {
