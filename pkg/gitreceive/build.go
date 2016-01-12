@@ -95,13 +95,11 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("getting app config for %s (%s)", appName, err)
 	}
 	log.Debug("got the following config back for app %s: %+v", appName, *appConf)
-	buildPackURLInterface, ok := appConf.Values["BUILDPACK_URL"]
-	if !ok {
-		return fmt.Errorf("BUILDPACK_URL not found in returned app config")
-	}
-	buildPackURL, ok := buildPackURLInterface.(string)
-	if !ok {
-		return fmt.Errorf("BUILDPACK_URL not returned as a string")
+	var buildPackURL string
+	if buildPackURLInterface, ok := appConf.Values["BUILDPACK_URL"]; ok {
+		if bpStr, ok := buildPackURLInterface.(string); ok {
+			buildPackURL = bpStr
+		}
 	}
 
 	// build a tarball from the new objects
@@ -164,12 +162,12 @@ func build(conf *Config, builderKey, gitSha string) error {
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	} else {
 		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
-		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	}
 
 	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
