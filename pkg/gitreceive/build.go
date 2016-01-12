@@ -163,12 +163,12 @@ func build(conf *Config, builderKey, gitSha string) error {
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
-		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	} else {
 		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	}
 
 	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
