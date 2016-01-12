@@ -89,6 +89,21 @@ func build(conf *Config, builderKey, gitSha string) error {
 	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
 	pushURL := fmt.Sprintf("%s://%s:%s/git/home/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
 
+	// Ensure that the app config can be gotten from workflow. We don't do anything with this information
+	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
+	if err != nil {
+		return fmt.Errorf("getting app config for %s (%s)", appName, err)
+	}
+	log.Debug("got the following config back for app %s: %+v", appName, *appConf)
+	buildPackURLInterface, ok := appConf.Values["BUILDPACK_URL"]
+	if !ok {
+		return fmt.Errorf("BUILDPACK_URL not found in returned app config")
+	}
+	buildPackURL, ok := buildPackURLInterface.(string)
+	if !ok {
+		return fmt.Errorf("BUILDPACK_URL not returned as a string")
+	}
+
 	// build a tarball from the new objects
 	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s.tar.gz", appName), gitSha)
 	gitArchiveCmd.Stdout = os.Stdout
@@ -154,6 +169,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
 		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
 		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	}
 
 	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
@@ -240,12 +256,6 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	log.Info("Build complete.")
-	log.Info("Launching app.")
-
-	// Ensure that the app config can be gotten from workflow. We don't do anything with this information
-	if _, err := getAppConfig(conf, builderKey, conf.Username, appName); err != nil {
-		return fmt.Errorf("getting app config for %s (%s)", appName, err)
-	}
 
 	log.Info("Launching...")
 
