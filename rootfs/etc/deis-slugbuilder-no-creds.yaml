@@ -16,3 +16,5 @@ spec:
           value: tar-url
         - name : put_url
           value: puturl
+        - name: BUILDPACK_URL
+          value: buildurl
