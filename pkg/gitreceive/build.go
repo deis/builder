@@ -98,6 +98,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	var buildPackURL string
 	if buildPackURLInterface, ok := appConf.Values["BUILDPACK_URL"]; ok {
 		if bpStr, ok := buildPackURLInterface.(string); ok {
+			log.Debug("found custom buildpack URL %s", bpStr)
 			buildPackURL = bpStr
 		}
 	}
