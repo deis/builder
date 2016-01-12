@@ -87,7 +87,9 @@ func build(conf *Config, builderKey, gitSha string) error {
 	tmpDir := os.TempDir()
 
 	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
-	pushURL := fmt.Sprintf("%s://%s:%s/git/home/%s/push", storage.schema(), storage.host(), storage.port(), slugName)
+
+	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
+	pushURL := fmt.Sprintf("%s://%s:%s/git/home/%s/push", storage.schema(), storage.host(), storage.port(), fmt.Sprintf("%s:git-%s", appName, gitSha))
 
 	// Ensure that the app config can be gotten from workflow. We don't do anything with this information
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
