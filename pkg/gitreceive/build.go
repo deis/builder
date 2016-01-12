@@ -246,10 +246,10 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	// poll the s3 server to ensure the slug exists
-	lsCmd := mcCmd(configDir, "ls", pushURL)
 	for {
 		// for now, assume the error indicates that the slug wasn't there, nothing else
 		// TODO: implement https://github.com/deis/builder/issues/80, which will clean this up siginficantly
+		lsCmd := mcCmd(configDir, "ls", pushURL)
 		if err := run(lsCmd); err == nil {
 			break
 		}
