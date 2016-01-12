@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 const (
@@ -36,7 +37,7 @@ func getStorageCreds() (*storageCreds, error) {
 	if accessKeyErr == nil && accessSecretKeyErr != nil {
 		return nil, errMissingSecret
 	}
-	accessKeyID = strings.TrimSpace(string(accessKeyIDBytes))
-	accessSecretKey = strings.TrimSpace(string(accessSecretKeyBytes))
+	accessKeyID := strings.TrimSpace(string(accessKeyIDBytes))
+	accessSecretKey := strings.TrimSpace(string(accessSecretKeyBytes))
 	return &storageCreds{key: accessKeyID, secret: accessSecretKey}, nil
 }
