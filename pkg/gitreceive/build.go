@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	// this constant represents the length of a shortened git sha - 8 characters long
 	shortShaIdx = 8
 )
 
