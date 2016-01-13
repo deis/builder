@@ -31,6 +31,9 @@ spec:
             - name: minio-user
               mountPath: /var/run/secrets/object/store
               readOnly: true
+            - name: builder-key-auth
+              mountPath: /var/run/secrets/api/auth
+              readOnly: true
             # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
             # - name: minio-ssl
             #   mountPath: /var/run/secrets/object/ssl
@@ -39,6 +42,9 @@ spec:
         - name: minio-user
           secret:
             secretName: minio-user
+        - name: builder-key-auth
+          secret:
+            secretName: builder-key-auth
         # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
         # - name: minio-ssl
         #   secret:

@@ -45,6 +45,7 @@ REPO=$2
 GIT_SHA=$3
 SHORT_SHA=${GIT_SHA:0:8}
 APP_NAME="${REPO%.*}"
+BUILDER_KEY=$(cat /var/run/secrets/api/auth/builder-key)
 
 cd $(dirname $0) # ensure we are in the root dir
 
@@ -75,7 +76,7 @@ else
 fi
 
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/config"
-RESPONSE=$(get-app-config -url="$URL" -key="{{ getv "/deis/controller/builderKey" }}" -user=$USER -app=$APP_NAME -value="BUILDPACK_URL")
+RESPONSE=$(get-app-config -url="$URL" -key="$BUILDER_KEY" -user=$USER -app=$APP_NAME -value="BUILDPACK_URL")
 CODE=$?
 if [ $CODE -ne 0 ]; then
     puts-warn $RESPONSE
@@ -186,7 +187,7 @@ puts-step "Launching app."
 puts-step "Launching... "
 URL="http://$DEIS_WORKFLOW_SERVICE_HOST:$DEIS_WORKFLOW_SERVICE_PORT/v2/hooks/build"
 DATA="$(generate-buildhook "$SHORT_SHA" "$USER" "$APP_NAME" "$APP_NAME" "$PROCFILE" "$USING_DOCKERFILE")"
-PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key={{ getv "/deis/controller/builderKey" }})
+PUBLISH_RELEASE=$(echo "$DATA" | publish-release-controller -url=$URL -key="$BUILDER_KEY")
 CODE=$?
 if [ $CODE -ne 0 ]; then
     puts-warn "ERROR: Failed to launch container"
