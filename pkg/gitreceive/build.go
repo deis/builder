@@ -107,7 +107,8 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	// build a tarball from the new objects
-	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s.tar.gz", appName), gitSha)
+	appTgz := fmt.Sprintf("%s.tar.gz", appName)
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha)
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := run(gitArchiveCmd); err != nil {
@@ -115,7 +116,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	// untar the archive into the temp dir
-	tarCmd := repoCmd(repoDir, "tar", "-xzf", fmt.Sprintf("%s.tar.gz", appName), "-C", fmt.Sprintf("%s/", tmpDir))
+	tarCmd := repoCmd(repoDir, "tar", "-xzf", appTgz, "-C", fmt.Sprintf("%s/", tmpDir))
 	tarCmd.Stdout = os.Stdout
 	tarCmd.Stderr = os.Stderr
 	if err := run(tarCmd); err != nil {
@@ -194,10 +195,10 @@ func build(conf *Config, builderKey, gitSha string) error {
 	// https://github.com/deis/builder/issues/80 will eliminate this distaste
 	run(makeBucketCmd)
 
-	cpCmd := mcCmd(configDir, "cp", fmt.Sprintf("%s.tar.gz", appName), tarURL)
+	cpCmd := mcCmd(configDir, "cp", appTgz, tarURL)
 	cpCmd.Dir = repoDir
 	if err := run(cpCmd); err != nil {
-		return fmt.Errorf("copying %s.tar.gz to %s (%s)", appName, tarURL, err)
+		return fmt.Errorf("copying %s to %s (%s)", appTgz, tarURL, err)
 	}
 
 	log.Info("Starting build")
