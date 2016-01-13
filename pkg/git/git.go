@@ -104,7 +104,9 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	log.Debugf(c, "Working Dir: %s", cmd.Dir)
 	log.Debugf(c, "Environment: %s", strings.Join(cmd.Env, ","))
 
-	plumbCommand(cmd, channel, &errbuff)
+	if err := plumbCommand(cmd, channel, &errbuff); err != nil {
+		return nil, err
+	}
 
 	if err := cmd.Start(); err != nil {
 		err = fmt.Errorf("Failed to start git pre-receive hook: %s (%s)", err, errbuff.Bytes())
@@ -141,15 +143,18 @@ func cleanRepoName(name string) (string, error) {
 // plumbCommand connects the exec in/output and the channel in/output.
 //
 // The sidechannel is for sending errors to logs.
-func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) {
-	inpipe, _ := cmd.StdinPipe()
+func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) error {
+	inpipe, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	cmd.Stdout = channel
+	cmd.Stderr = io.MultiWriter(channel.Stderr(), sidechannel)
 	go func() {
 		io.Copy(inpipe, channel)
 		inpipe.Close()
 	}()
 
-	cmd.Stdout = channel
-	cmd.Stderr = io.MultiWriter(channel.Stderr(), sidechannel)
 }
 
 var createLock sync.Mutex
