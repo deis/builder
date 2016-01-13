@@ -27,7 +27,6 @@ func TestBuilder(t *testing.T) {
 		"/deis/controller/protocol",
 		"/deis/controller/host",
 		"/deis/controller/port",
-		"/deis/controller/builderKey",
 	}
 	setdir := []string{
 		"/deis/controller",
