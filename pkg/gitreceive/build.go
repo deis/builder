@@ -259,7 +259,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	log.Info("Build complete.")
-
+	log.Info("Launching app.")
 	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
@@ -284,9 +284,9 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("No release returned from Deis controller")
 	}
 
-	log.Info("Done, %s:v%d deployed to Deis", appName, release)
-	log.Info("Use 'deis open' to view this application in your browser")
-	log.Info("To learn more, use 'deis help' or visit http://deis.io")
+	log.Info("Done, %s:v%d deployed to Deis\n", appName, release)
+	log.Info("Use 'deis open' to view this application in your browser\n")
+	log.Info("To learn more, use 'deis help' or visit http://deis.io\n")
 
 	gcCmd := repoCmd(repoDir, "git", "gc")
 	if err := run(gcCmd); err != nil {
