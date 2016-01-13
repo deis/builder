@@ -3,11 +3,15 @@ package gitreceive
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/deis/builder/pkg/gitreceive/etcd"
 	"github.com/deis/builder/pkg/log"
+)
+
+const (
+	builderKeyLocation = "/var/run/secrets/api/auth/builder-key"
 )
 
 func readLine(line string) (string, string, string, error) {
@@ -21,15 +25,11 @@ func readLine(line string) (string, string, string, error) {
 func Run(conf *Config) error {
 	log.Debug("Running git hook")
 
-	etcdClient, err := etcd.CreateClientFromEnv()
+	builderKeyBytes, err := ioutil.ReadFile(builderKeyLocation)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyLocation, err)
 	}
-	// TODO: replace etcd usage here with something else. See https://github.com/deis/builder/issues/81
-	builderKey, err := getBuilderKey(etcdClient)
-	if err != nil {
-		return fmt.Errorf("couldn't get builder key %s (%s)", builderKey, err)
-	}
+	builderKey := string(builderKeyBytes)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
