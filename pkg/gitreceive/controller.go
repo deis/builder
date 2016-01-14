@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg"
-	"github.com/deis/builder/pkg/log"
+	"github.com/deis/builder/pkg/gitreceive/log"
 )
 
 var (

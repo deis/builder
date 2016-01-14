@@ -10,7 +10,7 @@ import (
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
-	pkglog "github.com/deis/builder/pkg/log"
+	pkglog "github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/sshd"
 )
 

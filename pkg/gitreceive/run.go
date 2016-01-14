@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deis/builder/pkg/log"
+	"github.com/deis/builder/pkg/gitreceive/log"
 )
 
 const (

@@ -12,7 +12,7 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/deis/builder/pkg"
-	"github.com/deis/builder/pkg/log"
+	"github.com/deis/builder/pkg/gitreceive/log"
 	"gopkg.in/yaml.v2"
 )
 
