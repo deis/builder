@@ -20,25 +20,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// prereceiveHookTplStr is the template for a pre-receive hook. The following template variables are passed into it:
-//
-// 	.GitHome: the path to Git's home directory.
-const preReceiveHookTplStr = `#!/bin/bash
-strip_remote_prefix() {
-    stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
-}
+const (
+	preReceiveHookTplFile = "/etc/templates/pre-receive.tpl"
+)
 
-GIT_HOME={{.GitHome}} \
-SSH_CONNECTION="$SSH_CONNECTION" \
-SSH_ORIGINAL_COMMAND="$SSH_ORIGINAL_COMMAND" \
-REPOSITORY="$RECEIVE_REPO" \
-USERNAME="$RECEIVE_USER" \
-FINGERPRINT="$RECEIVE_FINGERPRINT" \
-POD_NAMESPACE="$POD_NAMESPACE" \
-boot git-receive | strip_remote_prefix
-`
-
-var preReceiveHookTpl = template.Must(template.New("hooks").Parse(preReceiveHookTplStr))
+var preReceiveHookTpl = template.Must(template.ParseFiles(preReceiveHookTplFile))
 
 // Receive receives a Git repo.
 // This will only work for git-receive-pack.
