@@ -40,8 +40,8 @@ func Err(format string, v ...interface{}) {
 
 // Info prints a green-tinted message.
 func Info(format string, v ...interface{}) {
-	fmt.Fprint(Stderr, "---> ")
-	fmt.Fprintf(Stderr, appendNewLine(format), v...)
+	fmt.Fprint(Stdout, "---> ")
+	fmt.Fprintf(Stdout, appendNewLine(format), v...)
 }
 
 // Debug prints a cyan-tinted message if IsDebugging is true.
