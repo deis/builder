@@ -40,10 +40,8 @@ RUN mkdir -p $GITHOME/.ssh && chown git:git $GITHOME/.ssh
 RUN chown -R $GITUSER:$GITUSER $GITHOME
 
 
-CMD ["/bin/boot"]
-COPY ./entrypoint.sh /
 ADD ./check-repos /home/git/
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["boot", "server"]
 EXPOSE 2223
 EXPOSE 3000
 RUN addgroup -g 2000 slug && adduser -D -u 2000 -G slug slug
@@ -56,3 +54,6 @@ RUN passwd -u git
 COPY . /
 
 ENV DEIS_RELEASE 2.0.0-dev
+ENV DEIS_BUILDER_SERVER_FETCHER_PORT=3000
+ENV DEIS_BUILDER_SERVER_SSH_HOST_IP=0.0.0.0
+ENV DEIS_BUILDER_SERVER_SSH_HOST_PORT=2223

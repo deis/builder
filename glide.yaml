@@ -1,6 +1,8 @@
 package: main
 import:
+- package: github.com/kelseyhightower/envconfig
 - package: github.com/coreos/go-etcd
+  version: c904d7032a70da6551c43929f199244f6a45f4c1
   subpackages:
   - /etcd
 - package: github.com/deis/deis
@@ -8,13 +10,21 @@ import:
   - /buildpack/builder/sshd
   - /pkg/time
 - package: github.com/gorilla/mux
+  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - package: github.com/gorilla/context
+  version: 14f550f51af52180c2eefed15e5fd18d63c0a64a
 - package: github.com/Masterminds/cookoo
+  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
   - /log
   - /safely
   - /fmt
 - package: golang.org/x/crypto
+  version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
   - /ssh
 - package: gopkg.in/yaml.v2
+  version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
+- package: github.com/labstack/gommon
+- package: code.google.com/p/go-uuid/uuid
+  version: 35bc42037350f0078e3c974c6ea690f1926603ab

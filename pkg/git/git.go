@@ -20,44 +20,25 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// PrereceiveHookTpl is a pre-receive hook.
-//
-// This is overridable. The following template variables are passed into it:
+// prereceiveHookTplStr is the template for a pre-receive hook. The following template variables are passed into it:
 //
 // 	.GitHome: the path to Git's home directory.
-var PrereceiveHookTpl = `#!/bin/bash
+const preReceiveHookTplStr = `#!/bin/bash
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
 
-while read oldrev newrev refname
-do
-  LOCKFILE="/tmp/$RECEIVE_REPO.lock"
-  if ( set -o noclobber; echo "$$" > "$LOCKFILE" ) 2> /dev/null; then
-	trap 'rm -f "$LOCKFILE"; exit 1' INT TERM EXIT
-
-	# check for authorization on this repo
-	{{.GitHome}}/receiver "$RECEIVE_REPO" "$newrev" "$RECEIVE_USER" "$RECEIVE_FINGERPRINT"
-	rc=$?
-	if [[ $rc != 0 ]] ; then
-	  echo "      ERROR: failed on rev $newrev - push denied"
-	  exit $rc
-	fi
-	# builder assumes that we are running this script from $GITHOME
-	cd {{.GitHome}}
-	# if we're processing a receive-pack on an existing repo, run a build
-	if [[ $SSH_ORIGINAL_COMMAND == git-receive-pack* ]]; then
-		{{.GitHome}}/builder "$RECEIVE_USER" "$RECEIVE_REPO" "$newrev" 2>&1 | strip_remote_prefix
-	fi
-
-	rm -f "$LOCKFILE"
-	trap - INT TERM EXIT
-  else
-	echo "Another git push is ongoing. Aborting..."
-	exit 1
-  fi
-done
+GIT_HOME={{.GitHome}} \
+SSH_CONNECTION="$SSH_CONNECTION" \
+SSH_ORIGINAL_COMMAND="$SSH_ORIGINAL_COMMAND" \
+REPOSITORY="$RECEIVE_REPO" \
+USERNAME="$RECEIVE_USER" \
+FINGERPRINT="$RECEIVE_FINGERPRINT" \
+POD_NAMESPACE="$POD_NAMESPACE" \
+boot git-receive | strip_remote_prefix
 `
+
+var preReceiveHookTpl = template.Must(template.New("hooks").Parse(preReceiveHookTplStr))
 
 // Receive receives a Git repo.
 // This will only work for git-receive-pack.
@@ -84,6 +65,8 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	fingerprint := p.Get("fingerprint", nil).(string)
 	user := p.Get("user", "").(string)
 
+	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, fingerprint, user)
+
 	repo, err := cleanRepoName(repoName)
 	if err != nil {
 		log.Warnf(c, "Illegal repo name: %s.", err)
@@ -92,9 +75,21 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	}
 	repo += ".git"
 
-	if _, err := createRepo(c, filepath.Join(gitHome, repo), gitHome); err != nil {
-		log.Infof(c, "Did not create new repo: %s", err)
+	repoPath := filepath.Join(gitHome, repo)
+	log.Debugf(c, "creating repo directory %s", repoPath)
+	if _, err := createRepo(c, repoPath); err != nil {
+		err = fmt.Errorf("Did not create new repo (%s)", err)
+		log.Warnf(c, err.Error())
+		return nil, err
 	}
+
+	log.Debugf(c, "writing pre-receive hook under %s", repoPath)
+	if err := createPreReceiveHook(c, gitHome, repoPath); err != nil {
+		err = fmt.Errorf("Did not write pre-receive hook (%s)", err)
+		log.Warnf(c, err.Error())
+		return nil, err
+	}
+
 	cmd := exec.Command("git-shell", "-c", fmt.Sprintf("%s '%s'", operation, repo))
 	log.Infof(c, strings.Join(cmd.Args, " "))
 
@@ -110,17 +105,33 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	}
 	cmd.Env = append(cmd.Env, os.Environ()...)
 
-	done := plumbCommand(cmd, channel, &errbuff)
+	log.Debugf(c, "Working Dir: %s", cmd.Dir)
+	log.Debugf(c, "Environment: %s", strings.Join(cmd.Env, ","))
 
-	if err := cmd.Start(); err != nil {
-		log.Warnf(c, "Failed git receive immediately: %s %s", err, errbuff.Bytes())
+	inpipe, err := cmd.StdinPipe()
+	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Waiting for git-receive to run.\n")
-	done.Wait()
-	fmt.Printf("Waiting for deploy.\n")
+	cmd.Stdout = channel
+	cmd.Stderr = io.MultiWriter(channel.Stderr(), &errbuff)
+
+	if err := cmd.Start(); err != nil {
+		err = fmt.Errorf("Failed to start git pre-receive hook: %s (%s)", err, errbuff.Bytes())
+		log.Warnf(c, err.Error())
+		return nil, err
+	}
+
+	if _, err := io.Copy(inpipe, channel); err != nil {
+		err = fmt.Errorf("Failed to write git objects into the git pre-receive hook (%s)", err)
+		log.Warnf(c, err.Error())
+		return nil, err
+	}
+
+	fmt.Println("Waiting for git-receive to run.")
+	fmt.Println("Waiting for deploy.")
 	if err := cmd.Wait(); err != nil {
-		log.Errf(c, "Error on command: %s %s", err, errbuff.Bytes())
+		err = fmt.Errorf("Failed to run git pre-receive hook: %s (%s)", errbuff.Bytes(), err)
+		log.Errf(c, err.Error())
 		return nil, err
 	}
 	if errbuff.Len() > 0 {
@@ -129,11 +140,6 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	log.Infof(c, "Deploy complete.\n")
 
 	return nil, nil
-}
-
-func execAs(user, cmd string, args ...string) *exec.Cmd {
-	fullCmd := cmd + " " + strings.Join(args, " ")
-	return exec.Command("su", user, "-c", fullCmd)
 }
 
 // cleanRepoName cleans a repository name for a git-sh operation.
@@ -148,23 +154,6 @@ func cleanRepoName(name string) (string, error) {
 	return strings.TrimPrefix(strings.TrimSuffix(name, ".git"), "/"), nil
 }
 
-// plumbCommand connects the exec in/output and the channel in/output.
-//
-// The sidechannel is for sending errors to logs.
-func plumbCommand(cmd *exec.Cmd, channel ssh.Channel, sidechannel io.Writer) *sync.WaitGroup {
-	var wg sync.WaitGroup
-	inpipe, _ := cmd.StdinPipe()
-	go func() {
-		io.Copy(inpipe, channel)
-		inpipe.Close()
-	}()
-
-	cmd.Stdout = channel
-	cmd.Stderr = channel.Stderr()
-
-	return &wg
-}
-
 var createLock sync.Mutex
 
 // createRepo creates a new Git repo if it is not present already.
@@ -173,7 +162,7 @@ var createLock sync.Mutex
 //
 // Returns a bool indicating whether a project was created (true) or already
 // existed (false).
-func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
+func createRepo(c cookoo.Context, repoPath string) (bool, error) {
 	createLock.Lock()
 	defer createLock.Unlock()
 
@@ -196,12 +185,6 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 			return false, err
 		}
 
-		hook, err := prereceiveHook(map[string]string{"GitHome": gitHome})
-		if err != nil {
-			return true, err
-		}
-		ioutil.WriteFile(filepath.Join(repoPath, "hooks", "pre-receive"), hook, 0755)
-
 		return true, nil
 	} else if err == nil {
 		return false, errors.New("Expected directory, found file.")
@@ -209,15 +192,18 @@ func createRepo(c cookoo.Context, repoPath, gitHome string) (bool, error) {
 	return false, err
 }
 
-//prereceiveHook templates a pre-receive hook for Git.
-func prereceiveHook(vars map[string]string) ([]byte, error) {
-	var out bytes.Buffer
-	// We parse the template anew each receive in case it has changed.
-	t, err := template.New("hooks").Parse(PrereceiveHookTpl)
-	if err != nil {
-		return []byte{}, err
+// createPreReceiveHook renders preReceiveHookTpl to repoPath/hooks/pre-receive
+func createPreReceiveHook(c cookoo.Context, gitHome, repoPath string) error {
+	// parse & generate the template anew each receive for each new git home
+	var hookByteBuf bytes.Buffer
+	if err := preReceiveHookTpl.Execute(&hookByteBuf, map[string]string{"GitHome": gitHome}); err != nil {
+		return err
 	}
 
-	err = t.Execute(&out, vars)
-	return out.Bytes(), err
+	writePath := filepath.Join(repoPath, "hooks", "pre-receive")
+	log.Debugf(c, "Writing pre-receive hook to %s", writePath)
+	if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
+		return fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
+	}
+	return nil
 }

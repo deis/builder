@@ -25,13 +25,7 @@ spec:
       volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket
-        - name: minio-user
-          mountPath: /var/run/secrets/object/store
-          readOnly: true
   volumes:
-    - name: minio-user
-      secret:
-        secretName: minio-user
     - name: docker-socket
       hostPath:
         path: /var/run/docker.sock

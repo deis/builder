@@ -12,42 +12,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// YamlToJSON takes an input yaml string, parses it and returns a string formatted as json.
-func YamlToJSON(bytes []byte) (string, error) {
-	var anomaly map[string]string
-
-	if err := yaml.Unmarshal(bytes, &anomaly); err != nil {
-		return "", err
-	}
-
-	retVal, err := json.Marshal(&anomaly)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(retVal), nil
-}
-
 // ParseConfig takes a response body from the controller and returns a Config object.
 func ParseConfig(body []byte) (*Config, error) {
 	var config Config
 	err := json.Unmarshal(body, &config)
 	return &config, err
-}
-
-// ParseReleaseVersion returns the version field from the bytes of a build hook response.
-func ParseReleaseVersion(bytes []byte) (int, error) {
-	var hook BuildHookResponse
-	if err := json.Unmarshal(bytes, &hook); err != nil {
-		return 0, fmt.Errorf("invalid application json configuration")
-	}
-
-	if hook.Release == nil {
-		return 0, fmt.Errorf("invalid application version")
-	}
-
-	return hook.Release["version"], nil
 }
 
 // GetDefaultType returns the default process types given a YAML byte array.

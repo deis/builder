@@ -1,3 +1,4 @@
 rootfs/bin/boot
 vendor/
 rootfs/usr/bin/
+./builder

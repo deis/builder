@@ -28,33 +28,6 @@ func stringInSlice(list []string, s string) bool {
 	return false
 }
 
-func TestYamlToJSONGood(t *testing.T) {
-	goodProcfiles := [][]byte{
-		[]byte(`web: while true; do echo hello; sleep 1; done`),
-
-		[]byte(`web: while true; do echo hello; sleep 1; done
-worker: while true; do echo hello; sleep 1; done`),
-		// test a procfile with quoted strings
-		[]byte(`web: /bin/bash -c "while true; do echo hello; sleep 1; done"`),
-	}
-
-	goodProcess := "while true; do echo hello; sleep 1; done"
-
-	for _, procfile := range goodProcfiles {
-		data, err := YamlToJSON(procfile)
-		if err != nil {
-			t.Errorf("expected procfile to be valid, got '%v'", err)
-		}
-		var p ProcessType
-		if err := json.Unmarshal([]byte(data), &p); err != nil {
-			t.Errorf("expected to be able to unmarshal object, got '%v'", err)
-		}
-		if !strings.Contains(p["web"], goodProcess) {
-			t.Errorf("expected web process == '%s', got '%s'", goodProcess, p["web"])
-		}
-	}
-}
-
 func TestParseConfigGood(t *testing.T) {
 	// mock the controller response
 	resp := bytes.NewBufferString(`{"owner": "test",
@@ -83,20 +56,6 @@ func TestParseConfigGood(t *testing.T) {
 		}
 	} else {
 		t.Error("expected CAR to be of type float64")
-	}
-}
-
-func TestParseReleaseVersionGood(t *testing.T) {
-	// mock controller build-hook response
-	resp := []byte(`{"release": {"version": 1},
-"domains": ["test.example.com", "test2.example.com"]}`)
-
-	version, err := ParseReleaseVersion(resp)
-	if err != nil {
-		t.Errorf("expected to parse version, got '%v'", err)
-	}
-	if version != 1 {
-		t.Errorf("expected '1', got '%d'", version)
 	}
 }
 
