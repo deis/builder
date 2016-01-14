@@ -1,7 +1,22 @@
 FROM alpine:3.1
 
 # install common packages
-RUN apk add --update-cache curl bash sudo && rm -rf /var/cache/apk/*
+RUN apk add --update-cache \
+  curl \
+  bash \
+  sudo \
+  coreutils \
+  device-mapper \
+  e2fsprogs \
+  git \
+  iptables \
+  libudev \
+  lxc \
+  openssh \
+  udev \
+  util-linux \
+  xz \
+  && rm -rf /var/cache/apk/*
 
 # install etcdctl
 RUN curl -sSL -o /usr/local/bin/etcdctl https://s3-us-west-2.amazonaws.com/get-deis/etcdctl-v0.4.9 \
@@ -10,21 +25,6 @@ RUN curl -sSL -o /usr/local/bin/etcdctl https://s3-us-west-2.amazonaws.com/get-d
 # install confd
 RUN curl -sSL -o /usr/local/bin/confd https://github.com/kelseyhightower/confd/releases/download/v0.10.0/confd-0.10.0-linux-amd64 \
     && chmod +x /usr/local/bin/confd
-
-RUN apk add --update-cache \
-    coreutils \
-    device-mapper \
-    e2fsprogs \
-    git \
-    iptables \
-    libudev \
-    lxc \
-    openssh \
-    udev \
-    util-linux \
-    xz \
-    && rm -rf /var/cache/apk/*
-
 
 # configure ssh server
 RUN mkdir -p /var/run/sshd && rm -rf /etc/ssh/ssh_host*
