@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/deis/deis/pkg/time"
+	"github.com/deis/pkg/time"
 )
 
 // ProcessType represents the key/value mappings of a process type to a process inside
