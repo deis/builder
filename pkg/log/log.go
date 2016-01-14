@@ -40,7 +40,7 @@ func Err(format string, v ...interface{}) {
 
 // Info prints a green-tinted message.
 func Info(format string, v ...interface{}) {
-	fmt.Fprint(Stdout, "---> ")
+	fmt.Fprint(Stdout, "-----> ")
 	fmt.Fprintf(Stdout, appendNewLine(format), v...)
 }
 
