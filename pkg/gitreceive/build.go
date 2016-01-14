@@ -201,7 +201,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("copying %s to %s (%s)", appTgz, tarURL, err)
 	}
 
-	log.Info("Starting build")
+	log.Info("Starting build... but first, coffee!")
 	log.Debug("Starting pod %s", buildPodName)
 	kCreateCmd := exec.Command(
 		"kubectl",
