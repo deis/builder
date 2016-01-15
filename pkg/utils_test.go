@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dtime "github.com/deis/deis/pkg/time"
+	dtime "github.com/deis/pkg/time"
 )
 
 type ClosingBuffer struct {
