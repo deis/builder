@@ -1,4 +1,4 @@
-package gitreceive
+package storage
 
 import (
 	"fmt"
@@ -22,40 +22,16 @@ var (
 	)
 )
 
-type storageConfig interface {
-	schema() string
-	host() string
-	port() string
-}
-
-func getStorageConfig() (storageConfig, error) {
+func getEndpoint() (string, error) {
 	mHost := os.Getenv(minioHostEnvVar)
 	mPort := os.Getenv(minioPortEnvVar)
 	oHost := os.Getenv(outsideStorageHostEnvVar)
 	oPort := os.Getenv(outsideStoragePortEnvVar)
 	if mHost != "" && mPort != "" {
-		return minioConfig{hst: mHost, prt: mPort}, nil
+		return fmt.Sprintf("http://%s:%s", mHost, mPort), nil
 	} else if oHost != "" && oPort != "" {
-		return outsideConfig{hst: oHost, prt: oPort}, nil
+		return fmt.Sprintf("https://%s:%s", oHost, oPort), nil
 	} else {
 		return nil, errNoStorageConfig
 	}
 }
-
-type minioConfig struct {
-	hst string
-	prt string
-}
-
-func (m minioConfig) schema() string { return "http" }
-func (m minioConfig) host() string   { return m.hst }
-func (m minioConfig) port() string   { return m.prt }
-
-type outsideConfig struct {
-	hst string
-	prt string
-}
-
-func (o outsideConfig) schema() string { return "https" }
-func (o outsideConfig) host() string   { return o.hst }
-func (o outsideConfig) port() string   { return o.prt }

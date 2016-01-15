@@ -1,10 +1,12 @@
-package gitreceive
+package storage
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws/credentials"
 )
 
 const (
@@ -17,19 +19,14 @@ var (
 	errMissingSecret = fmt.Errorf("missing %s", accessSecretKeyFile)
 )
 
-type storageCreds struct {
-	key    string
-	secret string
-}
-
-// getStorageCreds gets storage credentials from accessKeyIDFile and accessSecretKeyFile.
-// returns os.ErrNotExist if both files are missing and otherwise, if a file was missing,
-// returns errMissingKey or errMissingSecret according to the file
-func getStorageCreds() (*storageCreds, error) {
+// getCreds gets storage credentials from accessKeyIDFile and accessSecretKeyFile.
+// if either a key exists but not a secret or vice-versa, returns an error.
+// if neither exists, returns credentials.AnonymousCredentials
+func getCreds() (*credentials.Credentials, error) {
 	accessKeyIDBytes, accessKeyErr := ioutil.ReadFile(accessKeyIDFile)
 	accessSecretKeyBytes, accessSecretKeyErr := ioutil.ReadFile(accessSecretKeyFile)
 	if accessKeyErr == os.ErrNotExist && accessSecretKeyErr == os.ErrNotExist {
-		return nil, os.ErrNotExist
+		return credentials.AnonymousCredentials, nil
 	}
 	if accessKeyErr != nil && accessSecretKeyErr == nil {
 		return nil, errMissingKey
@@ -39,5 +36,5 @@ func getStorageCreds() (*storageCreds, error) {
 	}
 	accessKeyID := strings.TrimSpace(string(accessKeyIDBytes))
 	accessSecretKey := strings.TrimSpace(string(accessSecretKeyBytes))
-	return &storageCreds{key: accessKeyID, secret: accessSecretKey}, nil
+	return credentials.NewStaticCredentials(accessKeyID, accessSecretKey, ""), nil
 }
