@@ -39,7 +39,6 @@ RUN adduser -D -h $GITHOME $GITUSER
 RUN mkdir -p $GITHOME/.ssh && chown git:git $GITHOME/.ssh
 RUN chown -R $GITUSER:$GITUSER $GITHOME
 
-
 ADD ./check-repos /home/git/
 ENTRYPOINT ["boot", "server"]
 EXPOSE 2223
