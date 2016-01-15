@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/log"
+	"github.com/deis/builder/pkg/gitreceive/storage"
 )
 
 const (
@@ -30,6 +31,12 @@ func Run(conf *Config) error {
 		return fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyLocation, err)
 	}
 	builderKey := string(builderKeyBytes)
+
+	s3Client, err := storage.GetClient()
+	if err != nil {
+		return fmt.Errorf("configuring S3 client (%s)", err)
+	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -46,7 +53,7 @@ func Run(conf *Config) error {
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, builderKey, newRev); err != nil {
+			if err := build(conf, s3Client, builderKey, newRev); err != nil {
 				return err
 			}
 		}

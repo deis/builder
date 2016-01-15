@@ -60,16 +60,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, builderKey, gitSha string) error {
-	storage, err := getStorageConfig()
-	if err != nil {
-		return err
-	}
-	creds, err := getStorageCreds()
-	if err == errMissingKey || err == errMissingSecret {
-		return err
-	}
-
+func build(conf *Config, s3Client *s3.Client, builderKey, gitSha string) error {
 	repo := conf.Repository
 	if len(gitSha) <= shortShaIdx {
 		return errGitShaTooShort{sha: gitSha}
