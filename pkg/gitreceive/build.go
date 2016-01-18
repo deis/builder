@@ -169,11 +169,6 @@ func build(conf *Config, s3Client *s3.Client, builderKey, gitSha string) error {
 		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
 	}
 
-	configDir := "/var/minio-conf"
-	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
-		return fmt.Errorf("creating minio config file (%s)", err)
-	}
-
 	bucketName := "git"
 	if _, err := s3Client.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)}); bucketCreateErr != nil {
 		log.Warn("create bucket error: %+v", err)
