@@ -29,3 +29,9 @@ import:
 - package: github.com/deis/pkg
   subpackages:
   - /time
+- package: github.com/codegangsta/cli
+  version: a65b733b303f0055f8d324d805f393cd3e7a7904
+- package: github.com/ugorji/go
+  version: 821cda7e48749cacf7cad2c6ed01e96457ca7e9d
+  subpackages:
+  - /codec

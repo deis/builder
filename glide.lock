@@ -1,10 +1,12 @@
 hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2016-01-15T16:02:42.558311109-08:00
+updated: 2016-01-18T15:22:31.833930915-07:00
 imports:
 - name: code.google.com/p/go-uuid
   version: 35bc42037350
   subpackages:
   - uuid
+- name: github.com/codegangsta/cli
+  version: a65b733b303f0055f8d324d805f393cd3e7a7904
 - name: github.com/coreos/go-etcd
   version: c904d7032a70da6551c43929f199244f6a45f4c1
   subpackages:
@@ -27,6 +29,10 @@ imports:
   - /log
   - /safely
   - /fmt
+- name: github.com/ugorji/go
+  version: 821cda7e48749cacf7cad2c6ed01e96457ca7e9d
+  subpackages:
+  - /codec
 - name: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
