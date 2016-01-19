@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
+	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -71,11 +73,11 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	tmpDir := os.TempDir()
 
 	tarObjKey := fmt.Sprintf("home/%s/tar", slugName)
-	tarURL := fmt.Sprintf("%s://%s:%s/git/%s", storage.schema(), storage.host(), storage.port(), tarObjKey)
+	tarURL := fmt.Sprintf("%s/git/%s", *s3Client.Config.Endpoint, tarObjKey)
 
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
 	pushObjKey := fmt.Sprintf("home/%s/push", fmt.Sprintf("%s:git-%s", appName, gitSha))
-	pushURL := fmt.Sprintf("%s://%s:%s/%s", storage.schema(), storage.host(), storage.port(), pushObjKey)
+	pushURL := fmt.Sprintf("%s/%s", *s3Client.Config.Endpoint, pushObjKey)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -171,7 +173,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	}
 
 	bucketName := "git"
-	if _, err := s3Client.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)}); bucketCreateErr != nil {
+	if _, err := s3Client.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)}); err != nil {
 		log.Warn("create bucket error: %+v", err)
 	}
 
