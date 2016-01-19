@@ -11,7 +11,7 @@ func ObjectExists(s3Client *s3.S3, bucket, objName string) bool {
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objName),
 	}
-	resp, err := svc.HeadObject(in)
+	resp, err := s3Client.HeadObject(in)
 	if err != nil {
 		return false
 	}

@@ -32,6 +32,6 @@ func getEndpoint() (string, error) {
 	} else if oHost != "" && oPort != "" {
 		return fmt.Sprintf("https://%s:%s", oHost, oPort), nil
 	} else {
-		return nil, errNoStorageConfig
+		return "", errNoStorageConfig
 	}
 }

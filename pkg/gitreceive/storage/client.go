@@ -12,7 +12,7 @@ func GetClient() (*s3.S3, error) {
 	if err != nil {
 		return nil, err
 	}
-	awsCfg.Endpoint = endpt
+	awsCfg.Endpoint = aws.String(endpt)
 	creds, err := getCreds()
 	if err != nil {
 		return nil, err

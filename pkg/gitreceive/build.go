@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/pborman/uuid"
@@ -51,7 +52,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.Client, builderKey, gitSha string) error {
+func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	repo := conf.Repository
 	if len(gitSha) <= shortShaIdx {
 		return errGitShaTooShort{sha: gitSha}
