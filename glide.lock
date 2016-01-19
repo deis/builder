@@ -1,5 +1,5 @@
 hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2016-01-21T23:28:28.629949188Z
+updated: 2016-01-22T00:18:16.661682554Z
 imports:
 - name: bitbucket.org/bertimus9/systemstat
   version: 1468fd0db20598383c9393cccaa547de6ad99e5e
@@ -60,18 +60,10 @@ imports:
 - name: github.com/armon/gomdb
   version: 151f2e08ef45cb0e57d694b2562f351955dff572
 - name: github.com/aws/aws-sdk-go
-  version: c4ae871ffc03691a7b039fa751a1e7afee56e920
+  version: 3ad0b07b44c22c21c734d1094981540b7a11e942
   subpackages:
-  - aws
-  - internal/endpoints
-  - internal/protocol/ec2query
-  - internal/protocol/query
-  - internal/protocol/rest
-  - internal/protocol/xml/xmlutil
-  - internal/signer/v4
-  - service/autoscaling
-  - service/ec2
-  - service/elb
+  - /aws
+  - /aws/session
 - name: github.com/Azure/azure-sdk-for-go
   version: 97d9593768bbbbd316f9c055dfc5f780933cd7fc
   subpackages:
@@ -248,6 +240,8 @@ imports:
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-check/check
   version: 4f90aeace3a26ad7021961c297b22c42160c7b25
+- name: github.com/go-ini/ini
+  version: afbd495e5aaea13597b5e14fe514ddeaa4d76fc3
 - name: github.com/godbus/dbus
   version: 939230d2086a4f1870e04c52e0a376c25bae0ec4
 - name: github.com/gogo/protobuf
@@ -309,7 +303,6 @@ imports:
   version: 5434f8b69b7f4f4ef0120e04c046cd6ce54ef0dd
 - name: github.com/Graylog2/go-gelf
   version: 4ab02610a910e4d4dc56b9c3f24f60818c56ae20
-  repo: https://github.com/Graylog2/go-gelf
 - name: github.com/hashicorp/consul
   version: 954aec66231b79c161a4122b023fbcad13047f79
   subpackages:
@@ -366,6 +359,8 @@ imports:
   version: afde71eb1740fd763ab9450e1f700ba0e53c36d0
   subpackages:
   - client
+- name: github.com/jmespath/go-jmespath
+  version: c01cf91b011868172fdcd9f41838e80c9d716264
 - name: github.com/jmhodges/levigo
   version: 1ddad808d437abb2b8a55a950ec2616caa88969b
 - name: github.com/jonboulle/clockwork
@@ -421,7 +416,6 @@ imports:
   version: 3f504e8dabd5d562e997d19ce0200aa41973e1b2
 - name: github.com/mistifyio/go-zfs
   version: 1b4ae6fb4e77b095934d4430860ff202060169f8
-  repo: https://github.com/mistifyio/go-zfs
 - name: github.com/mitchellh/cli
   version: cb6853d606ea4a12a15ac83cc43503df99fd28fb
 - name: github.com/mitchellh/mapstructure

@@ -28,7 +28,7 @@ import:
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
 - package: github.com/aws/aws-sdk-go
-  version: c4ae871ffc03691a7b039fa751a1e7afee56e920
+  version: 3ad0b07b44c22c21c734d1094981540b7a11e942
   subpackages:
   - /aws
   - /aws/session
