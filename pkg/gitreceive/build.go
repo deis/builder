@@ -181,7 +181,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	if err != nil {
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
-	if err := storage.Upload(s3Client, bucketName, tarObjKey); err != nil {
+	if err := storage.Upload(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
 		return fmt.Errorf("uploading %s to %s/%s (%s)", absAppTgz, bucketName, tarObjKey, err)
 	}
 
