@@ -60,7 +60,7 @@ imports:
 - name: github.com/armon/gomdb
   version: 151f2e08ef45cb0e57d694b2562f351955dff572
 - name: github.com/aws/aws-sdk-go
-  version: 3ad0b07b44c22c21c734d1094981540b7a11e942
+  version: 87b1e60a50b09e4812dee560b33a238f67305804
   subpackages:
   - /aws
   - /aws/session
