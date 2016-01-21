@@ -12,12 +12,12 @@ const (
 	v1Version = "v1"
 )
 
-func dockerBuilderPodName(appName, shortSha) string {
+func dockerBuilderPodName(appName, shortSha string) string {
 	uid := uuid.New()[:8]
 	return fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func slugBuilderPodName(appName, shortSha) string {
+func slugBuilderPodName(appName, shortSha string) string {
 	uid := uuid.New()[:8]
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
