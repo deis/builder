@@ -5,6 +5,7 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/unversioned"
 )
 
 const (
@@ -24,13 +25,14 @@ func slugBuilderPodName(appName, shortSha string) string {
 
 func dockerBuilderPod(debug, withAuth bool, name, namespace, heritageLabel, versionLabel, tarURL, imageName string) *api.Pod {
 	return &api.Pod{
-		Kind:       podKind,
-		APIVersion: v1Version,
-		Name:       name,
-		Namespace:  namespace,
-		Labels: map[string]string{
-			"heritage": heritageLabel,
-			"version":  versionLabel,
+		TypeMeta: unversioned.TypeMeta{Kind: podKind, APIVersion: v1Version},
+		ObjectMeta: api.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"heritage": heritageLabel,
+				"version":  versionLabel,
+			},
 		},
 		Spec: api.PodSpec{},
 	}
@@ -38,13 +40,14 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace, heritageLabel, vers
 
 func slugbuilderPod(debug, withAuth bool, name, namespace, heritageLabel, versionLabel, tarURL, putURL, buildpackURL string) *api.Pod {
 	return &api.Pod{
-		Kind:       podKind,
-		APIVersion: v1Version,
-		Name:       name,
-		Namespace:  namespace,
-		Labels: map[string]string{
-			"heritage": heritageLabel,
-			"version":  versionLabel,
+		TypeMeta: unversioned.TypeMeta{Kind: podKind, APIVersion: v1Version},
+		ObjectMeta: api.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"heritage": heritageLabel,
+				"version":  versionLabel,
+			},
 		},
 		Spec: api.PodSpec{},
 	}
