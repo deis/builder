@@ -6,8 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-func GetClient() (*s3.S3, error) {
+func GetClient(region string) (*s3.S3, error) {
 	awsCfg := new(aws.Config)
+	awsCfg.Region = aws.String(region)
 	endpt, err := getEndpoint()
 	if err != nil {
 		return nil, err

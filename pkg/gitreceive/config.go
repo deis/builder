@@ -18,6 +18,7 @@ type Config struct {
 	Username           string `envconfig:"USERNAME" required:"true"`
 	Fingerprint        string `envconfig:"FINGERPRINT" required:"true"`
 	PodNamespace       string `envconfig:"POD_NAMESPACE" required:"true"`
+	StorageRegion      string `envconfig:"STORAGE_REGION" default:""`
 }
 
 func (c Config) App() string {

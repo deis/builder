@@ -32,7 +32,7 @@ func Run(conf *Config) error {
 	}
 	builderKey := string(builderKeyBytes)
 
-	s3Client, err := storage.GetClient()
+	s3Client, err := storage.GetClient(conf.StorageRegion)
 	if err != nil {
 		return fmt.Errorf("configuring S3 client (%s)", err)
 	}
