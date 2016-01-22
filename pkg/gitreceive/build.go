@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -66,7 +67,10 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return err
 	}
 	creds, err := getStorageCreds()
+	hasCreds := true
 	if err == errMissingKey || err == errMissingSecret {
+		hasCreds = false
+	} else {
 		return err
 	}
 
@@ -128,56 +132,55 @@ func build(conf *Config, builderKey, gitSha string) error {
 	if err == nil {
 		usingDockerfile = false
 	}
+
 	var procType pkg.ProcessType
 	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
 		return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
 	}
 
-	var srcManifest string
-	if err == os.ErrNotExist {
-		// both key and secret are missing, proceed with no credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
-		}
-	} else if err == nil {
-		// both key and secret are in place, so proceed with credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder.yaml"
-		}
-	} else if err != nil {
-		// unexpected error, fail
-		return fmt.Errorf("unexpected error (%s)", err)
-	}
-
-	fileBytes, err := ioutil.ReadFile(srcManifest)
-	if err != nil {
-		return fmt.Errorf("reading kubernetes manifest %s (%s)", srcManifest, err)
-	}
-
 	finalManifestFileLocation := fmt.Sprintf("/etc/%s", slugName)
-	var buildPodName string
-	var finalManifest string
+	finalManifestFD, err := os.Create(finalManifestFileLocation)
+	if err != nil {
+		return fmt.Errorf("opening builder pod manifest %s (%s)", finalManifestFileLocation, err)
+	}
+
 	uid := uuid.New()[:8]
+	var buildPodName string
+	var tpl *template.Template
+	var tplData interface{}
 	if usingDockerfile {
 		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		tplData = dockerBuilderTplData{
+			Name:      buildPodName,
+			TarURL:    tarURL,
+			ImageName: imageName,
+		}
+		if hasCreds {
+			tpl = dockerBuilderTpl
+		} else {
+			tpl = dockerBuilderNoCredsTpl
+		}
 	} else {
 		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
-		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
+		tplData = slugBuilderTplData{
+			Name:         buildPodName,
+			TarURL:       tarURL,
+			PutURL:       pushURL,
+			BuildPackURL: buildPackURL,
+		}
+		if hasCreds {
+			tpl = slugBuilderTpl
+		} else {
+			tpl = slugBuilderNoCredsTpl
+		}
 	}
 
 	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
-	if err := ioutil.WriteFile(finalManifestFileLocation, []byte(finalManifest), os.ModePerm); err != nil {
+	if err := tpl.Execute(finalManifestFD, tplData); err != nil {
 		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
+	}
+	if err := finalManifestFD.Close(); err != nil {
+		return fmt.Errorf("closing file pointer for final manifest %s (%s)", finalManifestFileLocation, err)
 	}
 
 	configDir := "/var/minio-conf"
@@ -216,6 +219,10 @@ func build(conf *Config, builderKey, gitSha string) error {
 	kCreateCmd.Stderr = os.Stderr
 	if err := run(kCreateCmd); err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
+	}
+
+	if err := os.Remove(finalManifestFileLocation); err != nil {
+		return fmt.Errorf("removing final manifest %s (%s)", finalManifestFileLocation, err)
 	}
 
 	// poll kubectl every 100ms to determine when the build pod is running
