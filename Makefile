@@ -27,6 +27,10 @@ RC := manifests/deis-${SHORT_NAME}-rc.yaml
 SVC := manifests/deis-${SHORT_NAME}-service.yaml
 IMAGE := ${DEIS_REGISTRY}${IMAGE_PREFIX}/${SHORT_NAME}:${VERSION}
 
+info:
+	@echo "Build tag:  ${VERSION}"
+	@echo "Registry:   ${DEIS_REGISTRY}"
+	@echo "Image:      ${IMAGE}"
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -61,20 +65,23 @@ docker-push:
 	docker push ${IMAGE}
 
 # Deploy is a Kubernetes-oriented target
-deploy: kube-service kube-rc
+deploy: kube-create
 
-# Some things, like services, have to be deployed before pods. This is an
-# example target. Others could perhaps include kube-secret, kube-volume, etc.
-kube-service:
-	kubectl create -f ${SVC}
+kube-delete:
+	-kubectl delete service deis-builder
+	-kubectl delete rc deis-builder
 
-# When possible, we deploy with RCs.
-kube-rc:
-	kubectl create -f ${RC}
+kube-create: update-manifests
+	kubectl create -f manifests/deis-builder-service.yml
+	kubectl create -f manifests/deis-builder-rc.tmp.yml
 
-kube-clean:
-	kubectl delete rc deis-${SHORT_NAME}
-	kubectl delete svc deis-${SHORT_NAME}
+kube-update: update-manifests
+	kubectl delete -f manifests/deis-builder-rc.tmp.yml
+	kubectl create -f manifests/deis-builder-rc.tmp.yml
+
+update-manifests:
+	sed 's#\(image:\) .*#\1 $(IMAGE)#' manifests/deis-builder-rc.yml \
+		> manifests/deis-builder-rc.tmp.yml
 
 .PHONY: all build docker-compile kube-up kube-down deploy
 
