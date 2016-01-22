@@ -1,4 +1,5 @@
-package: main
+package: github.com/deis/builder
+flatten: true
 import:
 - package: github.com/kelseyhightower/envconfig
 - package: github.com/coreos/go-etcd
@@ -7,8 +8,6 @@ import:
   - /etcd
 - package: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
-- package: github.com/gorilla/context
-  version: 14f550f51af52180c2eefed15e5fd18d63c0a64a
 - package: github.com/Masterminds/cookoo
   version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
@@ -31,7 +30,8 @@ import:
   - /time
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
-- package: github.com/ugorji/go
-  version: 821cda7e48749cacf7cad2c6ed01e96457ca7e9d
-  subpackages:
-  - /codec
+ignore:
+  - appengine
+  - appengine/memcache
+  - appengine/datastore
+  - appengine/user
