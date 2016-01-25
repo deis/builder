@@ -123,14 +123,18 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("running %s (%s)", strings.Join(tarCmd.Args, " "), err)
 	}
 
-	usingDockerfile := true
-	rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
-	if err == nil {
-		usingDockerfile = false
-	}
+	bType := getBuildTypeForDir(tmpDir)
+	usingDockerfile := bType == buildTypeDockerfile
+
 	var procType pkg.ProcessType
-	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
-		return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
+	if bType == buildTypeProcfile {
+		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
+		if err != nil {
+			return fmt.Errorf("reading %s/Procfile", tmpDir)
+		}
+		if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
+			return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
+		}
 	}
 
 	var srcManifest string
