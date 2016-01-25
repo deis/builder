@@ -45,12 +45,7 @@ build:
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
 
 test:
-	${DEV_ENV_CMD} go test ./pkg && \
-	${DEV_ENV_CMD} go test ./pkg/confd && \
-	${DEV_ENV_CMD} go test ./pkg/env && \
-	${DEV_ENV_CMD} go test ./pkg/etcd && \
-	${DEV_ENV_CMD} go test ./pkg/git && \
-	${DEV_ENV_CMD} go test ./pkg/sshd
+	${DEV_ENV_CMD} go test `glide nv`
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
