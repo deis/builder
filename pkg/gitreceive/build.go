@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
+	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
 
