@@ -1,13 +1,26 @@
 package storage
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/mitchellh/goamz/s3"
 )
 
-func CreateBucket(s3Client *s3.S3, bucketName string) error {
-	_, err := s3Client.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucketName),
-	})
-	return err
+const (
+	ACLPublicRead = s3.ACL("public-read")
+)
+
+func BucketExists(svc *s3.S3, bucketName string) (bool, error) {
+	buckets, err := svc.ListBuckets()
+	if err != nil {
+		return false, err
+	}
+	for _, bucket := range buckets.Buckets {
+		if bucketName == bucket.Name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func CreateBucket(svc *s3.S3, bucketName string) error {
+	return svc.Bucket(bucketName).PutBucket(s3.ACL("public-read"))
 }

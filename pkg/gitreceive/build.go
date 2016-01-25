@@ -10,11 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/mitchellh/goamz/s3"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -73,11 +72,11 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	tmpDir := os.TempDir()
 
 	tarObjKey := fmt.Sprintf("home/%s/tar", slugName)
-	tarURL := fmt.Sprintf("%s/git/%s", *s3Client.Config.Endpoint, tarObjKey)
+	tarURL := fmt.Sprintf("%s/git/%s", s3Client.S3Endpoint, tarObjKey)
 
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
 	pushObjKey := fmt.Sprintf("home/%s/push", fmt.Sprintf("%s:git-%s", appName, gitSha))
-	pushURL := fmt.Sprintf("%s/%s", *s3Client.Config.Endpoint, pushObjKey)
+	pushURL := fmt.Sprintf("%s/%s", s3Client.S3Endpoint, pushObjKey)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -173,7 +172,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	}
 
 	bucketName := "git"
-	if _, err := s3Client.CreateBucket(&s3.CreateBucketInput{Bucket: aws.String(bucketName)}); err != nil {
+	if err := storage.CreateBucket(s3Client, bucketName); err != nil {
 		log.Warn("create bucket error: %+v", err)
 	}
 
@@ -181,7 +180,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	if err != nil {
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
-	if err := storage.Upload(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
+	if err := storage.UploadObject(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
 		return fmt.Errorf("uploading %s to %s/%s (%s)", absAppTgz, bucketName, tarObjKey, err)
 	}
 
@@ -235,7 +234,11 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	// poll the s3 server to ensure the slug exists
 	// TODO: time out looking
 	for {
-		if storage.ObjectExists(s3Client, bucketName, pushObjKey) {
+		exists, err := storage.ObjectExists(s3Client, bucketName, pushObjKey)
+		if err != nil {
+			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, pushObjKey, err)
+		}
+		if exists {
 			break
 		}
 	}
