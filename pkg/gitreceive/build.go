@@ -138,7 +138,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	var srcManifest string
-	if err == os.ErrNotExist {
+	if creds == nil {
 		// both key and secret are missing, proceed with no credentials
 		if usingDockerfile {
 			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
