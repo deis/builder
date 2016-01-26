@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/log"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
 const (
@@ -31,6 +32,9 @@ func Run(conf *Config) error {
 	}
 	builderKey := string(builderKeyBytes)
 	scanner := bufio.NewScanner(os.Stdin)
+
+	kubeClient, err := client.NewInCluster()
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		oldRev, newRev, refName, err := readLine(line)
@@ -46,7 +50,7 @@ func Run(conf *Config) error {
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, builderKey, newRev); err != nil {
+			if err := build(conf, kubeClient, builderKey, newRev); err != nil {
 				return err
 			}
 		}

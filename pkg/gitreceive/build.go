@@ -1,19 +1,22 @@
 package gitreceive
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
+	"k8s.io/kubernetes/pkg/api"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/fields"
+	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/watch"
 )
 
 const (
@@ -45,10 +48,6 @@ func mcCmd(configDir string, args ...string) *exec.Cmd {
 	return cmd
 }
 
-func kGetCmd(podNS, podName string) *exec.Cmd {
-	return exec.Command("kubectl", fmt.Sprintf("--namespace=%s", podNS), "get", "pods", "-o", "yaml", podName)
-}
-
 // run prints the command it will execute to the debug log, then runs it and returns the result of run
 func run(cmd *exec.Cmd) error {
 	cmdStr := strings.Join(cmd.Args, " ")
@@ -60,7 +59,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, builderKey, gitSha string) error {
+func build(conf *Config, kubeClient *client.Client, builderKey, gitSha string) error {
 	storage, err := getStorageConfig()
 	if err != nil {
 		return err
@@ -137,53 +136,6 @@ func build(conf *Config, builderKey, gitSha string) error {
 		}
 	}
 
-	var srcManifest string
-	if creds == nil {
-		// both key and secret are missing, proceed with no credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
-		}
-	} else if err == nil {
-		// both key and secret are in place, so proceed with credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder.yaml"
-		}
-	} else if err != nil {
-		// unexpected error, fail
-		return fmt.Errorf("unexpected error (%s)", err)
-	}
-
-	fileBytes, err := ioutil.ReadFile(srcManifest)
-	if err != nil {
-		return fmt.Errorf("reading kubernetes manifest %s (%s)", srcManifest, err)
-	}
-
-	finalManifestFileLocation := fmt.Sprintf("/etc/%s", slugName)
-	var buildPodName string
-	var finalManifest string
-	uid := uuid.New()[:8]
-	if usingDockerfile {
-		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
-	} else {
-		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
-		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
-	}
-
-	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
-	if err := ioutil.WriteFile(finalManifestFileLocation, []byte(finalManifest), os.ModePerm); err != nil {
-		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
-	}
-
 	configDir := "/var/minio-conf"
 	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
 		return fmt.Errorf("creating minio config file (%s)", err)
@@ -205,52 +157,71 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("copying %s to %s (%s)", appTgz, tarURL, err)
 	}
 
+	var pod *api.Pod
+	var buildPodName string
+	if usingDockerfile {
+		buildPodName = dockerBuilderPodName(appName, shortSha)
+		pod = dockerBuilderPod(
+			conf.Debug,
+			creds != nil,
+			buildPodName,
+			conf.PodNamespace,
+			"deis",
+			"2.0.0-beta",
+			tarURL,
+			imageName,
+		)
+	} else {
+		buildPodName = slugBuilderPodName(appName, shortSha)
+		pod = slugbuilderPod(
+			conf.Debug,
+			creds != nil,
+			buildPodName,
+			conf.PodNamespace,
+			"deis",
+			"2.0.0-beta",
+			tarURL,
+			pushURL,
+			buildPackURL,
+		)
+	}
 	log.Info("Starting build... but first, coffee!")
 	log.Debug("Starting pod %s", buildPodName)
-	kCreateCmd := exec.Command(
-		"kubectl",
-		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		"create",
-		"-f",
-		finalManifestFileLocation,
-	)
-	if log.IsDebugging {
-		kCreateCmd.Stdout = os.Stdout
-	}
-	kCreateCmd.Stderr = os.Stderr
-	if err := run(kCreateCmd); err != nil {
+
+	podsInterface := kubeClient.Pods(conf.PodNamespace)
+
+	newPod, err := podsInterface.Create(pod)
+	if err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	// poll kubectl every 100ms to determine when the build pod is running
-	// TODO: use the k8s client and watch the event stream instead (https://github.com/deis/builder/issues/65)
-	for {
-		cmd := kGetCmd(conf.PodNamespace, buildPodName)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		// ignore errors
-		run(cmd)
-		outStr := string(out.Bytes())
-		if strings.Contains(outStr, "phase: Running") {
-			break
-		} else if strings.Contains(outStr, "phase: Failed") {
-			return fmt.Errorf("build pod %s entered phase: Failed", buildPodName)
-		}
-		time.Sleep(100 * time.Millisecond)
+	watcher, err := podsInterface.Watch(labels.Nothing(), fields.OneTermEqualSelector("name", pod.Name), v1Version)
+	if err != nil {
+		return fmt.Errorf("watching events for builder pod startup")
 	}
 
-	// get logs from the builder pod
-	kLogsCmd := exec.Command(
-		"kubectl",
-		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		"logs",
-		"-f",
-		buildPodName,
-	)
-	kLogsCmd.Stdout = os.Stdout
-	if err := run(kLogsCmd); err != nil {
-		return fmt.Errorf("running %s to get builder logs (%s)", strings.Join(kLogsCmd.Args, " "), err)
+	ch := watcher.ResultChan()
+	for evt := range ch {
+		if evt.Type == watch.Added {
+			watcher.Stop()
+			break
+		} else if evt.Type == watch.Error {
+			watcher.Stop()
+			return fmt.Errorf("builder pod failed to launch with ERROR")
+		}
 	}
+
+	req := podsInterface.GetLogs(newPod.Name, &api.PodLogOptions{
+		Follow:   true,
+		Previous: true,
+	})
+
+	rc, err := req.Stream()
+	if err != nil {
+		return fmt.Errorf("attempting to stream logs (%s)", err)
+	}
+
+	// TODO: use a bufio Scanner to stream the logs
 
 	// poll the s3 server to ensure the slug exists
 	for {
