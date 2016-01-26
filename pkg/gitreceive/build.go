@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
+	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
 
@@ -123,18 +123,22 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("running %s (%s)", strings.Join(tarCmd.Args, " "), err)
 	}
 
-	usingDockerfile := true
-	rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
-	if err == nil {
-		usingDockerfile = false
-	}
+	bType := getBuildTypeForDir(tmpDir)
+	usingDockerfile := bType == buildTypeDockerfile
+
 	var procType pkg.ProcessType
-	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
-		return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
+	if bType == buildTypeProcfile {
+		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
+		if err != nil {
+			return fmt.Errorf("reading %s/Procfile", tmpDir)
+		}
+		if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
+			return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
+		}
 	}
 
 	var srcManifest string
-	if err == os.ErrNotExist {
+	if creds == nil {
 		// both key and secret are missing, proceed with no credentials
 		if usingDockerfile {
 			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"

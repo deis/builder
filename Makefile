@@ -27,6 +27,7 @@ RC := manifests/deis-${SHORT_NAME}-rc.yaml
 SVC := manifests/deis-${SHORT_NAME}-service.yaml
 IMAGE := ${DEIS_REGISTRY}${IMAGE_PREFIX}/${SHORT_NAME}:${VERSION}
 
+TEST_PACKAGES := $(shell ${DEV_ENV_CMD} glide nv)
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -45,12 +46,7 @@ build:
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
 
 test:
-	${DEV_ENV_CMD} go test ./pkg && \
-	${DEV_ENV_CMD} go test ./pkg/confd && \
-	${DEV_ENV_CMD} go test ./pkg/env && \
-	${DEV_ENV_CMD} go test ./pkg/etcd && \
-	${DEV_ENV_CMD} go test ./pkg/git && \
-	${DEV_ENV_CMD} go test ./pkg/sshd
+	${DEV_ENV_CMD} go test ${TEST_PACKAGES}
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
