@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
-	"github.com/mitchellh/goamz/s3"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -72,11 +72,11 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	tmpDir := os.TempDir()
 
 	tarObjKey := fmt.Sprintf("home/%s/tar", slugName)
-	tarURL := fmt.Sprintf("%s/git/%s", s3Client.S3Endpoint, tarObjKey)
+	tarURL := fmt.Sprintf("%s/git/%s", s3Client.Endpoint, tarObjKey)
 
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
 	pushObjKey := fmt.Sprintf("home/%s/push", fmt.Sprintf("%s:git-%s", appName, gitSha))
-	pushURL := fmt.Sprintf("%s/%s", s3Client.S3Endpoint, pushObjKey)
+	pushURL := fmt.Sprintf("%s/%s", s3Client.Endpoint, pushObjKey)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -125,23 +125,22 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	}
 
 	var srcManifest string
-	if creds == nil {
-		// both key and secret are missing, proceed with no credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
-		}
-	} else if err == nil {
+
+	creds := storage.CredsOK()
+	if creds {
 		// both key and secret are in place, so proceed with credentials
 		if usingDockerfile {
 			srcManifest = "/etc/deis-dockerbuilder.yaml"
 		} else {
 			srcManifest = "/etc/deis-slugbuilder.yaml"
 		}
-	} else if err != nil {
-		// unexpected error, fail
-		return fmt.Errorf("unexpected error (%s)", err)
+	} else {
+		// both key and secret are missing, proceed with no credentials
+		if usingDockerfile {
+			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
+		} else {
+			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
+		}
 	}
 
 	fileBytes, err := ioutil.ReadFile(srcManifest)
@@ -181,7 +180,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
 	if err := storage.UploadObject(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
-		return fmt.Errorf("uploading %s to %s/%s (%s)", absAppTgz, bucketName, tarObjKey, err)
+		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, tarObjKey, err)
 	}
 
 	log.Info("Starting build... but first, coffee!")

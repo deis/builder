@@ -1,26 +1,46 @@
 package storage
 
 import (
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-const (
-	ACLPublicRead = s3.ACL("public-read")
+var (
+	ACLPublicRead = aws.String("public-read")
 )
 
 func BucketExists(svc *s3.S3, bucketName string) (bool, error) {
-	buckets, err := svc.ListBuckets()
+	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
 	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "404" {
+				return false, nil
+			}
+		}
+
 		return false, err
 	}
-	for _, bucket := range buckets.Buckets {
-		if bucketName == bucket.Name {
-			return true, nil
-		}
-	}
-	return false, nil
+	return true, nil
 }
 
 func CreateBucket(svc *s3.S3, bucketName string) error {
-	return svc.Bucket(bucketName).PutBucket(s3.ACL("public-read"))
+	_, err := svc.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(bucketName),
+		ACL:    ACLPublicRead,
+	})
+
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok {
+			if awsErr.Code() == "409" {
+				return nil
+			}
+		}
+
+		return err
+	}
+
+	return nil
 }

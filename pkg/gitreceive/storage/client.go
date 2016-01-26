@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func GetClient(regionStr string) (*s3.S3, error) {
@@ -16,10 +17,10 @@ func GetClient(regionStr string) (*s3.S3, error) {
 		return nil, err
 	}
 
-	region := aws.Region{
-		Name:       regionStr,
-		S3Endpoint: endpoint,
-	}
-
-	return s3.New(*auth, region), nil
+	return s3.New(session.New(&aws.Config{
+		Credentials:      auth,
+		Region:           aws.String(regionStr),
+		Endpoint:         aws.String(endpoint),
+		S3ForcePathStyle: aws.Bool(true),
+	})), nil
 }

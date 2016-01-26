@@ -25,10 +25,15 @@ import:
 - package: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - package: github.com/labstack/gommon
-- package: https://github.com/pborman/uuid
+- package: github.com/pborman/uuid
 - package: github.com/deis/pkg
   subpackages:
   - /time
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
-- package: github.com/mitchellh/goamz
+- package: github.com/aws/aws-sdk-go
+  version: 87b1e60a50b09e4812dee560b33a238f67305804
+  subpackages:
+  - aws
+  - aws/session
+  - service/s3

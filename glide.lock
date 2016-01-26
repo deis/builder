@@ -1,36 +1,38 @@
-hash: 6860014728843604c77a0f007952f22c0080201fd0704ffd409f76a5a5646131
-updated: 2016-01-21T18:24:32.957734131-07:00
+hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+updated: 2016-01-26T22:02:49.417635436Z
 imports:
 - name: bitbucket.org/bertimus9/systemstat
   version: 1468fd0db20598383c9393cccaa547de6ad99e5e
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: code.google.com/p/go-charset
-  version: ebbeafdc430e
+  version: ""
+  repo: https://code.google.com/p/go-charset
 - name: code.google.com/p/go-uuid
-  version: 35bc42037350
+  version: ""
   subpackages:
   - uuid
 - name: code.google.com/p/go.crypto
-  version: 69e2a90ed92d
+  version: ""
+  repo: https://code.google.com/p/go.crypto
 - name: code.google.com/p/go.net
-  version: 937a34c9de13
+  version: ""
+  repo: https://code.google.com/p/go.net
 - name: code.google.com/p/go.text
-  version: 5b2527008a4c
-- name: code.google.com/p/goauth2
-  version: 222e66a2882e
+  version: ""
+  repo: https://code.google.com/p/go.text
 - name: code.google.com/p/google-api-go-client
-  version: e1c259484b49
-  subpackages:
-  - bigquery/v2
-  - googleapi
+  version: ""
+  repo: https://code.google.com/p/google-api-go-client
 - name: code.google.com/p/goprotobuf
-  version: 5fc2294e655b78ed8a02082d37808d46c17d7e64
+  version: 6aaa8d47701fa6cf07e914ec01fde3d4a1fe79c3
   repo: https://github.com/golang/protobuf
 - name: code.google.com/p/gosqlite
-  version: 74691fb6f837
+  version: ""
+  repo: https://code.google.com/p/gosqlite
 - name: code.google.com/p/log4go
-  version: c3294304d93f
+  version: ""
+  repo: https://code.google.com/p/log4go
 - name: github.com/abbot/go-http-auth
   version: c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35
 - name: github.com/AdRoll/goamz
@@ -60,18 +62,11 @@ imports:
 - name: github.com/armon/gomdb
   version: 151f2e08ef45cb0e57d694b2562f351955dff572
 - name: github.com/aws/aws-sdk-go
-  version: c4ae871ffc03691a7b039fa751a1e7afee56e920
+  version: 87b1e60a50b09e4812dee560b33a238f67305804
   subpackages:
   - aws
-  - internal/endpoints
-  - internal/protocol/ec2query
-  - internal/protocol/query
-  - internal/protocol/rest
-  - internal/protocol/xml/xmlutil
-  - internal/signer/v4
-  - service/autoscaling
-  - service/ec2
-  - service/elb
+  - aws/session
+  - service/s3
 - name: github.com/Azure/azure-sdk-for-go
   version: 97d9593768bbbbd316f9c055dfc5f780933cd7fc
   subpackages:
@@ -196,7 +191,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 5ca80149b9d3f8b863af0e2bb6742e608603bd99
 - name: github.com/docker/distribution
-  version: c301f8ab27f4913c968b8d73a38e5dda79b9d3d7
+  version: 69db5b74405102be10afc3445157389cd488cd4f
 - name: github.com/docker/docker
   version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
   subpackages:
@@ -214,7 +209,7 @@ imports:
 - name: github.com/docker/libkv
   version: c2aac5dbbaa5c872211edea7c0f32b3bd67e7410
 - name: github.com/docker/libnetwork
-  version: 5eb9973054d568302e9b2696f3267e94765d93ff
+  version: 014fb9c23d9692fbac7e57adf806064f293115da
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
 - name: github.com/docker/spdystream
@@ -248,6 +243,8 @@ imports:
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-check/check
   version: 4f90aeace3a26ad7021961c297b22c42160c7b25
+- name: github.com/go-ini/ini
+  version: afbd495e5aaea13597b5e14fe514ddeaa4d76fc3
 - name: github.com/godbus/dbus
   version: 939230d2086a4f1870e04c52e0a376c25bae0ec4
 - name: github.com/gogo/protobuf
@@ -307,6 +304,9 @@ imports:
   version: 14c555599c2a4f493c1e13fd1ea6fdf721739028
 - name: github.com/gorilla/websocket
   version: 5434f8b69b7f4f4ef0120e04c046cd6ce54ef0dd
+- name: github.com/Graylog2/go-gelf
+  version: 06974fc6689396066f6ebf5bab951d41979e3386
+  repo: https://github.com/Graylog2/go-gelf
 - name: github.com/hashicorp/consul
   version: 954aec66231b79c161a4122b023fbcad13047f79
   subpackages:
@@ -334,7 +334,7 @@ imports:
 - name: github.com/hashicorp/memberlist
   version: 9a1e242e454d2443df330bdd51a436d5a9058fc4
 - name: github.com/hashicorp/raft
-  version: 8237aa61783236b104587045b0f9fdcec25df564
+  version: 057b893fd996696719e98b6c44649ea14968c811
 - name: github.com/hashicorp/raft-mdb
   version: 55f29473b9e604b3678b93a8433a6cf089e70f76
 - name: github.com/hashicorp/serf
@@ -363,6 +363,8 @@ imports:
   version: afde71eb1740fd763ab9450e1f700ba0e53c36d0
   subpackages:
   - client
+- name: github.com/jmespath/go-jmespath
+  version: c01cf91b011868172fdcd9f41838e80c9d716264
 - name: github.com/jmhodges/levigo
   version: 1ddad808d437abb2b8a55a950ec2616caa88969b
 - name: github.com/jonboulle/clockwork
@@ -370,7 +372,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/julienschmidt/httprouter
-  version: 21439ef4d70ba4f3e2a5ed9249e7b03af4019b40
+  version: abb0dc9f755ff0a9d818db28d9d8b9810066e2b5
 - name: github.com/kardianos/osext
   version: 8fef92e41e22a70e700a96b29f066cda30ea24ef
 - name: github.com/kballard/go-shellquote
@@ -386,7 +388,7 @@ imports:
 - name: github.com/kr/text
   version: 6807e777504f54ad073ecef66747de158294b639
 - name: github.com/labstack/gommon
-  version: 0764305a9af697a66da7bda2ea52672b7eca5a06
+  version: 413ca04f46b29aabc8e7ce369d26c0e97dd21101
 - name: github.com/lsegal/gucumber
   version: 44a4d7eb3b14a88cf82b073dfb7e06277afdc549
 - name: github.com/Masterminds/cookoo
@@ -396,7 +398,7 @@ imports:
   - /safely
   - /fmt
 - name: github.com/mattn/go-colorable
-  version: 3dac7b4f76f6e17fb39b768b89e3783d16e237fe
+  version: 4af63d73f5bea08b682ad2cd198b1e607afd6be0
 - name: github.com/mattn/go-isatty
   version: 56b76bdf51f7708750eac80fa38b952bb9f32639
 - name: github.com/matttproud/golang_protobuf_extensions
@@ -416,17 +418,15 @@ imports:
   - upid
 - name: github.com/miekg/dns
   version: 3f504e8dabd5d562e997d19ce0200aa41973e1b2
+- name: github.com/mistifyio/go-zfs
+  version: 1b4ae6fb4e77b095934d4430860ff202060169f8
+  repo: https://github.com/mistifyio/go-zfs
 - name: github.com/mitchellh/cli
   version: cb6853d606ea4a12a15ac83cc43503df99fd28fb
-- name: github.com/mitchellh/goamz
-  version: caaaea8b30ee15616494ee68abd5d8ebbbef05cf
 - name: github.com/mitchellh/mapstructure
   version: 740c764bc6149d3f1806231418adb9f52c11bcbf
 - name: github.com/mjibson/appstats
   version: 0542d5f0e87ea3a8fa4174322b9532f5d04f9fa8
-- name: github.com/motain/gocheck
-  version: 9beb271d26e640863a5bf4a3c5ea40ccdd466b84
-  repo: https://github.com/motain/gocheck
 - name: github.com/mxk/go-flowrate
   version: cca7078d478f8520f85629ad7c68962d31ed7682
   subpackages:
@@ -574,9 +574,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: cf4986612c83df6c55578ba198316d1684a9a287
-- name: golang.org/x/text/internal/colltab
-  version: cf4986612c83df6c55578ba198316d1684a9a287
+  version: 6d3c22c4525a4da167968fa2479be5524d2e8bd0
 - name: golang.org/x/tools
   version: 4f50f44d7a3206e9e28b984e023efce2a4a75369
   subpackages:
@@ -589,8 +587,6 @@ imports:
   - compute/v1
   - container/v1beta1
   - googleapi
-- name: google.golang.org/api/storage/v1
-  version: ""
 - name: google.golang.org/appengine
   version: 6bde959377a90acb53366051d7d587bfd7171354
 - name: google.golang.org/cloud
@@ -619,7 +615,7 @@ imports:
   subpackages:
   - api/v1/types
 - name: k8s.io/kubernetes
-  version: e8fdbb77ef7d92b519b15d357fd3bfac55e01e01
+  version: f7636d888c1b61158761d1e9a7b8c3f4a12305f3
 - name: launchpad.net/gocheck
   version: 4f90aeace3a26ad7021961c297b22c42160c7b25
   repo: https://github.com/go-check/check

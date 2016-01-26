@@ -2,20 +2,28 @@ package storage
 
 import (
 	"io"
-	"net/http"
 
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 func ObjectExists(svc *s3.S3, bucket, objName string) (bool, error) {
-	resp, err := svc.Bucket(bucket).Head(objName)
+	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucket),
+	})
 	if err != nil {
 		return false, err
 	}
-	return resp.StatusCode == http.StatusOK, nil
+	return true, nil
 }
 
 func UploadObject(svc *s3.S3, bucketName, objKey string, reader io.Reader) error {
-	// see https://godoc.org/github.com/aws/aws-sdk-go/service/s3#example-S3-PutObject
-	return nil
+	params := &s3.PutObjectInput{
+		Body:   aws.ReadSeekCloser(reader),
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objKey),
+		ACL:    ACLPublicRead,
+	}
+	_, err := svc.PutObject(params)
+	return err
 }
