@@ -12,24 +12,12 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
-
-const (
-	// this constant represents the length of a shortened git sha - 8 characters long
-	shortShaIdx = 8
-)
-
-type errGitShaTooShort struct {
-	sha string
-}
-
-func (e errGitShaTooShort) Error() string {
-	return fmt.Sprintf("git sha %s was too short", e.sha)
-}
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
 func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
@@ -53,30 +41,26 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
+func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	repo := conf.Repository
-	if len(gitSha) <= shortShaIdx {
-		return errGitShaTooShort{sha: gitSha}
+	gitSha, err := git.NewSha(rawGitSha)
+	if err != nil {
+		return err
 	}
-	shortSha := gitSha[0:8]
+
 	appName := conf.App()
 
 	repoDir := filepath.Join(conf.GitHome, repo)
 	buildDir := filepath.Join(repoDir, "build")
 
-	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
+	slugName := fmt.Sprintf("%s:git-%s", appName, gitSha.Short)
 	imageName := strings.Replace(slugName, ":", "-", -1)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
 	tmpDir := os.TempDir()
 
-	tarObjKey := fmt.Sprintf("home/%s/tar", slugName)
-	tarURL := fmt.Sprintf("%s/git/%s", s3Client.Endpoint, tarObjKey)
-
-	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
-	pushObjKey := fmt.Sprintf("home/%s/push", fmt.Sprintf("%s:git-%s", appName, gitSha))
-	pushURL := fmt.Sprintf("%s/%s", s3Client.Endpoint, pushObjKey)
+	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -94,7 +78,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 
 	// build a tarball from the new objects
 	appTgz := fmt.Sprintf("%s.tar.gz", appName)
-	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha)
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Full)
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := run(gitArchiveCmd); err != nil {
@@ -153,15 +137,15 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	var finalManifest string
 	uid := uuid.New()[:8]
 	if usingDockerfile {
-		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
+		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, gitSha.Short, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL, -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL, -1)
 	} else {
-		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
+		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, gitSha.Short, uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", pushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", tarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL, -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL, -1)
 		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	}
 
@@ -179,8 +163,8 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	if err != nil {
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
-	if err := storage.UploadObject(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
-		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, tarObjKey, err)
+	if err := storage.UploadObject(s3Client, bucketName, slugBuilderInfo.TarKey, appTgzReader); err != nil {
+		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, slugBuilderInfo.TarKey, err)
 	}
 
 	log.Info("Starting build... but first, coffee!")
@@ -233,9 +217,9 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	// poll the s3 server to ensure the slug exists
 	// TODO: time out looking
 	for {
-		exists, err := storage.ObjectExists(s3Client, bucketName, pushObjKey)
+		exists, err := storage.ObjectExists(s3Client, bucketName, slugBuilderInfo.PushKey)
 		if err != nil {
-			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, pushObjKey, err)
+			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey, err)
 		}
 		if exists {
 			break
@@ -247,7 +231,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
-		Sha:         gitSha,
+		Sha:         gitSha.Full,
 		ReceiveUser: conf.Username,
 		ReceiveRepo: appName,
 		Image:       appName,
