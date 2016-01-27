@@ -60,7 +60,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	}
 	tmpDir := os.TempDir()
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client, appName, slugName, gitSha)
+	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
