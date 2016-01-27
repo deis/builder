@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/deis/builder/pkg/gitreceive/git"
@@ -20,10 +19,13 @@ func TestS3Endpoint(t *testing.T) {
 		t.Fatalf("error building git sha (%s)", err)
 	}
 	sbi := NewSlugBuilderInfo(s3Endpoint, appName, slugName, sha)
-	if !strings.HasPrefix(sbi.PushURL, s3Endpoint) {
-		t.Errorf("push URL %s didn't have expected s3 endpoint prefix %s", sbi.PushURL, s3Endpoint)
+
+	expectedPushURL := s3Endpoint + "/git/" + sbi.PushKey
+	if sbi.PushURL != expectedPushURL {
+		t.Errorf("push URL %s didn't match expected %s", sbi.PushURL, expectedPushURL)
 	}
-	if !strings.HasPrefix(sbi.TarURL, s3Endpoint) {
-		t.Errorf("tar URL %s didn't have expected s3 endpoint prefix %s", sbi.TarURL, s3Endpoint)
+	expectedTarURL := s3Endpoint + "/git/" + sbi.TarKey
+	if sbi.TarURL != expectedTarURL {
+		t.Errorf("tar URL %s didn't match expected %s", sbi.TarURL, expectedTarURL)
 	}
 }
