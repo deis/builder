@@ -2,21 +2,27 @@ package gitreceive
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
-	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
+
+	"k8s.io/kubernetes/pkg/api"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/fields"
+	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/watch"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -24,10 +30,6 @@ func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	cmd := exec.Command(first, others...)
 	cmd.Dir = repoDir
 	return cmd
-}
-
-func kGetCmd(podNS, podName string) *exec.Cmd {
-	return exec.Command("kubectl", fmt.Sprintf("--namespace=%s", podNS), "get", "pods", "-o", "yaml", podName)
 }
 
 // run prints the command it will execute to the debug log, then runs it and returns the result of run
@@ -41,7 +43,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
+func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -108,52 +110,6 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 		}
 	}
 
-	var srcManifest string
-
-	creds := storage.CredsOK()
-	if creds {
-		// both key and secret are in place, so proceed with credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder.yaml"
-		}
-	} else {
-		// both key and secret are missing, proceed with no credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
-		}
-	}
-
-	fileBytes, err := ioutil.ReadFile(srcManifest)
-	if err != nil {
-		return fmt.Errorf("reading kubernetes manifest %s (%s)", srcManifest, err)
-	}
-
-	finalManifestFileLocation := fmt.Sprintf("/etc/%s", slugName)
-	var buildPodName string
-	var finalManifest string
-	uid := uuid.New()[:8]
-	if usingDockerfile {
-		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, gitSha.Short(), uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL(), -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL(), -1)
-	} else {
-		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, gitSha.Short(), uid)
-		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL(), -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL(), -1)
-		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
-	}
-
-	log.Debug("writing builder manifest to %s", finalManifestFileLocation)
-	if err := ioutil.WriteFile(finalManifestFileLocation, []byte(finalManifest), os.ModePerm); err != nil {
-		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
-	}
-
 	bucketName := "git"
 	if err := storage.CreateBucket(s3Client, bucketName); err != nil {
 		log.Warn("create bucket error: %+v", err)
@@ -169,51 +125,82 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, slugBuilderInfo.TarKey(), err)
 	}
 
+	creds := storage.CredsOK()
+
+	var pod *api.Pod
+	var buildPodName string
+	if usingDockerfile {
+		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
+		pod = dockerBuilderPod(
+			conf.Debug,
+			creds,
+			buildPodName,
+			conf.PodNamespace,
+			appConf.Values,
+			slugBuilderInfo.TarURL(),
+			imageName,
+		)
+	} else {
+		buildPodName = slugBuilderPodName(appName, gitSha.Short())
+		pod = slugbuilderPod(
+			conf.Debug,
+			creds,
+			buildPodName,
+			conf.PodNamespace,
+			appConf.Values,
+			slugBuilderInfo.TarURL(),
+			slugBuilderInfo.PushURL(),
+			buildPackURL,
+		)
+	}
+
 	log.Info("Starting build... but first, coffee!")
 	log.Debug("Starting pod %s", buildPodName)
-	kCreateCmd := exec.Command(
-		"kubectl",
-		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		"create",
-		"-f",
-		finalManifestFileLocation,
-	)
-	if log.IsDebugging {
-		kCreateCmd.Stdout = os.Stdout
+	json, err := prettyPrintJSON(pod)
+	if err == nil {
+		log.Debug("Pod spec: %v", json)
+	} else {
+		log.Debug("Error creating json representaion of pod spec: %v", err)
 	}
-	kCreateCmd.Stderr = os.Stderr
-	if err := run(kCreateCmd); err != nil {
+
+	podsInterface := kubeClient.Pods(conf.PodNamespace)
+
+	newPod, err := podsInterface.Create(pod)
+	if err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	// poll kubectl every 100ms to determine when the build pod is running
-	// TODO: use the k8s client and watch the event stream instead (https://github.com/deis/builder/issues/65)
-	for {
-		cmd := kGetCmd(conf.PodNamespace, buildPodName)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-		// ignore errors
-		run(cmd)
-		outStr := string(out.Bytes())
-		if strings.Contains(outStr, "phase: Running") {
-			break
-		} else if strings.Contains(outStr, "phase: Failed") {
-			return fmt.Errorf("build pod %s entered phase: Failed", buildPodName)
-		}
-		time.Sleep(100 * time.Millisecond)
+	watcher, err := podsInterface.Watch(labels.Nothing(), fields.OneTermEqualSelector("name", pod.Name), newPod.ResourceVersion)
+	if err != nil {
+		return fmt.Errorf("watching events for builder pod startup")
 	}
 
-	// get logs from the builder pod
-	kLogsCmd := exec.Command(
-		"kubectl",
-		fmt.Sprintf("--namespace=%s", conf.PodNamespace),
-		"logs",
-		"-f",
-		buildPodName,
-	)
-	kLogsCmd.Stdout = os.Stdout
-	if err := run(kLogsCmd); err != nil {
-		return fmt.Errorf("running %s to get builder logs (%s)", strings.Join(kLogsCmd.Args, " "), err)
+	ch := watcher.ResultChan()
+	for evt := range ch {
+		if evt.Type == watch.Added {
+			watcher.Stop()
+			break
+		} else if evt.Type == watch.Error {
+			watcher.Stop()
+			return fmt.Errorf("builder pod failed to launch with ERROR")
+		}
+	}
+
+	req := kubeClient.Get().Namespace(conf.PodNamespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
+		&api.PodLogOptions{
+			Follow:   true,
+			Previous: true,
+		}, api.Scheme)
+
+	rc, err := req.Stream()
+	if err != nil {
+		return fmt.Errorf("attempting to stream logs (%s)", err)
+	}
+	defer rc.Close()
+
+	_, err = io.Copy(os.Stdout, rc)
+	if err != nil {
+		return fmt.Errorf("fetching builder logs (%s)", err)
 	}
 
 	// poll the s3 server to ensure the slug exists
@@ -264,4 +251,16 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	}
 
 	return nil
+}
+
+func prettyPrintJSON(data interface{}) (string, error) {
+	output := &bytes.Buffer{}
+	if err := json.NewEncoder(output).Encode(data); err != nil {
+		return "", err
+	}
+	formatted := &bytes.Buffer{}
+	if err := json.Indent(formatted, output.Bytes(), "", "  "); err != nil {
+		return "", err
+	}
+	return string(formatted.Bytes()), nil
 }
