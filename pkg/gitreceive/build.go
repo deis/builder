@@ -10,8 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/log"
+	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/pborman/uuid"
 	"gopkg.in/yaml.v2"
 )
@@ -36,15 +38,6 @@ func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	return cmd
 }
 
-// mcCmd returns a command to execute the 'mc' binary, so that it reads config from configDir.
-// the command outputs its stderr to os.Stderr
-func mcCmd(configDir string, args ...string) *exec.Cmd {
-	cmd := exec.Command("mc", "-C", configDir, "--quiet")
-	cmd.Args = append(cmd.Args, args...)
-	cmd.Stderr = os.Stderr
-	return cmd
-}
-
 func kGetCmd(podNS, podName string) *exec.Cmd {
 	return exec.Command("kubectl", fmt.Sprintf("--namespace=%s", podNS), "get", "pods", "-o", "yaml", podName)
 }
@@ -60,16 +53,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, builderKey, gitSha string) error {
-	storage, err := getStorageConfig()
-	if err != nil {
-		return err
-	}
-	creds, err := getStorageCreds()
-	if err == errMissingKey || err == errMissingSecret {
-		return err
-	}
-
+func build(conf *Config, s3Client *s3.S3, builderKey, gitSha string) error {
 	repo := conf.Repository
 	if len(gitSha) <= shortShaIdx {
 		return errGitShaTooShort{sha: gitSha}
@@ -87,10 +71,12 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 	tmpDir := os.TempDir()
 
-	tarURL := fmt.Sprintf("%s://%s:%s/git/home/%s/tar", storage.schema(), storage.host(), storage.port(), slugName)
+	tarObjKey := fmt.Sprintf("home/%s/tar", slugName)
+	tarURL := fmt.Sprintf("%s/git/%s", s3Client.Endpoint, tarObjKey)
 
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
-	pushURL := fmt.Sprintf("%s://%s:%s/git/home/%s/push", storage.schema(), storage.host(), storage.port(), fmt.Sprintf("%s:git-%s", appName, gitSha))
+	pushObjKey := fmt.Sprintf("home/%s/push", fmt.Sprintf("%s:git-%s", appName, gitSha))
+	pushURL := fmt.Sprintf("%s/%s", s3Client.Endpoint, pushObjKey)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -114,6 +100,7 @@ func build(conf *Config, builderKey, gitSha string) error {
 	if err := run(gitArchiveCmd); err != nil {
 		return fmt.Errorf("running %s (%s)", strings.Join(gitArchiveCmd.Args, " "), err)
 	}
+	absAppTgz := fmt.Sprintf("%s/%s", repoDir, appTgz)
 
 	// untar the archive into the temp dir
 	tarCmd := repoCmd(repoDir, "tar", "-xzf", appTgz, "-C", fmt.Sprintf("%s/", tmpDir))
@@ -138,23 +125,22 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	var srcManifest string
-	if creds == nil {
-		// both key and secret are missing, proceed with no credentials
-		if usingDockerfile {
-			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
-		} else {
-			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
-		}
-	} else if err == nil {
+
+	creds := storage.CredsOK()
+	if creds {
 		// both key and secret are in place, so proceed with credentials
 		if usingDockerfile {
 			srcManifest = "/etc/deis-dockerbuilder.yaml"
 		} else {
 			srcManifest = "/etc/deis-slugbuilder.yaml"
 		}
-	} else if err != nil {
-		// unexpected error, fail
-		return fmt.Errorf("unexpected error (%s)", err)
+	} else {
+		// both key and secret are missing, proceed with no credentials
+		if usingDockerfile {
+			srcManifest = "/etc/deis-dockerbuilder-no-creds.yaml"
+		} else {
+			srcManifest = "/etc/deis-slugbuilder-no-creds.yaml"
+		}
 	}
 
 	fileBytes, err := ioutil.ReadFile(srcManifest)
@@ -184,25 +170,17 @@ func build(conf *Config, builderKey, gitSha string) error {
 		return fmt.Errorf("writing final manifest %s (%s)", finalManifestFileLocation, err)
 	}
 
-	configDir := "/var/minio-conf"
-	if err := os.MkdirAll(configDir, os.ModePerm); err != nil {
-		return fmt.Errorf("creating minio config file (%s)", err)
+	bucketName := "git"
+	if err := storage.CreateBucket(s3Client, bucketName); err != nil {
+		log.Warn("create bucket error: %+v", err)
 	}
 
-	configCmd := mcCmd(configDir, "config", "host", "add", fmt.Sprintf("%s://%s:%s", storage.schema(), storage.host(), storage.port()), creds.key, creds.secret)
-	if err := run(configCmd); err != nil {
-		return fmt.Errorf("configuring the minio client (%s)", err)
+	appTgzReader, err := os.Open(absAppTgz)
+	if err != nil {
+		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
-
-	makeBucketCmd := mcCmd(configDir, "mb", fmt.Sprintf("%s://%s:%s/git", storage.schema(), storage.host(), storage.port()))
-	// Don't look for errors here. Buckets may already exist
-	// https://github.com/deis/builder/issues/80 will eliminate this distaste
-	run(makeBucketCmd)
-
-	cpCmd := mcCmd(configDir, "cp", appTgz, tarURL)
-	cpCmd.Dir = repoDir
-	if err := run(cpCmd); err != nil {
-		return fmt.Errorf("copying %s to %s (%s)", appTgz, tarURL, err)
+	if err := storage.UploadObject(s3Client, bucketName, tarObjKey, appTgzReader); err != nil {
+		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, tarObjKey, err)
 	}
 
 	log.Info("Starting build... but first, coffee!")
@@ -253,11 +231,13 @@ func build(conf *Config, builderKey, gitSha string) error {
 	}
 
 	// poll the s3 server to ensure the slug exists
+	// TODO: time out looking
 	for {
-		// for now, assume the error indicates that the slug wasn't there, nothing else
-		// TODO: implement https://github.com/deis/builder/issues/80, which will clean this up siginficantly
-		lsCmd := mcCmd(configDir, "ls", pushURL)
-		if err := run(lsCmd); err == nil {
+		exists, err := storage.ObjectExists(s3Client, bucketName, pushObjKey)
+		if err != nil {
+			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, pushObjKey, err)
+		}
+		if exists {
 			break
 		}
 	}
