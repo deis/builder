@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"regexp"
 )
 
 const (
@@ -10,12 +11,14 @@ const (
 	fullShaLen  = 40
 )
 
-type ErrGitShaTooShort struct {
+var shaRegex = regexp.MustCompile(`^[\da-f]{40}$`)
+
+type ErrInvalidGitSha struct {
 	sha string
 }
 
-func (e ErrGitShaTooShort) Error() string {
-	return fmt.Sprintf("git sha %s was too short", e.sha)
+func (e ErrInvalidGitSha) Error() string {
+	return fmt.Sprintf("git sha %s was invalid", e.sha)
 }
 
 type SHA struct {
@@ -24,8 +27,8 @@ type SHA struct {
 }
 
 func NewSha(rawSha string) (*SHA, error) {
-	if len(rawSha) < fullShaLen {
-		return nil, ErrGitShaTooShort{sha: rawSha}
+	if !shaRegex.Match([]byte(rawSha)) {
+		return nil, ErrInvalidGitSha{sha: rawSha}
 	}
 	return &SHA{Full: rawSha, Short: rawSha[0:8]}, nil
 }
