@@ -54,11 +54,14 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	buildDir := filepath.Join(repoDir, "build")
 
 	slugName := fmt.Sprintf("%s:git-%s", appName, gitSha.Short())
-	imageName := strings.Replace(slugName, ":", "-", -1)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
-	tmpDir := os.TempDir()
+
+	tmpDir, err := ioutil.TempDir(buildDir, "tmp")
+	if err != nil {
+		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
+	}
 
 	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, appName, slugName, gitSha)
 
@@ -78,7 +81,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 
 	// build a tarball from the new objects
 	appTgz := fmt.Sprintf("%s.tar.gz", appName)
-	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Full())
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Short())
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := run(gitArchiveCmd); err != nil {
@@ -97,7 +100,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	bType := getBuildTypeForDir(tmpDir)
 	usingDockerfile := bType == buildTypeDockerfile
 
-	var procType pkg.ProcessType
+	procType := pkg.ProcessType{}
 	if bType == buildTypeProcfile {
 		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
 		if err != nil {
@@ -136,7 +139,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 			conf.PodNamespace,
 			appConf.Values,
 			slugBuilderInfo.TarURL(),
-			imageName,
+			slugName,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -201,13 +204,12 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	if err != nil {
 		return fmt.Errorf("Timed out waiting for object in storage. Aborting build...")
 	}
-
 	log.Info("Build complete.")
 	log.Info("Launching app.")
 	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
-		Sha:         gitSha.Full(),
+		Sha:         gitSha.Short(),
 		ReceiveUser: conf.Username,
 		ReceiveRepo: appName,
 		Image:       appName,
@@ -217,7 +219,6 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		buildHook.Dockerfile = ""
 	} else {
 		buildHook.Dockerfile = "true"
-		buildHook.Image = imageName
 	}
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	if err != nil {

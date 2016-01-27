@@ -36,7 +36,7 @@ func TestPushKey(t *testing.T) {
 		t.Fatalf("error building git sha (%s)", err)
 	}
 	sbi := NewSlugBuilderInfo(s3Endpoint, appName, slugName, sha)
-	expectedPushKey := "home/" + appName + ":git-" + sha.Full() + "/push"
+	expectedPushKey := "home/" + appName + ":git-" + sha.Short() + "/push"
 	if sbi.PushKey() != expectedPushKey {
 		t.Errorf("push key %s didn't match expected %s", sbi.PushKey(), expectedPushKey)
 	}
