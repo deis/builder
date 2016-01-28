@@ -18,7 +18,7 @@ type SlugBuilderInfo struct {
 func NewSlugBuilderInfo(s3Endpoint, appName, slugName string, gitSha *git.SHA) *SlugBuilderInfo {
 	tarKey := fmt.Sprintf("home/%s/tar", slugName)
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
-	pushKey := fmt.Sprintf("home/%s:git-%s/push", appName, gitSha.Full)
+	pushKey := fmt.Sprintf("home/%s:git-%s/push", appName, gitSha.Full())
 
 	return &SlugBuilderInfo{
 		pushKey: pushKey,
