@@ -27,7 +27,7 @@ type SHA struct {
 }
 
 func NewSha(rawSha string) (*SHA, error) {
-	if !shaRegex.Match([]byte(rawSha)) {
+	if !shaRegex.MatchString(rawSha) {
 		return nil, ErrInvalidGitSha{sha: rawSha}
 	}
 	return &SHA{full: rawSha, short: rawSha[0:8]}, nil
