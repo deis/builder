@@ -8,7 +8,6 @@ import (
 const (
 	// this constant represents the length of a shortened git sha - 8 characters long
 	shortShaIdx = 8
-	fullShaLen  = 40
 )
 
 var shaRegex = regexp.MustCompile(`^[\da-f]{40}$`)
