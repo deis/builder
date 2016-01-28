@@ -20,12 +20,12 @@ func TestS3Endpoint(t *testing.T) {
 	}
 	sbi := NewSlugBuilderInfo(s3Endpoint, appName, slugName, sha)
 
-	expectedPushURL := s3Endpoint + "/git/" + sbi.PushKey
-	if sbi.PushURL != expectedPushURL {
-		t.Errorf("push URL %s didn't match expected %s", sbi.PushURL, expectedPushURL)
+	expectedPushURL := s3Endpoint + "/git/" + sbi.PushKey()
+	if sbi.PushURL() != expectedPushURL {
+		t.Errorf("push URL %s didn't match expected %s", sbi.PushURL(), expectedPushURL)
 	}
-	expectedTarURL := s3Endpoint + "/git/" + sbi.TarKey
-	if sbi.TarURL != expectedTarURL {
-		t.Errorf("tar URL %s didn't match expected %s", sbi.TarURL, expectedTarURL)
+	expectedTarURL := s3Endpoint + "/git/" + sbi.TarKey()
+	if sbi.TarURL() != expectedTarURL {
+		t.Errorf("tar URL %s didn't match expected %s", sbi.TarURL(), expectedTarURL)
 	}
 }

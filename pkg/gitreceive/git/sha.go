@@ -22,13 +22,16 @@ func (e ErrInvalidGitSha) Error() string {
 }
 
 type SHA struct {
-	Full  string
-	Short string
+	full  string
+	short string
 }
 
 func NewSha(rawSha string) (*SHA, error) {
 	if !shaRegex.Match([]byte(rawSha)) {
 		return nil, ErrInvalidGitSha{sha: rawSha}
 	}
-	return &SHA{Full: rawSha, Short: rawSha[0:8]}, nil
+	return &SHA{full: rawSha, short: rawSha[0:8]}, nil
 }
+
+func (s SHA) Full() string  { return s.full }
+func (s SHA) Short() string { return s.short }

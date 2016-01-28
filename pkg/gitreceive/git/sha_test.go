@@ -34,11 +34,11 @@ func TestNewSha(t *testing.T) {
 			t.Errorf("expected no error for sha %s (#%d), got %s", shaStr, i, err)
 			continue
 		}
-		if sha.Full != shaStr {
-			t.Errorf("expected full sha string to be %s, got %s", shaStr, sha.Full)
+		if sha.Full() != shaStr {
+			t.Errorf("expected full sha string to be %s, got %s", shaStr, sha.Full())
 		}
-		if sha.Short != shaStr[0:8] {
-			t.Errorf("expected short sha to be first 8 characters of %s, got %s", shaStr, sha.Short)
+		if sha.Short() != shaStr[0:8] {
+			t.Errorf("expected short sha to be first 8 characters of %s, got %s", shaStr, sha.Short())
 		}
 	}
 }

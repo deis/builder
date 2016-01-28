@@ -8,10 +8,10 @@ import (
 
 // SlugBuilderInfo contains all of the object storage related information needed to pass to a slug builder
 type SlugBuilderInfo struct {
-	PushKey string
-	PushURL string
-	TarKey  string
-	TarURL  string
+	pushKey string
+	pushURL string
+	tarKey  string
+	tarURL  string
 }
 
 // NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data
@@ -21,9 +21,14 @@ func NewSlugBuilderInfo(s3Endpoint, appName, slugName string, gitSha *git.SHA) *
 	pushKey := fmt.Sprintf("home/%s:git-%s/push", appName, gitSha.Full)
 
 	return &SlugBuilderInfo{
-		PushKey: pushKey,
-		PushURL: fmt.Sprintf("%s/git/%s", s3Endpoint, pushKey),
-		TarKey:  tarKey,
-		TarURL:  fmt.Sprintf("%s/git/%s", s3Endpoint, tarKey),
+		pushKey: pushKey,
+		pushURL: fmt.Sprintf("%s/git/%s", s3Endpoint, pushKey),
+		tarKey:  tarKey,
+		tarURL:  fmt.Sprintf("%s/git/%s", s3Endpoint, tarKey),
 	}
 }
+
+func (s SlugBuilderInfo) PushKey() string { return s.pushKey }
+func (s SlugBuilderInfo) PushURL() string { return s.pushURL }
+func (s SlugBuilderInfo) TarKey() string  { return s.tarKey }
+func (s SlugBuilderInfo) TarURL() string  { return s.tarURL }

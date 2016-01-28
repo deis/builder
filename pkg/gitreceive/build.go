@@ -53,7 +53,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	repoDir := filepath.Join(conf.GitHome, repo)
 	buildDir := filepath.Join(repoDir, "build")
 
-	slugName := fmt.Sprintf("%s:git-%s", appName, gitSha.Short)
+	slugName := fmt.Sprintf("%s:git-%s", appName, gitSha.Short())
 	imageName := strings.Replace(slugName, ":", "-", -1)
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
@@ -78,7 +78,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 
 	// build a tarball from the new objects
 	appTgz := fmt.Sprintf("%s.tar.gz", appName)
-	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Full)
+	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Full())
 	gitArchiveCmd.Stdout = os.Stdout
 	gitArchiveCmd.Stderr = os.Stderr
 	if err := run(gitArchiveCmd); err != nil {
@@ -137,15 +137,15 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	var finalManifest string
 	uid := uuid.New()[:8]
 	if usingDockerfile {
-		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, gitSha.Short, uid)
+		buildPodName = fmt.Sprintf("dockerbuild-%s-%s-%s", appName, gitSha.Short(), uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL(), -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL(), -1)
 	} else {
-		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, gitSha.Short, uid)
+		buildPodName = fmt.Sprintf("slugbuild-%s-%s-%s", appName, gitSha.Short(), uid)
 		finalManifest = strings.Replace(string(fileBytes), "repo_name", buildPodName, -1)
-		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL, -1)
-		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL, -1)
+		finalManifest = strings.Replace(finalManifest, "puturl", slugBuilderInfo.PushURL(), -1)
+		finalManifest = strings.Replace(finalManifest, "tar-url", slugBuilderInfo.TarURL(), -1)
 		finalManifest = strings.Replace(finalManifest, "buildurl", buildPackURL, -1)
 	}
 
@@ -164,9 +164,9 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
 
-	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, bucketName, slugBuilderInfo.TarKey)
-	if err := storage.UploadObject(s3Client, bucketName, slugBuilderInfo.TarKey, appTgzReader); err != nil {
-		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, slugBuilderInfo.TarKey, err)
+	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, bucketName, slugBuilderInfo.TarKey())
+	if err := storage.UploadObject(s3Client, bucketName, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
+		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, slugBuilderInfo.TarKey(), err)
 	}
 
 	log.Info("Starting build... but first, coffee!")
@@ -219,9 +219,9 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	// poll the s3 server to ensure the slug exists
 	// TODO: time out looking
 	for {
-		exists, err := storage.ObjectExists(s3Client, bucketName, slugBuilderInfo.PushKey)
+		exists, err := storage.ObjectExists(s3Client, bucketName, slugBuilderInfo.PushKey())
 		if err != nil {
-			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey, err)
+			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey(), err)
 		}
 		if exists {
 			break
@@ -233,7 +233,7 @@ func build(conf *Config, s3Client *s3.S3, builderKey, rawGitSha string) error {
 	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
-		Sha:         gitSha.Full,
+		Sha:         gitSha.Full(),
 		ReceiveUser: conf.Username,
 		ReceiveRepo: appName,
 		Image:       appName,
