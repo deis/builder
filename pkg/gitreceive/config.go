@@ -19,6 +19,7 @@ type Config struct {
 	Fingerprint        string `envconfig:"FINGERPRINT" required:"true"`
 	PodNamespace       string `envconfig:"POD_NAMESPACE" required:"true"`
 	StorageRegion      string `envconfig:"STORAGE_REGION" default:"us-east-1"`
+	Debug              bool   `envconfig:"DEBUG" default:"false"`
 }
 
 func (c Config) App() string {

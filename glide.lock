@@ -1,5 +1,5 @@
 hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2016-01-26T22:02:49.417635436Z
+updated: 2016-01-28T18:11:08.757154218Z
 imports:
 - name: bitbucket.org/bertimus9/systemstat
   version: 1468fd0db20598383c9393cccaa547de6ad99e5e
@@ -88,7 +88,7 @@ imports:
 - name: github.com/bmizerany/pat
   version: b8a35001b773c267eb260a691f4e5499a3531600
 - name: github.com/boltdb/bolt
-  version: 0f053fabc06119583d61937a0a06ef0ba0f1b301
+  version: 90fef389f98027ca55594edd7dbd6e7f3926fdad
 - name: github.com/bradfitz/gomemcache
   version: fb1f79c6b65acda83063cbc69f6bba1522558bfc
 - name: github.com/bradfitz/http2
@@ -146,22 +146,19 @@ imports:
   - oauth2
   - oidc
 - name: github.com/coreos/go-semver
-  version: 6fe83ccda8fb9b7549c9ab4ba47f47858bc950aa
+  version: 568e959cd89871e61434c1143528d9162da89ef2
   subpackages:
   - semver
 - name: github.com/coreos/go-systemd
-  version: 97e243d21a8e232e9d8af38ba2366dfcfceebeba
+  version: cea488b4e6855fee89b6c22a811e3c5baca861b6
   subpackages:
   - daemon
-  - dbus
-  - unit
+  - journal
+  - util
 - name: github.com/coreos/pkg
-  version: fa94270d4bac0d8ae5dc6b71894e251aada93f74
+  version: 42a8c3b1a6f917bb8346ef738f32712a7ca0ede7
   subpackages:
   - capnslog
-  - health
-  - httputil
-  - timeutil
 - name: github.com/cpuguy83/go-md2man
   version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
@@ -248,7 +245,7 @@ imports:
 - name: github.com/godbus/dbus
   version: 939230d2086a4f1870e04c52e0a376c25bae0ec4
 - name: github.com/gogo/protobuf
-  version: 2093b57e5ca2ccbee4626814100bc1aada691b18
+  version: 64f27bf06efee53589314a6e5a4af34cdd85adf6
   subpackages:
   - proto
 - name: github.com/golang/glog
@@ -262,7 +259,7 @@ imports:
   subpackages:
   - gomock
 - name: github.com/golang/protobuf
-  version: 7f07925444bb51fa4cf9dfe6f7661876f8852275
+  version: 5677a0e3d5e89854c9974e1256839ee23f8233ca
   subpackages:
   - proto
 - name: github.com/google/btree
@@ -306,7 +303,6 @@ imports:
   version: 5434f8b69b7f4f4ef0120e04c046cd6ce54ef0dd
 - name: github.com/Graylog2/go-gelf
   version: 06974fc6689396066f6ebf5bab951d41979e3386
-  repo: https://github.com/Graylog2/go-gelf
 - name: github.com/hashicorp/consul
   version: 954aec66231b79c161a4122b023fbcad13047f79
   subpackages:
@@ -368,7 +364,7 @@ imports:
 - name: github.com/jmhodges/levigo
   version: 1ddad808d437abb2b8a55a950ec2616caa88969b
 - name: github.com/jonboulle/clockwork
-  version: 3f831b65b61282ba6bece21b91beea2edc4c887a
+  version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/julienschmidt/httprouter
@@ -420,7 +416,6 @@ imports:
   version: 3f504e8dabd5d562e997d19ce0200aa41973e1b2
 - name: github.com/mistifyio/go-zfs
   version: 1b4ae6fb4e77b095934d4430860ff202060169f8
-  repo: https://github.com/mistifyio/go-zfs
 - name: github.com/mitchellh/cli
   version: cb6853d606ea4a12a15ac83cc43503df99fd28fb
 - name: github.com/mitchellh/mapstructure
@@ -452,9 +447,11 @@ imports:
 - name: github.com/progrium/go-extpoints
   version: 529a176f52394e48e8882dd70a01732f1bb480f3
 - name: github.com/prometheus/client_golang
-  version: 3b78d7a77f51ccbc364d4bc170920153022cfd08
+  version: a842dc11e0621c34a71cab634d1d0190a59802a8
   subpackages:
+  - model
   - prometheus
+  - text
 - name: github.com/prometheus/client_model
   version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
   subpackages:
@@ -465,7 +462,7 @@ imports:
   - expfmt
   - model
 - name: github.com/prometheus/procfs
-  version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
+  version: ee2372b58cee877abe07cde670d04d3b3bac5ee6
 - name: github.com/rackspace/gophercloud
   version: f92863476c034f851073599c09d90cd61ee95b3d
 - name: github.com/rakyll/globalconf
@@ -524,11 +521,9 @@ imports:
 - name: github.com/stretchr/objx
   version: d40df0cc104c06eae2dfe03d7dddb83802d52f9a
 - name: github.com/stretchr/testify
-  version: 089c7181b8c728499929ff09b62d3fdd8df8adff
+  version: 9cc77fa25329013ce07362c7742952ff887361f2
   subpackages:
   - assert
-  - mock
-  - require
 - name: github.com/syndtr/gocapability
   version: 2c00daeb6c3b45114c80ac44119e7b8801fdd852
   subpackages:
@@ -538,7 +533,7 @@ imports:
 - name: github.com/tobi/airbrake-go
   version: a3cdd910a3ffef88a20fbecc10363a520ad61a0a
 - name: github.com/ugorji/go
-  version: 821cda7e48749cacf7cad2c6ed01e96457ca7e9d
+  version: 5abd4e96a45c386928ed2ca2a7ef63e2533e18ec
 - name: github.com/vaughan0/go-ini
   version: a98ad7ee00ec53921f08832bc06ecf7fd600e6a1
 - name: github.com/vishvananda/netlink
@@ -564,33 +559,25 @@ imports:
   subpackages:
   - inotify
 - name: golang.org/x/net
-  version: c2528b2dd8352441850638a8bb678c2ad056fd3e
+  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
   subpackages:
   - context
 - name: golang.org/x/oauth2
-  version: b5adcc2dcdf009d0391547edc6ecbaff889f5bb9
+  version: 3046bc76d6dfd7d3707f6640f85e42d9c4050f50
 - name: golang.org/x/sys
-  version: e11762ca30adc5b39fdbfd8c4250dabeb8e456d3
+  version: 9c60d1c508f5134d1ca726b4641db998f2523357
   subpackages:
   - unix
 - name: golang.org/x/text
   version: 6d3c22c4525a4da167968fa2479be5524d2e8bd0
 - name: golang.org/x/tools
   version: 4f50f44d7a3206e9e28b984e023efce2a4a75369
-  subpackages:
-  - go/ast/astutil
-  - imports
 - name: google.golang.org/api
   version: 0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd
-  subpackages:
-  - cloudmonitoring/v2beta2
-  - compute/v1
-  - container/v1beta1
-  - googleapi
 - name: google.golang.org/appengine
   version: 6bde959377a90acb53366051d7d587bfd7171354
 - name: google.golang.org/cloud
-  version: 2e43671e4ad874a7bca65746ff3edb38e6e93762
+  version: f20d6dcccb44ed49de45ae3703312cb46e627db1
   subpackages:
   - compute/metadata
   - internal
@@ -615,7 +602,7 @@ imports:
   subpackages:
   - api/v1/types
 - name: k8s.io/kubernetes
-  version: f7636d888c1b61158761d1e9a7b8c3f4a12305f3
+  version: 4309194eda6bfd4db0cc28f46cacabe1719979d7
 - name: launchpad.net/gocheck
   version: 4f90aeace3a26ad7021961c297b22c42160c7b25
   repo: https://github.com/go-check/check
