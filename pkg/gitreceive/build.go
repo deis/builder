@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
@@ -20,9 +21,6 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
-	"k8s.io/kubernetes/pkg/watch"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -170,26 +168,15 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	watcher, err := podsInterface.Watch(labels.Nothing(), fields.OneTermEqualSelector("name", pod.Name), newPod.ResourceVersion)
-	if err != nil {
-		return fmt.Errorf("watching events for builder pod startup")
+	timeout := time.Duration(5 * time.Minute)
+	tick := time.Duration(500 * time.Millisecond)
+	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, tick, timeout); err != nil {
+		return fmt.Errorf("watching events for builder pod startup (%s)", err)
 	}
 
-	ch := watcher.ResultChan()
-	for evt := range ch {
-		if evt.Type == watch.Added {
-			watcher.Stop()
-			break
-		} else if evt.Type == watch.Error {
-			watcher.Stop()
-			return fmt.Errorf("builder pod failed to launch with ERROR")
-		}
-	}
-
-	req := kubeClient.Get().Namespace(conf.PodNamespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
+	req := kubeClient.Get().Namespace(newPod.Namespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
 		&api.PodLogOptions{
-			Follow:   true,
-			Previous: true,
+			Follow: true,
 		}, api.Scheme)
 
 	rc, err := req.Stream()
@@ -198,10 +185,11 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 	defer rc.Close()
 
-	_, err = io.Copy(os.Stdout, rc)
+	size, err := io.Copy(os.Stdout, rc)
 	if err != nil {
 		return fmt.Errorf("fetching builder logs (%s)", err)
 	}
+	log.Debug("size of logs streamed %v", size)
 
 	// poll the s3 server to ensure the slug exists
 	// TODO: time out looking
