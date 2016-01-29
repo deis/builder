@@ -43,8 +43,6 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
-				pkglog.Info("starting fetcher on port %d", cnf.FetcherPort)
-				go fetcher.Serve(cnf.FetcherPort)
 				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				os.Exit(pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot"))
 			},
