@@ -10,7 +10,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
@@ -21,6 +20,7 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -168,9 +168,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	timeout := time.Duration(5 * time.Minute)
-	tick := time.Duration(500 * time.Millisecond)
-	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, tick, timeout); err != nil {
+	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("watching events for builder pod startup (%s)", err)
 	}
 
@@ -192,15 +190,16 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	log.Debug("size of logs streamed %v", size)
 
 	// poll the s3 server to ensure the slug exists
-	// TODO: time out looking
-	for {
+	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {
 		exists, err := storage.ObjectExists(s3Client, bucketName, slugBuilderInfo.PushKey())
 		if err != nil {
-			return fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey(), err)
+			return false, fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey(), err)
 		}
-		if exists {
-			break
-		}
+		return exists, nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Timed out waiting for object in storage. Aborting build...")
 	}
 
 	log.Info("Build complete.")
