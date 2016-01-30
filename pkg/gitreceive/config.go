@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	builderPodTick    = 100
+	objectStorageTick = 500
+)
+
 type Config struct {
 	// k8s service discovery env vars
 	WorkflowHost string `envconfig:"DEIS_WORKFLOW_SERVICE_HOST" required:"true"`
@@ -57,4 +62,22 @@ func (c Config) ObjectStorageTickDuration() time.Duration {
 // operation that involves the object storage
 func (c Config) ObjectStorageWaitDuration() time.Duration {
 	return time.Duration(time.Duration(c.ObjectStorageWaitDurationMSec) * time.Millisecond)
+}
+
+// CheckDurations checks if ticks for builder and object storage are not bigger
+// than the maximum duration. In case of this it will set the tick to the default
+func (c *Config) CheckDurations() {
+	if c.BuilderPodTickDurationMSec >= c.BuilderPodWaitDurationMSec {
+		c.BuilderPodTickDurationMSec = builderPodTick
+	}
+	if c.BuilderPodTickDurationMSec < builderPodTick {
+		c.BuilderPodTickDurationMSec = builderPodTick
+	}
+
+	if c.ObjectStorageTickDurationMSec >= c.ObjectStorageWaitDurationMSec {
+		c.ObjectStorageTickDurationMSec = objectStorageTick
+	}
+	if c.ObjectStorageTickDurationMSec < objectStorageTick {
+		c.ObjectStorageTickDurationMSec = objectStorageTick
+	}
 }

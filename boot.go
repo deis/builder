@@ -17,8 +17,6 @@ import (
 const (
 	serverConfAppName     = "deis-builder-server"
 	gitReceiveConfAppName = "deis-builder-git-receive"
-	builderPodTick        = 100
-	objectStorageTick     = 500
 )
 
 func init() {
@@ -61,14 +59,7 @@ func main() {
 					pkglog.Err("Error getting config for %s [%s]", gitReceiveConfAppName, err)
 					os.Exit(1)
 				}
-
-				// check for invalid ticks duration
-				if cnf.BuilderPodTickDurationMSec >= cnf.BuilderPodWaitDurationMSec {
-					cnf.BuilderPodTickDurationMSec = builderPodTick
-				}
-				if cnf.ObjectStorageTickDurationMSec >= cnf.ObjectStorageWaitDurationMSec {
-					cnf.ObjectStorageTickDurationMSec = objectStorageTick
-				}
+				cnf.CheckDurations()
 
 				if err := gitreceive.Run(cnf); err != nil {
 					pkglog.Err("running git receive hook [%s]", err)
