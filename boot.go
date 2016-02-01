@@ -59,6 +59,8 @@ func main() {
 					pkglog.Err("Error getting config for %s [%s]", gitReceiveConfAppName, err)
 					os.Exit(1)
 				}
+				cnf.CheckDurations()
+
 				if err := gitreceive.Run(cnf); err != nil {
 					pkglog.Err("running git receive hook [%s]", err)
 					os.Exit(1)
