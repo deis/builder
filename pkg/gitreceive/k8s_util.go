@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	slugBuilderName    = "deis-slugbuilder"
-	slugBuilderImage   = "quay.io/deisci/slugbuilder:v2-beta"
-	dockerBuilderName  = "deis-dockerbuilder"
-	dockerBuilderImage = "quay.io/deisci/dockerbuilder:v2-beta"
+	slugBuilderName   = "deis-slugbuilder"
+	slugBuilderImage  = "quay.io/deisci/slugbuilder:v2-beta"
+	dockerBuilderName = "deis-dockerbuilder"
+	// change the value back to quay.io/deisci/dockerbuilder:v2-beta
+	dockerBuilderImage = "smothiki/dockerbuilder:v1.8"
 
 	tarURLKey        = "TAR_URL"
 	putURLKey        = "put_url"
@@ -44,10 +45,8 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[stri
 	addEnvToPod(pod, "ACCESS_KEY_FILE", "/var/run/secrets/object/store/access_key")
 	addEnvToPod(pod, "ACCESS_SECRET_FILE", "/var/run/secrets/object/store/access_secret")
 
-	if !withAuth {
-		addEnvToPod(pod, tarURLKey, tarURL)
-		addEnvToPod(pod, "IMG_NAME", imageName)
-	}
+	addEnvToPod(pod, tarURLKey, tarURL)
+	addEnvToPod(pod, "IMG_NAME", imageName)
 
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
 		Name:      dockerSocketName,
