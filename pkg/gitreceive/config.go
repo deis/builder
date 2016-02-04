@@ -13,7 +13,7 @@ const (
 type Config struct {
 	// k8s service discovery env vars
 	WorkflowHost string `envconfig:"DEIS_WORKFLOW_SERVICE_HOST" required:"true"`
-	WorkflowPort string `envconfig:"DEIS_WORKFLOW_SERVICE_PORT" required:"true"`
+	WorkflowPort int    `envconfig:"DEIS_WORKFLOW_SERVICE_PORT" required:"true"`
 	RegistryHost string `envconfig:"DEIS_REGISTRY_SERVICE_HOST" required:"true"`
 	RegistryPort string `envconfig:"DEIS_REGISTRY_SERVICE_PORT" required:"true"`
 

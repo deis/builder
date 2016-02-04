@@ -16,6 +16,7 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/hooks"
 	"gopkg.in/yaml.v2"
 
 	"k8s.io/kubernetes/pkg/api"
@@ -41,7 +42,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey, rawGitSha string) error {
+func build(conf *Config, hooksClient *hooks.Client, s3Client *s3.S3, kubeClient *client.Client, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -66,7 +67,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
-	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
+	appConf, err := hooksClient.GetAppConfig(appName, conf.Username)
 	if err != nil {
 		return fmt.Errorf("getting app config for %s (%s)", appName, err)
 	}
@@ -220,7 +221,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	} else {
 		buildHook.Dockerfile = "true"
 	}
-	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
+	buildHookResp, err := hooksClient.PublishRelease(buildHook)
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)
 	}
