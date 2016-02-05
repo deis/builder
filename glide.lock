@@ -1,5 +1,5 @@
 hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2016-01-28T18:11:08.757154218Z
+updated: 2016-02-09T19:49:39.71867789Z
 imports:
 - name: bitbucket.org/bertimus9/systemstat
   version: 1468fd0db20598383c9393cccaa547de6ad99e5e
@@ -25,7 +25,7 @@ imports:
   version: ""
   repo: https://code.google.com/p/google-api-go-client
 - name: code.google.com/p/goprotobuf
-  version: 6aaa8d47701fa6cf07e914ec01fde3d4a1fe79c3
+  version: b982704f8bb716bb608144408cff30e15fbde841
   repo: https://github.com/golang/protobuf
 - name: code.google.com/p/gosqlite
   version: ""
@@ -35,12 +35,6 @@ imports:
   repo: https://code.google.com/p/log4go
 - name: github.com/abbot/go-http-auth
   version: c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35
-- name: github.com/AdRoll/goamz
-  version: aa6e716d710a0c7941cb2075cfbb9661f16d21f1
-  subpackages:
-  - aws
-  - cloudfront
-  - s3
 - name: github.com/agtorre/gocolorize
   version: f42b554bf7f006936130c9bb4f971afd2d87f671
 - name: github.com/appc/cni
@@ -61,6 +55,8 @@ imports:
   version: 4239b77079c7b5d1243b7b4736304ce8ddb6f0f2
 - name: github.com/armon/gomdb
   version: 151f2e08ef45cb0e57d694b2562f351955dff572
+- name: github.com/arschles/assert
+  version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
 - name: github.com/aws/aws-sdk-go
   version: 87b1e60a50b09e4812dee560b33a238f67305804
   subpackages:
@@ -104,7 +100,7 @@ imports:
 - name: github.com/cbroglie/mapstructure
   version: 25325b46b67d1c3eb7d58bad37d34d89a31cf9ec
 - name: github.com/cheggaaa/pb
-  version: da1f27ad1d9509b16f65f52fd9d8138b0f2dc7b2
+  version: e67c2c3b91b15e81659790a8644e0d3b4a40271d
 - name: github.com/ClusterHQ/flocker-go
   version: 3f33ece70f6571f0ec45bfae2f243ab11fab6c52
 - name: github.com/codegangsta/cli
@@ -128,11 +124,11 @@ imports:
   - schema
   - unit
 - name: github.com/coreos/gexpect
-  version: 5173270e159f5aa8fbc999dc7e3dcb50f4098a69
+  version: 0b5620b695de57d5fcea082b9a062157ac60ed73
 - name: github.com/coreos/go-etcd
-  version: c904d7032a70da6551c43929f199244f6a45f4c1
+  version: 4cceaf7283b76f27c4a732b20730dcdb61053bf5
   subpackages:
-  - /etcd
+  - etcd
 - name: github.com/coreos/go-iptables
   version: 83dfad0f13fd7310fb3c1cb8563248d8d604b95b
   subpackages:
@@ -176,7 +172,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: ef32fa3046d9f249d399f98ebaf9be944430fd1d
 - name: github.com/deis/pkg
-  version: 09ab3eb029a68c60e671e86f7864a7cc057224c4
+  version: c85c2ef5e9e5ea570df66131f8906e409408a145
   subpackages:
   - /time
 - name: github.com/denverdino/aliyungo
@@ -188,7 +184,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 5ca80149b9d3f8b863af0e2bb6742e608603bd99
 - name: github.com/docker/distribution
-  version: 69db5b74405102be10afc3445157389cd488cd4f
+  version: 3f97c258a69baf6e36448878223d42b89c765b17
 - name: github.com/docker/docker
   version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
   subpackages:
@@ -201,12 +197,18 @@ imports:
   - pkg/units
 - name: github.com/docker/go-units
   version: 8e2d4523730c73120e10d4652f36ad6010998f4e
+- name: github.com/docker/goamz
+  version: 29510ec7eba995a3750f6b38128c5318f8b71592
+  subpackages:
+  - aws
+  - cloudfront
+  - s3
 - name: github.com/docker/libcontainer
   version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
 - name: github.com/docker/libkv
   version: c2aac5dbbaa5c872211edea7c0f32b3bd67e7410
 - name: github.com/docker/libnetwork
-  version: 014fb9c23d9692fbac7e57adf806064f293115da
+  version: f9d35bcfe4e44184e394a59303cc9b56f5613911
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
 - name: github.com/docker/spdystream
@@ -241,7 +243,7 @@ imports:
 - name: github.com/go-check/check
   version: 4f90aeace3a26ad7021961c297b22c42160c7b25
 - name: github.com/go-ini/ini
-  version: afbd495e5aaea13597b5e14fe514ddeaa4d76fc3
+  version: 193d1ecb466bf97aae8b454a5cfc192941c64809
 - name: github.com/godbus/dbus
   version: 939230d2086a4f1870e04c52e0a376c25bae0ec4
 - name: github.com/gogo/protobuf
@@ -300,9 +302,9 @@ imports:
 - name: github.com/gorilla/schema
   version: 14c555599c2a4f493c1e13fd1ea6fdf721739028
 - name: github.com/gorilla/websocket
-  version: 5434f8b69b7f4f4ef0120e04c046cd6ce54ef0dd
+  version: 234959944d9cf05229b02e8b386e5cffe1e4e04a
 - name: github.com/Graylog2/go-gelf
-  version: 06974fc6689396066f6ebf5bab951d41979e3386
+  version: aab2f594e4585d43468ac57287b0dece9d806883
 - name: github.com/hashicorp/consul
   version: 954aec66231b79c161a4122b023fbcad13047f79
   subpackages:
@@ -320,9 +322,9 @@ imports:
 - name: github.com/hashicorp/go.net
   version: 104dcad90073cd8d1e6828b2af19185b60cf3e29
 - name: github.com/hashicorp/golang-lru
-  version: 5c7531c003d8bf158b0fe5063649a2f41a822146
+  version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
 - name: github.com/hashicorp/hcl
-  version: 578dd9746824a54637686b51a41bad457a56bcef
+  version: 8cc810768200e949a2a92972845244f6a818f68d
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
 - name: github.com/hashicorp/mdns
@@ -360,7 +362,7 @@ imports:
   subpackages:
   - client
 - name: github.com/jmespath/go-jmespath
-  version: c01cf91b011868172fdcd9f41838e80c9d716264
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/jmhodges/levigo
   version: 1ddad808d437abb2b8a55a950ec2616caa88969b
 - name: github.com/jonboulle/clockwork
@@ -368,7 +370,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/julienschmidt/httprouter
-  version: abb0dc9f755ff0a9d818db28d9d8b9810066e2b5
+  version: 2c34ec888a7359c0750064e0a4c8df360806c255
 - name: github.com/kardianos/osext
   version: 8fef92e41e22a70e700a96b29f066cda30ea24ef
 - name: github.com/kballard/go-shellquote
@@ -384,9 +386,10 @@ imports:
 - name: github.com/kr/text
   version: 6807e777504f54ad073ecef66747de158294b639
 - name: github.com/labstack/gommon
-  version: 413ca04f46b29aabc8e7ce369d26c0e97dd21101
+  version: 28bf9248c3e81039c18bff6a1cf2a7f0841caf35
 - name: github.com/lsegal/gucumber
   version: 44a4d7eb3b14a88cf82b073dfb7e06277afdc549
+  repo: https://github.com/lsegal/gucumber
 - name: github.com/Masterminds/cookoo
   version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
@@ -417,7 +420,7 @@ imports:
 - name: github.com/mistifyio/go-zfs
   version: 1b4ae6fb4e77b095934d4430860ff202060169f8
 - name: github.com/mitchellh/cli
-  version: cb6853d606ea4a12a15ac83cc43503df99fd28fb
+  version: 5c87c51cedf76a1737bf5ca3979e8644871598a6
 - name: github.com/mitchellh/mapstructure
   version: 740c764bc6149d3f1806231418adb9f52c11bcbf
 - name: github.com/mjibson/appstats
@@ -499,6 +502,7 @@ imports:
   version: 1b506fc7c24eec5a3693cdcbed40d9c226cfc6a1
 - name: github.com/shiena/ansicolor
   version: a422bbe96644373c5753384a59d678f7d261ff10
+  repo: https://github.com/shiena/ansicolor
 - name: github.com/shurcooL/sanitized_anchor_name
   version: 9a8b7d4e8f347bfa230879db9d7d4e4d9e19f962
 - name: github.com/Sirupsen/logrus
@@ -512,7 +516,7 @@ imports:
 - name: github.com/spf13/pflag
   version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
 - name: github.com/stathat/go
-  version: 01d012b9ee2ecc107cb28b6dd32d9019ed5c1d77
+  version: cf69b0bcb80478755dc0ea1120b36000e35dcbbb
 - name: github.com/steveeJ/gexpect
   version: 0b5620b695de57d5fcea082b9a062157ac60ed73
   repo: https://github.com/coreos/gexpect
@@ -534,6 +538,8 @@ imports:
   version: a3cdd910a3ffef88a20fbecc10363a520ad61a0a
 - name: github.com/ugorji/go
   version: 5abd4e96a45c386928ed2ca2a7ef63e2533e18ec
+  subpackages:
+  - codec
 - name: github.com/vaughan0/go-ini
   version: a98ad7ee00ec53921f08832bc06ecf7fd600e6a1
 - name: github.com/vishvananda/netlink
@@ -559,7 +565,7 @@ imports:
   subpackages:
   - inotify
 - name: golang.org/x/net
-  version: 7dbad50ab5b31073856416cdcfeb2796d682f844
+  version: c2528b2dd8352441850638a8bb678c2ad056fd3e
   subpackages:
   - context
 - name: golang.org/x/oauth2
@@ -569,13 +575,13 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 6d3c22c4525a4da167968fa2479be5524d2e8bd0
+  version: 2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79
 - name: golang.org/x/tools
   version: 4f50f44d7a3206e9e28b984e023efce2a4a75369
 - name: google.golang.org/api
   version: 0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd
 - name: google.golang.org/appengine
-  version: 6bde959377a90acb53366051d7d587bfd7171354
+  version: 6a436539be38c296a8075a871cc536686b458371
 - name: google.golang.org/cloud
   version: f20d6dcccb44ed49de45ae3703312cb46e627db1
   subpackages:

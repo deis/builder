@@ -1,13 +1,8 @@
 package pkg
 
 import (
-	"time"
-
 	"github.com/Masterminds/cookoo"
-	"github.com/Masterminds/cookoo/fmt"
-	"github.com/deis/builder/pkg/confd"
 	"github.com/deis/builder/pkg/env"
-	"github.com/deis/builder/pkg/etcd"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/sshd"
 )
@@ -19,80 +14,16 @@ import (
 func routes(reg *cookoo.Registry) {
 
 	// The "boot" route starts up the builder as a daemon process. Along the
-	// way, it starts and configures multiple services, including etcd, confd,
-	// and sshd.
+	// way, it starts and configures multiple services, including sshd.
 	reg.AddRoute(cookoo.Route{
 		Name: "boot",
 		Help: "Boot the builder",
 		Does: []cookoo.Task{
 
-			// ENV: Make sure the environment is correct.
-			cookoo.Cmd{
-				Name: "vars",
-				Fn:   env.Get,
-				Using: []cookoo.Param{
-					{Name: "HOST", DefaultValue: "127.0.0.1"},
-					{Name: "DEIS_ETCD_1_SERVICE_HOST", DefaultValue: "127.0.0.1"},
-					{Name: "DEIS_ETCD_1_SERVICE_PORT_CLIENT", DefaultValue: "4001"},
-					{Name: "ETCD_PATH", DefaultValue: "/deis/builder"},
-					{Name: "ETCD_TTL", DefaultValue: "20"},
-				},
-			},
-			cookoo.Cmd{ // This depends on others being processed first.
-				Name: "vars2",
-				Fn:   env.Get,
-				Using: []cookoo.Param{
-					{Name: "ETCD", DefaultValue: "$DEIS_ETCD_1_SERVICE_HOST:$DEIS_ETCD_1_SERVICE_PORT_CLIENT"},
-				},
-			},
-
-			// ETCD: Make sure Etcd is running, and do the initial population.
-			cookoo.Cmd{
-				Name:  "client",
-				Fn:    etcd.CreateClient,
-				Using: []cookoo.Param{{Name: "url", DefaultValue: "http://127.0.0.1:4001", From: "cxt:ETCD"}},
-			},
-			cookoo.Cmd{
-				Name: "etcdup",
-				Fn:   etcd.IsRunning,
-				Using: []cookoo.Param{
-					{Name: "client", From: "cxt:client"},
-					{Name: "count", DefaultValue: 20},
-				},
-			},
-			cookoo.Cmd{
-				Name: "-",
-				Fn:   Sleep,
-				Using: []cookoo.Param{
-					{Name: "duration", DefaultValue: 21 * time.Second},
-					{Name: "message", DefaultValue: "Sleeping while etcd expires keys."},
-				},
-			},
-			cookoo.Cmd{
-				Name: "newdir",
-				Fn:   fmt.Sprintf,
-				Using: []cookoo.Param{
-					{Name: "format", DefaultValue: "%s/users"},
-					{Name: "0", From: "cxt:ETCD_PATH"},
-				},
-			},
-			cookoo.Cmd{
-				Name: "mkdir",
-				Fn:   etcd.MakeDir,
-				Using: []cookoo.Param{
-					{Name: "path", From: "cxt:newdir"},
-					{Name: "client", From: "cxt:client"},
-				},
-			},
-
 			// SSHD: Create and configure host keys.
 			cookoo.Cmd{
 				Name: "installSshHostKeys",
-				Fn:   etcd.StoreHostKeys,
-				Using: []cookoo.Param{
-					{Name: "client", From: "cxt:client"},
-					{Name: "basepath", From: "cxt:ETCD_PATH"},
-				},
+				Fn:   sshd.GenSSHKeys,
 			},
 			cookoo.Cmd{
 				Name: sshd.HostKeys,
@@ -103,44 +34,12 @@ func routes(reg *cookoo.Registry) {
 				Fn:   sshd.Configure,
 			},
 
-			// CONFD: Build out the templates, then start the Confd server.
-			cookoo.Cmd{
-				Name:  "once",
-				Fn:    confd.RunOnce,
-				Using: []cookoo.Param{{Name: "node", From: "cxt:ETCD"}},
-			},
-			cookoo.Cmd{
-				Name:  "confd",
-				Fn:    confd.Run,
-				Using: []cookoo.Param{{Name: "node", From: "cxt:ETCD"}},
-			},
-
-			// ETDCD: Now watch for events on etcd, and trigger a git check-repos for
-			// each. For the most part, this runs in the background.
-			cookoo.Cmd{
-				Name: "Cleanup",
-				Fn:   etcd.Watch,
-				Using: []cookoo.Param{
-					{Name: "client", From: "cxt:client"},
-				},
-			},
 			// If there's an EXTERNAL_PORT, we publish info to etcd.
 			cookoo.Cmd{
 				Name: "externalport",
 				Fn:   env.Get,
 				Using: []cookoo.Param{
 					{Name: "EXTERNAL_PORT", DefaultValue: ""},
-				},
-			},
-			cookoo.Cmd{
-				Name: "etcdupdate",
-				Fn:   etcd.UpdateHostPort,
-				Using: []cookoo.Param{
-					{Name: "base", From: "cxt:ETCD_PATH"},
-					{Name: "host", From: "cxt:DEIS_ETCD_1_SERVICE_HOST"},
-					{Name: "port", From: "cxt:EXTERNAL_PORT"},
-					{Name: "client", From: "cxt:client"},
-					{Name: "sshdPid", From: "cxt:sshd"},
 				},
 			},
 
@@ -150,39 +49,6 @@ func routes(reg *cookoo.Registry) {
 				Fn:   KillOnExit,
 				Using: []cookoo.Param{
 					{Name: "sshd", From: "cxt:sshdstart"},
-				},
-			},
-		},
-	})
-
-	// This route is called during a user authentication for SSH.
-	// The rough pattern is that we parse the local authorized keys file, and
-	// then validate that the supplied user key matches an authorized key.
-	//
-	// This grants access to running git-receive, but does not grant access
-	// to writing to the repo. That's handled by the sshReceive.
-	reg.AddRoute(cookoo.Route{
-		Name: "pubkeyAuth",
-		Does: []cookoo.Task{
-			// Parse the authorized keys file.
-			// We do this every time because confd is constantly regenerating
-			// the auth keys file.
-			cookoo.Cmd{
-				Name: "authorizedKeys",
-				Fn:   sshd.ParseAuthorizedKeys,
-				Using: []cookoo.Param{
-					{Name: "path", DefaultValue: "/home/git/.ssh/authorized_keys"},
-				},
-			},
-
-			// Auth against the keys
-			cookoo.Cmd{
-				Name: "authN",
-				Fn:   sshd.AuthKey,
-				Using: []cookoo.Param{
-					{Name: "metadata", From: "cxt:metadata"},
-					{Name: "key", From: "cxt:key"},
-					{Name: "authorizedKeys", From: "cxt:authorizedKeys"},
 				},
 			},
 		},
@@ -205,6 +71,22 @@ func routes(reg *cookoo.Registry) {
 		},
 	})
 
+	reg.AddRoute(cookoo.Route{
+		Name: "pubkeyAuth",
+		Does: []cookoo.Task{
+			// Auth against the keys
+			cookoo.Cmd{
+				Name: "authN",
+				Fn:   sshd.AuthKey,
+				Using: []cookoo.Param{
+					{Name: "metadata", From: "cxt:metadata"},
+					{Name: "key", From: "cxt:key"},
+					{Name: "repoName", From: "cxt:repository"},
+				},
+			},
+		},
+	})
+
 	// This proxies a client session into a git receive.
 	//
 	// Called by the sshd.Server
@@ -212,25 +94,6 @@ func routes(reg *cookoo.Registry) {
 		Name: "sshGitReceive",
 		Help: "Handle a git receive over an SSH connection.",
 		Does: []cookoo.Task{
-			// The Git receive handler needs the username. So we provide
-			// it by looking up the name based on the key. When the
-			// controller no longer requires username for SSH auth, we can
-			// ditch this.
-			cookoo.Cmd{
-				Name: "fingerprint",
-				Fn:   sshd.FingerprintKey,
-				Using: []cookoo.Param{
-					{Name: "key", From: "cxt:key"},
-				},
-			},
-			cookoo.Cmd{
-				Name: "username",
-				Fn:   etcd.FindSSHUser,
-				Using: []cookoo.Param{
-					{Name: "client", From: "cxt:client"},
-					{Name: "fingerprint", From: "cxt:fingerprint"},
-				},
-			},
 			cookoo.Cmd{
 				Name: "receive",
 				Fn:   git.Receive,
@@ -239,9 +102,8 @@ func routes(reg *cookoo.Registry) {
 					{Name: "channel", From: "cxt:channel"},
 					{Name: "operation", From: "cxt:operation"},
 					{Name: "repoName", From: "cxt:repository"},
-					{Name: "fingerprint", From: "cxt:fingerprint"},
 					{Name: "permissions", From: "cxt:authN"},
-					{Name: "user", From: "cxt:username"},
+					{Name: "userinfo", From: "cxt:userinfo"},
 				},
 			},
 		},

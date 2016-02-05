@@ -6,10 +6,6 @@ ignore:
 - appengine/user
 import:
 - package: github.com/kelseyhightower/envconfig
-- package: github.com/coreos/go-etcd
-  version: c904d7032a70da6551c43929f199244f6a45f4c1
-  subpackages:
-  - /etcd
 - package: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - package: github.com/Masterminds/cookoo

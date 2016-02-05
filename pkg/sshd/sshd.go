@@ -1,54 +1,21 @@
 package sshd
 
 import (
-	"bufio"
-	"crypto/md5"
-	"crypto/subtle"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"strings"
+	"os/exec"
 
 	"golang.org/x/crypto/ssh"
+
+	"github.com/deis/builder/pkg/controller"
 
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 )
 
-// ParseAuthorizedKeys reads and process an authorized_keys file.
-//
-// The file is merely parsed into lines, which are then returned in an array.
-//
-// Params:
-// 	- path (string): The path to the authorized_keys file.
-//
-// Returns:
-//  []string of keys.
-//
-func ParseAuthorizedKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	path := p.Get("path", "~/.ssh/authorized_keys").(string)
-
-	file, err := os.Open(path)
-	if err != nil {
-		return []string{}, err
-	}
-	defer file.Close()
-
-	reader := bufio.NewScanner(file)
-	buf := []string{}
-
-	for reader.Scan() {
-		data := reader.Text()
-		if len(data) > 0 {
-			log.Infof(c, "Adding key '%s'", data)
-			buf = append(buf, strings.TrimSpace(data))
-		}
-	}
-
-	return buf, nil
-
-}
+const (
+	builderKeyLocation = "/var/run/secrets/api/auth/builder-key"
+)
 
 // ParseHostKeys parses the host key files.
 //
@@ -62,6 +29,7 @@ func ParseAuthorizedKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cooko
 // Returns:
 // 	[]ssh.Signer
 func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
+	log.Debugf(c, "Parsing ssh host keys")
 	hostKeyTypes := p.Get("keytypes", []string{"rsa", "dsa", "ecdsa"}).([]string)
 	pathTpl := p.Get("path", "/etc/ssh/ssh_host_%s_key").(string)
 	hostKeys := make([]ssh.Signer, 0, len(hostKeyTypes))
@@ -96,58 +64,31 @@ func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Inte
 // Params:
 // 	- metadata (ssh.ConnMetadata)
 // 	- key (ssh.PublicKey)
-// 	- authorizedKeys ([]string): List of lines from an authorized keys file.
 //
 // Returns:
 // 	*ssh.Permissions
 //
 func AuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	meta := p.Get("metadata", nil).(ssh.ConnMetadata)
+	log.Debugf(c, "Starting ssh authentication")
 	key := p.Get("key", nil).(ssh.PublicKey)
-	authorized := p.Get("authorizedKeys", []string{}).([]string)
 
-	auth := new(ssh.CertChecker)
-	auth.UserKeyFallback = func(meta ssh.ConnMetadata, pk ssh.PublicKey) (*ssh.Permissions, error) {
-
-		// This gives us a string in the form "ssh-rsa LONG_KEY"
-		suppliedType := key.Type()
-		supplied := key.Marshal()
-
-		for _, allowedKey := range authorized {
-			allowed, _, _, _, err := ssh.ParseAuthorizedKey([]byte(allowedKey))
-			if err != nil {
-				log.Infof(c, "Could not parse authorized key '%q': %s", allowedKey, err)
-				continue
-			}
-
-			// We use a contstant time compare more as a precaution than anything
-			// else. A timing attack here would be very difficult, but... better
-			// safe than sorry.
-			if allowed.Type() == suppliedType && subtle.ConstantTimeCompare(allowed.Marshal(), supplied) == 1 {
-				log.Infof(c, "Key accepted for user %s.", meta.User())
-				perm := &ssh.Permissions{
-					Extensions: map[string]string{
-						"user": meta.User(),
-					},
-				}
-				return perm, nil
-			}
-		}
-
-		return nil, fmt.Errorf("No matching keys found.")
+	strKey := string(ssh.MarshalAuthorizedKey(key))
+	log.Debugf(c, "Checking auth for user key %v", strKey)
+	userInfo, err := controller.UserInfoFromKey(strKey)
+	if err != nil {
+		return nil, err
 	}
 
-	return auth.Authenticate(meta, key)
-}
+	userInfo.Key = strKey
+	c.Put("userinfo", userInfo)
 
-// compareKeys compares to key files and returns true of they match.
-func compareKeys(a, b ssh.PublicKey) bool {
-	if a.Type() != b.Type() {
-		return false
+	log.Infof(c, "Key accepted for user %s.", userInfo.Username)
+	perm := &ssh.Permissions{
+		Extensions: map[string]string{
+			"user": userInfo.Username,
+		},
 	}
-	// The best way to compare just the key seems to be to marshal both and
-	// then compare the output byte sequence.
-	return subtle.ConstantTimeCompare(a.Marshal(), b.Marshal()) == 1
+	return perm, nil
 }
 
 // Configure creates a new SSH configuration object.
@@ -178,35 +119,14 @@ func Configure(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrup
 	return cfg, nil
 }
 
-// FingerprintKey fingerprints a key and returns the colon-formatted version
-//
-// Params:
-// 	- key (ssh.PublicKey): The key to fingerprint.
-//
-// Returns:
-// 	- A string representation of the key fingerprint.
-func FingerprintKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	key := p.Get("key", nil).(ssh.PublicKey)
-	return Fingerprint(key), nil
-}
-
-// Fingerprint generates a colon-separated fingerprint string from a public key.
-func Fingerprint(key ssh.PublicKey) string {
-	hash := md5.Sum(key.Marshal())
-	buf := make([]byte, hex.EncodedLen(len(hash)))
-	hex.Encode(buf, hash[:])
-	// We need this in colon notation:
-	fp := make([]byte, len(buf)+15)
-
-	i, j := 0, 0
-	for ; i < len(buf); i++ {
-		if i > 0 && i%2 == 0 {
-			fp[j] = ':'
-			j++
-		}
-		fp[j] = buf[i]
-		j++
+// GenSSHKeys generates the default set of SSH host keys.
+func GenSSHKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
+	log.Debugf(c, "Generating ssh keys for sshd")
+	// Generate a new key
+	out, err := exec.Command("ssh-keygen", "-A").CombinedOutput()
+	if err != nil {
+		log.Infof(c, "ssh-keygen: %s", out)
+		return nil, err
 	}
-
-	return string(fp)
+	return nil, nil
 }
