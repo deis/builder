@@ -12,11 +12,10 @@ import (
 )
 
 const (
-	slugBuilderName   = "deis-slugbuilder"
-	slugBuilderImage  = "quay.io/deisci/slugbuilder:v2-beta"
-	dockerBuilderName = "deis-dockerbuilder"
-	// change the value back to quay.io/deisci/dockerbuilder:v2-beta
-	dockerBuilderImage = "smothiki/dockerbuilder:v1.8"
+	slugBuilderName    = "deis-slugbuilder"
+	slugBuilderImage   = "quay.io/deisci/slugbuilder:v2-beta"
+	dockerBuilderName  = "deis-dockerbuilder"
+	dockerBuilderImage = "quay.io/deisci/dockerbuilder:v2-beta"
 
 	tarURLKey        = "TAR_URL"
 	putURLKey        = "put_url"
