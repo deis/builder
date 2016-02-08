@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/hooks"
 
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -44,6 +46,8 @@ func Run(conf *Config) error {
 		return fmt.Errorf("couldn't reach the api server (%s)", err)
 	}
 
+	hooksClient := hooks.NewClient(http.DefaultClient, conf.WorkflowHost, conf.WorkflowPort, builderKey)
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -55,12 +59,20 @@ func Run(conf *Config) error {
 
 		log.Debug("read [%s,%s,%s]", oldRev, newRev, refName)
 
-		if err := receive(conf, builderKey, newRev); err != nil {
+		receiveInfo := &hooks.ReceiveInfo{
+			ReceiveUser:        conf.Username,
+			ReceiveRepo:        conf.Repository,
+			SHA:                newRev,
+			Fingerprint:        conf.Fingerprint,
+			SSHConnection:      conf.SSHConnection,
+			SSHOriginalCommand: conf.SSHOriginalCommand,
+		}
+		if err := hooksClient.Receive(receiveInfo); err != nil {
 			return err
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, s3Client, kubeClient, builderKey, newRev); err != nil {
+			if err := build(conf, hooksClient, s3Client, kubeClient, builderKey, newRev); err != nil {
 				return err
 			}
 		}
