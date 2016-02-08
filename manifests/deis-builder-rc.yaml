@@ -23,7 +23,11 @@ spec:
               name: ssh
             - containerPort: 3000
               name: fetcher
+            - containerPort: 8092
+              name: healthServer
           env:
+            - name: "HEALTH_SERVER_PORT"
+              value: "8092"
             - name: "EXTERNAL_PORT"
               value: "2223"
             # This var needs to be passed so that the minio client (https://github.com/minio/mc) will work in Alpine linux
