@@ -27,7 +27,7 @@ type healthZResp struct {
 
 func healthZHandler(s3Client *s3.S3) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lbOut, err := s3Client.ListBuckets(s3.ListBucketsInput{})
+		lbOut, err := s3Client.ListBuckets(&s3.ListBucketsInput{})
 		if err != nil {
 			str := fmt.Sprintf("Error listing buckets (%s)", err)
 			log.Printf(str)
