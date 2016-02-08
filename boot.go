@@ -10,6 +10,7 @@ import (
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
 	pkglog "github.com/deis/pkg/log"
 )
@@ -43,15 +44,33 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
-				s3Client, err := storage.GetClient
+				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
 				if err != nil {
 					pkglog.Err("getting s3 client [%s]", err)
 					os.Exit(1)
 				}
 				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
-				go healthsrv.Start(cnf.HealtHSrvPort, s3Client)
+				healthSrvCh := make(chan error)
+				go func() {
+					if err := healthsrv.Start(cnf.HealthSrvPort, s3Client); err != nil {
+						healthSrvCh <- err
+					}
+				}()
+
 				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
-				os.Exit(pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot"))
+				sshCh := make(chan int)
+				go func() {
+					sshCh <- pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot")
+				}()
+
+				select {
+				case err := <-healthSrvCh:
+					pkglog.Err("Error running health server (%s)", err)
+					os.Exit(1)
+				case i := <-sshCh:
+					pkglog.Err("Unexpected SSH server stop with code %d", i)
+					os.Exit(i)
+				}
 			},
 		},
 		{
