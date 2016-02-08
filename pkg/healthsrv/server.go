@@ -17,6 +17,6 @@ func Start(port int, s3Client *s3.S3) error {
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", healthZHandler(s3Client))
 
-	hostStr := fmt.Sprintf("%d", port)
+	hostStr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(hostStr, mux)
 }
