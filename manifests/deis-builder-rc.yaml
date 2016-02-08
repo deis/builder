@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ReplicationController
 metadata:
   name: deis-builder
+  namespace: deis
   labels:
     heritage: deis
 spec:
@@ -15,21 +16,22 @@ spec:
     spec:
       containers:
         - name: deis-builder
-          imagePullPolicy: Always
           image: quay.io/deisci/builder:v2-beta
+          imagePullPolicy: Always
           ports:
             - containerPort: 2223
+              name: ssh
             - containerPort: 3000
+              name: fetcher
           env:
-            - name: BUILDER_FETCHER_PORT
-              value: "3000"
-            - name: BUILDER_SSH_HOST_IP
-              value: "0.0.0.0"
-            - name: BUILDER_SSH_HOST_PORT
-              value: "2223"
             - name: "EXTERNAL_PORT"
               value: "2223"
-            - name: POD_NAMESPACE
+            # This var needs to be passed so that the minio client (https://github.com/minio/mc) will work in Alpine linux
+            - name: "DOCKERIMAGE"
+              value: "1"
+            - name: "DEBUG"
+              value: "true"
+            - name: "POD_NAMESPACE"
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
@@ -40,10 +42,6 @@ spec:
             - name: builder-key-auth
               mountPath: /var/run/secrets/api/auth
               readOnly: true
-            # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
-            # - name: minio-ssl
-            #   mountPath: /var/run/secrets/object/ssl
-            #   readOnly: true
       volumes:
         - name: minio-user
           secret:
@@ -51,7 +49,3 @@ spec:
         - name: builder-key-auth
           secret:
             secretName: builder-key-auth
-        # not currently running minio with SSL support. see https://github.com/deis/minio/pull/22 for more detail
-        # - name: minio-ssl
-        #   secret:
-        #     secretName: minio-ssl
