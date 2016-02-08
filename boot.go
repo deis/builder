@@ -9,6 +9,7 @@ import (
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
+	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/builder/pkg/sshd"
 	pkglog "github.com/deis/pkg/log"
 )
@@ -42,6 +43,13 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
+				s3Client, err := storage.GetClient
+				if err != nil {
+					pkglog.Err("getting s3 client [%s]", err)
+					os.Exit(1)
+				}
+				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
+				go healthsrv.Start(cnf.HealtHSrvPort, s3Client)
 				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				os.Exit(pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot"))
 			},
