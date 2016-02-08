@@ -24,7 +24,7 @@ spec:
             - containerPort: 3000
               name: fetcher
             - containerPort: 8092
-              name: healthServer
+              name: healthsrv
           env:
             - name: "HEALTH_SERVER_PORT"
               value: "8092"
