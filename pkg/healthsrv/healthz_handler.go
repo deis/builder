@@ -7,6 +7,7 @@ import (
 	"time"
 
 	s3 "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/deis/builder/pkg/gitreceive/log"
 )
 
 type healthZRespBucket struct {
@@ -30,7 +31,7 @@ func healthZHandler(s3Client *s3.S3) http.Handler {
 		lbOut, err := s3Client.ListBuckets(&s3.ListBucketsInput{})
 		if err != nil {
 			str := fmt.Sprintf("Error listing buckets (%s)", err)
-			log.Printf(str)
+			log.Info(str)
 			http.Error(w, str, http.StatusInternalServerError)
 			return
 		}
