@@ -2,6 +2,7 @@ package healthsrv
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -65,5 +66,19 @@ func TestHealthZNamespaceListErr(t *testing.T) {
 }
 
 func TestHealthZSuccess(t *testing.T) {
-	t.Skip("TODO")
+	nsLister := emptyNamespaceLister{}
+	bLister := emptyBucketLister{}
+	c := sshd.NewCircuit()
+	c.Close()
+
+	h := healthZHandler(nsLister, bLister, c)
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/healthz", bytes.NewBuffer(nil))
+	assert.NoErr(t, err)
+	h.ServeHTTP(w, r)
+	assert.Equal(t, w.Code, http.StatusOK, "response code")
+	expectedResp := healthZResp{Namespaces: nil, S3Buckets: nil, SSHServerStarted: true}
+	var expectedRespBytes bytes.Buffer
+	assert.NoErr(t, json.NewEncoder(&expectedRespBytes).Encode(expectedResp))
+	assert.Equal(t, string(w.Body.Bytes()), string(expectedRespBytes.Bytes()), "response body")
 }
