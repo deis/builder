@@ -33,8 +33,7 @@ type healthZResp struct {
 
 func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// there's a race between the boolean eval and the HTTP error returned, but k8s will repeat the health probe request
-		// and effectively re-evaluate the boolean.
+		// There's a race between the boolean eval and the HTTP error returned (the server could start up between the two), but k8s will repeat the health probe request and effectively re-evaluate the boolean. The result is that the server may not start until the next probe in those cases
 		if serverCircuit.State() != sshd.ClosedState {
 			str := fmt.Sprintf("SSH Server is not yet started")
 			log.Err(str)
