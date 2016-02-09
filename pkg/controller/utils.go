@@ -1,7 +1,8 @@
 package controller
 
 import (
-	"encoding/base64"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg/conf"
+	"golang.org/x/crypto/ssh"
 )
 
 const (
@@ -39,9 +41,30 @@ func controllerURLStr(additionalPath ...string) (string, error) {
 	return fmt.Sprintf("http://%s:%s/%s", host, port, strings.Join(additionalPath, "/")), nil
 }
 
-func UserInfoFromKey(key string) (*UserInfo, error) {
-	keyB64 := base64.RawURLEncoding.EncodeToString([]byte(key))
-	url, err := controllerURLStr("v2", "hooks", "key", keyB64)
+// fingerprint generates a colon-separated fingerprint string from a public key.
+func fingerprint(key ssh.PublicKey) string {
+	hash := md5.Sum(key.Marshal())
+	buf := make([]byte, hex.EncodedLen(len(hash)))
+	hex.Encode(buf, hash[:])
+	// We need this in colon notation:
+	fp := make([]byte, len(buf)+15)
+
+	i, j := 0, 0
+	for ; i < len(buf); i++ {
+		if i > 0 && i%2 == 0 {
+			fp[j] = ':'
+			j++
+		}
+		fp[j] = buf[i]
+		j++
+	}
+	return string(fp)
+}
+
+// UserInfoFromKey makes a request to the controller to get the user info from they given key
+func UserInfoFromKey(key ssh.PublicKey) (*UserInfo, error) {
+	fp := fingerprint(key)
+	url, err := controllerURLStr("v2", "hooks", "key", fp)
 	if err != nil {
 		return nil, err
 	}
@@ -75,5 +98,6 @@ func UserInfoFromKey(key string) (*UserInfo, error) {
 	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
 		return nil, err
 	}
+	ret.FingerPrint = fp
 	return ret, nil
 }
