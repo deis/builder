@@ -11,3 +11,9 @@ type NamespaceLister interface {
 	// List lists all namespaces that are selected by the given label and field selectors
 	List(labels.Selector, fields.Selector) (*api.NamespaceList, error)
 }
+
+type emptyNamespaceLister struct{}
+
+func (n noNamespacesLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
+	return &api.NamespaceList{}, nil
+}
