@@ -12,11 +12,8 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
-<<<<<<< 032d8fd56928af3492a8449e226d36d5324b8d2c
 	pkglog "github.com/deis/pkg/log"
-=======
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
->>>>>>> fix(boot.go,pkg/healthsrv): add kubernetes API checks in the healthz endpoint
 )
 
 const (
@@ -48,9 +45,6 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
-
-				serverCircuit := sshd.NewCircuit()
-
 				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
 				if err != nil {
 					pkglog.Err("getting s3 client [%s]", err)
@@ -64,7 +58,7 @@ func main() {
 				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
-					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client, serverCircuit); err != nil {
+					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client); err != nil {
 						healthSrvCh <- err
 					}
 				}()
@@ -72,7 +66,7 @@ func main() {
 				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, serverCircuit)
+					sshCh <- pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot")
 				}()
 
 				select {
