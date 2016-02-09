@@ -29,9 +29,9 @@ type healthZResp struct {
 	S3Buckets  []healthZRespBucket `json:"s3_buckets"`
 }
 
-func healthZHandler(nsLister NamespaceLister, s3Client *s3.S3) http.Handler {
+func healthZHandler(nsLister NamespaceLister, bLister BucketLister) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lbOut, err := s3Client.ListBuckets(&s3.ListBucketsInput{})
+		lbOut, err := bLister.ListBuckets(&s3.ListBucketsInput{})
 		if err != nil {
 			str := fmt.Sprintf("Error listing buckets (%s)", err)
 			log.Err(str)

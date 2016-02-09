@@ -3,8 +3,6 @@ package healthsrv
 import (
 	"fmt"
 	"net/http"
-
-	s3 "github.com/aws/aws-sdk-go/service/s3"
 )
 
 const (
@@ -13,9 +11,9 @@ const (
 )
 
 // Start starts the healthcheck server on $host:$port and blocks. It only returns if the server fails, with the indicative error
-func Start(port int, nsLister NamespaceLister, s3Client *s3.S3) error {
+func Start(port int, nsLister NamespaceLister, bLister BucketLister) error {
 	mux := http.NewServeMux()
-	mux.Handle("/healthz", healthZHandler(nsLister, s3Client))
+	mux.Handle("/healthz", healthZHandler(nsLister, bLister))
 
 	hostStr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(hostStr, mux)
