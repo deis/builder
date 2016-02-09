@@ -13,9 +13,9 @@ const (
 )
 
 // Start starts the healthcheck server on $host:$port and blocks. It only returns if the server fails, with the indicative error
-func Start(port int, s3Client *s3.S3) error {
+func Start(port int, nsLister NamespaceLister, s3Client *s3.S3) error {
 	mux := http.NewServeMux()
-	mux.Handle("/healthz", healthZHandler(s3Client))
+	mux.Handle("/healthz", healthZHandler(nsLister, s3Client))
 
 	hostStr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(hostStr, mux)

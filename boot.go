@@ -12,7 +12,11 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
+<<<<<<< 032d8fd56928af3492a8449e226d36d5324b8d2c
 	pkglog "github.com/deis/pkg/log"
+=======
+	kcl "k8s.io/kubernetes/pkg/client/unversioned"
+>>>>>>> fix(boot.go,pkg/healthsrv): add kubernetes API checks in the healthz endpoint
 )
 
 const (
@@ -49,10 +53,15 @@ func main() {
 					pkglog.Err("getting s3 client [%s]", err)
 					os.Exit(1)
 				}
+				kubeClient, err := kcl.NewInCluster()
+				if err != nil {
+					pkglog.Err("getting kubernetes client [%s]", err)
+					os.Exit(1)
+				}
 				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
-					if err := healthsrv.Start(cnf.HealthSrvPort, s3Client); err != nil {
+					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client); err != nil {
 						healthSrvCh <- err
 					}
 				}()
