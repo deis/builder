@@ -14,6 +14,14 @@ type NamespaceLister interface {
 
 type emptyNamespaceLister struct{}
 
-func (n noNamespacesLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
+func (n emptyNamespaceLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
 	return &api.NamespaceList{}, nil
+}
+
+type errNamespaceLister struct {
+	err error
+}
+
+func (e errNamespaceLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
+	return nil, e.err
 }

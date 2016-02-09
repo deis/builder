@@ -16,3 +16,11 @@ func (e emptyBucketLister) ListBuckets(*s3.ListBucketsInput) (*s3.ListBucketsOut
 	var buckets []*s3.Bucket
 	return &s3.ListBucketsOutput{Buckets: buckets}, nil
 }
+
+type errBucketLister struct {
+	err error
+}
+
+func (e errBucketLister) ListBuckets(*s3.ListBucketsInput) (*s3.ListBucketsOutput, error) {
+	return nil, e.err
+}

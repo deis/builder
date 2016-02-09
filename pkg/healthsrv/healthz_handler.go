@@ -38,14 +38,14 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 		if serverCircuit.State() != sshd.ClosedState {
 			str := fmt.Sprintf("SSH Server is not yet started")
 			log.Err(str)
-			http.Error(w, str, http.StatusAccepted)
+			http.Error(w, str, http.StatusServiceUnavailable)
 			return
 		}
 		lbOut, err := bLister.ListBuckets(&s3.ListBucketsInput{})
 		if err != nil {
 			str := fmt.Sprintf("Error listing buckets (%s)", err)
 			log.Err(str)
-			http.Error(w, str, http.StatusInternalServerError)
+			http.Error(w, str, http.StatusServiceUnavailable)
 			return
 		}
 		var rsp healthZResp
@@ -55,9 +55,9 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
-			str := fmt.Sprintf("Error listing buckets (%s)", err)
+			str := fmt.Sprintf("Error listing namespaces (%s)", err)
 			log.Err(str)
-			http.Error(w, str, http.StatusInternalServerError)
+			http.Error(w, str, http.StatusServiceUnavailable)
 			return
 		}
 		for _, ns := range nsList.Items {
