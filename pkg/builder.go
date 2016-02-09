@@ -5,13 +5,12 @@ package pkg
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/Masterminds/cookoo"
 	clog "github.com/Masterminds/cookoo/log"
 	"github.com/deis/builder/pkg/sshd"
-
-	"log"
-	"os"
 )
 
 // Return codes that will be sent to the shell.
@@ -28,7 +27,7 @@ const (
 // Git.
 //
 // Run returns on of the Status* status code constants.
-func Run(sshHostIP string, sshHostPort int, cmd string) int {
+func RunBuilder(sshHostIP string, sshHostPort int, sshServerCircuit *sshd.Circuit) int {
 	reg, router, ocxt := cookoo.Cookoo()
 	log.SetFlags(0) // Time is captured elsewhere.
 
@@ -59,7 +58,7 @@ func Run(sshHostIP string, sshHostPort int, cmd string) int {
 	// Start the SSH service.
 	// TODO: We could refactor Serve to be a command, and then run this as
 	// a route.
-	if err := sshd.Serve(reg, router, cxt); err != nil {
+	if err := sshd.Serve(reg, router, sshServerCircuit, cxt); err != nil {
 		clog.Errf(cxt, "SSH server failed: %s", err)
 		return StatusLocalError
 	}
