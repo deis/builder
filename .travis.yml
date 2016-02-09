@@ -17,3 +17,10 @@ deploy:
   script: _scripts/deploy.sh
   on:
     branch: master
+notifications:
+  webhooks:
+    urls:
+      - secure: "PGlwVe7DkcjRmCVCI/ysRb04EQei4+KcDmkFwFHGdndvpqP9hwENeLyjFe+nx8qYMn7dJ8B3P+gTpx9mvK4pk7itc7+x7aCDAb1Vpiu1hjs3LCFnoVc49rR/c9YNFyxYqdpOvq8jBMyP3YGA0SthdDeSsQw0nxUdHsPYdbzdpJGpFJ37y7yAYn2o75r6CA6xWKTYSeSd8/fVXUC3h+dMSL48PtqPAUniHp2PcAxLQgevrrAo7pOg3zr9zKGk/FbbGb4cDzDQ+fPSiqhjMfcDsmymQH3hfk/2z99uQLiDZwAiUQOpYx9Mlb4KLOyyq8CfpFgl0tGldITr0RF+j5IslTs49XStDECWvdbmgoCK+mTTj+EtBpH2XvFKKGHfob+O7cDghfqq0zJvGXst4r7eMlAulj7nEB31wIPQ2JuLXjWNz+e/TDbT0j1IC3xesHFz0aDnpgztzr0cubNTNNbti5/yZllS3DFIykzHyWY8IHbtKE8MZuBPS19IwMdnudUvbRCizDYqoT4xhS/BGKNN1x0GTYoqsxbS8Aw8PD34lI7sysJ6ba3vUSKuJ7BJlybq/o/K6MKP2Ke2WMwwMjWzSuBbdkENvkxyAhtdCftXF+TC0Tq7DvxieTBFg//oQo/DbdXADJ3GyuTKVNrOvW7Jqijfd/mCpuqfzv07zisLYBs="
+    on_success: always
+    on_failure: never
+    on_start: never
