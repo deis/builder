@@ -190,7 +190,24 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	if err != nil {
 		return fmt.Errorf("fetching builder logs (%s)", err)
 	}
-	log.Debug("size of logs streamed %v", size)
+	log.Debug("size of streamed logs %v", size)
+
+	// check the state and exit code of the build pod.
+	// if the code is not 0 return error
+	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+		return fmt.Errorf("error getting builder pod status (%s)", err)
+	}
+	buildPod, err := kubeClient.Pods(newPod.Namespace).Get(newPod.Name)
+	if err != nil {
+		return fmt.Errorf("error getting builder pod status (%s)", err)
+	}
+
+	for _, containerStatus := range buildPod.Status.ContainerStatuses {
+		state := containerStatus.State.Terminated
+		if state.ExitCode != 0 {
+			return fmt.Errorf("Stopping build.")
+		}
+	}
 
 	// poll the s3 server to ensure the slug exists
 	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {

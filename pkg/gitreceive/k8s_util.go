@@ -147,22 +147,43 @@ func addEnvToPod(pod api.Pod, key, value string) {
 
 // waitForPod waits for a pod in state running or failed
 func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
+	condition := func(pod *api.Pod) (bool, error) {
+		if pod.Status.Phase == api.PodRunning {
+			return true, nil
+		}
+		if pod.Status.Phase == api.PodFailed {
+			return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
+		}
+		return false, nil
+	}
+
+	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+}
+
+// waitForPodEnd waits for a pod in state succeeded or failed
+func waitForPodEnd(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
+	condition := func(pod *api.Pod) (bool, error) {
+		if pod.Status.Phase == api.PodSucceeded {
+			return true, nil
+		}
+		if pod.Status.Phase == api.PodFailed {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+}
+
+// waitForPodCondition waits for a pod in state defined by a condition (func)
+func waitForPodCondition(c *client.Client, ns, podName string, condition func(pod *api.Pod) (bool, error),
+	interval, timeout time.Duration) error {
 	return wait.PollImmediate(interval, timeout, func() (bool, error) {
 		pod, err := c.Pods(ns).Get(podName)
 		if err != nil {
 			if apierrs.IsNotFound(err) {
 				return true, err
 			}
-		}
-
-		condition := func(pod *api.Pod) (bool, error) {
-			if pod.Status.Phase == api.PodRunning {
-				return true, nil
-			}
-			if pod.Status.Phase == api.PodFailed {
-				return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
-			}
-			return false, nil
 		}
 
 		done, err := condition(pod)
