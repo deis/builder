@@ -9,8 +9,7 @@ import (
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/sshd"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/api"
 )
 
 type healthZRespBucket struct {
@@ -31,43 +30,77 @@ type healthZResp struct {
 	SSHServerStarted bool                `json:"ssh_server_started"`
 }
 
+func marshalHealthZResp(w http.ResponseWriter, rsp healthZResp) {
+	if err := json.NewEncoder(w).Encode(rsp); err != nil {
+		str := fmt.Sprintf("Error encoding JSON (%s)", err)
+		http.Error(w, str, http.StatusInternalServerError)
+		return
+	}
+}
+
 func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// There's a race between the boolean eval and the HTTP error returned (the server could start up between the two), but k8s will repeat the health probe request and effectively re-evaluate the boolean. The result is that the server may not start until the next probe in those cases
-		if serverCircuit.State() != sshd.ClosedState {
-			str := fmt.Sprintf("SSH Server is not yet started")
-			log.Err(str)
-			http.Error(w, str, http.StatusServiceUnavailable)
-			return
-		}
-		lbOut, err := bLister.ListBuckets(&s3.ListBucketsInput{})
-		if err != nil {
-			str := fmt.Sprintf("Error listing buckets (%s)", err)
-			log.Err(str)
-			http.Error(w, str, http.StatusServiceUnavailable)
-			return
-		}
-		var rsp healthZResp
-		for _, buck := range lbOut.Buckets {
-			rsp.S3Buckets = append(rsp.S3Buckets, convertBucket(buck))
-		}
+		stopCh := make(chan struct{})
 
-		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
-		if err != nil {
-			str := fmt.Sprintf("Error listing namespaces (%s)", err)
-			log.Err(str)
-			http.Error(w, str, http.StatusServiceUnavailable)
-			return
+		serverStateCh := make(chan struct{})
+		serverStateErrCh := make(chan error)
+		go circuitState(serverCircuit, serverStateCh, serverStateErrCh, stopCh)
+
+		listBucketsCh := make(chan *s3.ListBucketsOutput)
+		listBucketsErrCh := make(chan error)
+		go listBuckets(bLister, listBucketsCh, listBucketsErrCh, stopCh)
+
+		namespaceListerCh := make(chan *api.NamespaceList)
+		namespaceListerErrCh := make(chan error)
+		go listNamespaces(nsLister, namespaceListerCh, namespaceListerErrCh, stopCh)
+
+		var rsp healthZResp
+		serverState, bucketState, namespaceState := false, false, false
+		for {
+			select {
+			case err := <-serverStateErrCh:
+				log.Err(err.Error())
+				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				close(stopCh)
+				return
+			case err := <-listBucketsErrCh:
+				str := fmt.Sprintf("Error listing buckets (%s)", err)
+				log.Err(str)
+				http.Error(w, str, http.StatusServiceUnavailable)
+				close(stopCh)
+				return
+			case err := <-namespaceListerErrCh:
+				str := fmt.Sprintf("Error listing namespaces (%s)", err)
+				log.Err(str)
+				http.Error(w, str, http.StatusServiceUnavailable)
+				close(stopCh)
+				return
+			case <-serverStateCh:
+				serverState = true
+				rsp.SSHServerStarted = true
+				if serverState && bucketState && namespaceState {
+					marshalHealthZResp(w, rsp)
+					return
+				}
+			case lbOut := <-listBucketsCh:
+				bucketState = true
+				for _, buck := range lbOut.Buckets {
+					rsp.S3Buckets = append(rsp.S3Buckets, convertBucket(buck))
+				}
+				if serverState && bucketState && namespaceState {
+					marshalHealthZResp(w, rsp)
+					return
+				}
+			case nsList := <-namespaceListerCh:
+				namespaceState = true
+				for _, ns := range nsList.Items {
+					rsp.Namespaces = append(rsp.Namespaces, ns.Name)
+				}
+				if serverState && bucketState && namespaceState {
+					marshalHealthZResp(w, rsp)
+					return
+				}
+			}
 		}
-		for _, ns := range nsList.Items {
-			rsp.Namespaces = append(rsp.Namespaces, ns.Name)
-		}
-		rsp.SSHServerStarted = true
-		if err := json.NewEncoder(w).Encode(rsp); err != nil {
-			str := fmt.Sprintf("Error encoding JSON (%s)", err)
-			http.Error(w, str, http.StatusInternalServerError)
-			return
-		}
-		// TODO: check server is running
 	})
 }
