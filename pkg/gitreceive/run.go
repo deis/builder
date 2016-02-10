@@ -3,18 +3,15 @@ package gitreceive
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/gitreceive/storage"
 
-	client "k8s.io/kubernetes/pkg/client/unversioned"
-)
+	builderconf "github.com/deis/builder/pkg/conf"
 
-const (
-	builderKeyLocation = "/var/run/secrets/api/auth/builder-key"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
 func readLine(line string) (string, string, string, error) {
@@ -28,11 +25,10 @@ func readLine(line string) (string, string, string, error) {
 func Run(conf *Config) error {
 	log.Debug("Running git hook")
 
-	builderKeyBytes, err := ioutil.ReadFile(builderKeyLocation)
+	builderKey, err := builderconf.GetBuilderKey()
 	if err != nil {
-		return fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyLocation, err)
+		return err
 	}
-	builderKey := string(builderKeyBytes)
 
 	s3Client, err := storage.GetClient(conf.StorageRegion)
 	if err != nil {

@@ -3,26 +3,11 @@ package pkg
 import (
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
 )
-
-// Sleep delays the execution of the remainder of the chain of commands.
-//
-// Params:
-// 	-duration (time.Duration): Time to sleep.
-//  -message (string): The message to log when entering sleep.
-func Sleep(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	dur := p.Get("duration", 10*time.Millisecond).(time.Duration)
-	msg := p.Get("messages", "Sleeping").(string)
-	log.Info(c, msg)
-	time.Sleep(dur)
-	log.Info(c, "Woke up.")
-	return true, nil
-}
 
 // KillOnExit kills PIDs when the program exits.
 //

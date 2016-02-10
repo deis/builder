@@ -15,6 +15,8 @@ import (
 	"sync"
 	"text/template"
 
+	"github.com/deis/builder/pkg/controller"
+
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"golang.org/x/crypto/ssh"
@@ -49,23 +51,21 @@ var preReceiveHookTpl = template.Must(template.New("hooks").Parse(preReceiveHook
 // 	- channel (ssh.Channel): The channel.
 // 	- request (*ssh.Request): The channel.
 // 	- gitHome (string): Defaults to /home/git.
-// 	- fingerprint (string): The fingerprint of the user's SSH key.
-// 	- user (string): The name of the Deis user.
+// 	- userInfo (*controller.UserInfo): Deis user information.
 //
 // Returns:
 // 	- nothing
 func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	if ok, z := p.Requires("channel", "request", "fingerprint", "permissions"); !ok {
+	if ok, z := p.Requires("channel", "request", "userinfo"); !ok {
 		return nil, fmt.Errorf("Missing requirements %q", z)
 	}
 	repoName := p.Get("repoName", "").(string)
 	operation := p.Get("operation", "").(string)
 	channel := p.Get("channel", nil).(ssh.Channel)
 	gitHome := p.Get("gitHome", "/home/git").(string)
-	fingerprint := p.Get("fingerprint", nil).(string)
-	user := p.Get("user", "").(string)
+	userinfo := p.Get("userinfo", nil).(*controller.UserInfo)
 
-	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, fingerprint, user)
+	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, userinfo.FingerPrint, userinfo.Username)
 
 	repo, err := cleanRepoName(repoName)
 	if err != nil {
@@ -73,6 +73,11 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 		channel.Stderr().Write([]byte("No repo given"))
 		return nil, err
 	}
+
+	if ok := checkIfAllowed(repo, userinfo.Apps); !ok {
+		return nil, fmt.Sprintf("The user %v has no permission in application %v", userinfo.Username, repo)
+	}
+
 	repo += ".git"
 
 	repoPath := filepath.Join(gitHome, repo)
@@ -97,9 +102,9 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 
 	cmd.Dir = gitHome
 	cmd.Env = []string{
-		fmt.Sprintf("RECEIVE_USER=%s", user),
+		fmt.Sprintf("RECEIVE_USER=%s", userinfo.Username),
 		fmt.Sprintf("RECEIVE_REPO=%s", repo),
-		fmt.Sprintf("RECEIVE_FINGERPRINT=%s", fingerprint),
+		fmt.Sprintf("RECEIVE_FINGERPRINT=%s", userinfo.FingerPrint),
 		fmt.Sprintf("SSH_ORIGINAL_COMMAND=%s '%s'", operation, repo),
 		fmt.Sprintf("SSH_CONNECTION=%s", c.Get("SSH_CONNECTION", "0 0 0 0").(string)),
 	}
@@ -206,4 +211,14 @@ func createPreReceiveHook(c cookoo.Context, gitHome, repoPath string) error {
 		return fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
 	}
 	return nil
+}
+
+// checkIfAllowed verifies if an application is contained in a list of allowed applications
+func checkIfAllowed(app string, validApps []string) bool {
+	for _, validApp := range validApps {
+		if validApp == app {
+			return true
+		}
+	}
+	return false
 }

@@ -8,7 +8,6 @@
 package sshd
 
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
 	"strings"
@@ -275,37 +274,6 @@ func cleanExec(pay []byte) string {
 	// way of doing this.
 	r := strings.NewReplacer("$", "", "`", "'")
 	return r.Replace(e.Value)
-}
-
-// parseString parses an encoded string according to the indicated length.
-// From ssh.Unmarshal.
-func parseString(in []byte) (out, rest []byte, ok bool) {
-	if len(in) < 4 {
-		return
-	}
-	length := binary.BigEndian.Uint32(in)
-	if uint32(len(in)) < 4+length {
-		return
-	}
-	out = in[4 : 4+length]
-	rest = in[4+length:]
-	ok = true
-	return
-}
-
-// parseEnv parses the key/value pairs in env requests.
-func parseEnv(pay []byte) ([]byte, []byte) {
-
-	l := pay[3]
-
-	key := pay[4 : 4+l]
-
-	offset := l + 8
-	l = pay[7+l] // 4 for the offset, l for the key, 3 for the next three bytes.
-	val := pay[offset : l+offset]
-
-	return key, val
-
 }
 
 // Ping handles a simple test SSH exec.

@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// GetClient returns a S3 API compatible storage client
 func GetClient(regionStr string) (*s3.S3, error) {
 	auth, err := getAuth()
 	if err != nil {
