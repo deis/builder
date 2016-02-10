@@ -217,6 +217,8 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 	if !usingDockerfile {
 		buildHook.Dockerfile = ""
+		// need this to tell the controller what URL to give the slug runner
+		buildHook.Image = slugBuilderInfo.PushURL() + "/slug.tgz"
 	} else {
 		buildHook.Dockerfile = "true"
 	}
