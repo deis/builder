@@ -65,7 +65,7 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	gitHome := p.Get("gitHome", "/home/git").(string)
 	userinfo := p.Get("userinfo", nil).(*controller.UserInfo)
 
-	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, userinfo.FingerPrint, userinfo.Username)
+	log.Debugf(c, "receiving git repo name: %s, operation: %s, fingerprint: %s, user: %s", repoName, operation, userinfo.Fingerprint, userinfo.Username)
 
 	repo, err := cleanRepoName(repoName)
 	if err != nil {
@@ -104,7 +104,7 @@ func Receive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt)
 	cmd.Env = []string{
 		fmt.Sprintf("RECEIVE_USER=%s", userinfo.Username),
 		fmt.Sprintf("RECEIVE_REPO=%s", repo),
-		fmt.Sprintf("RECEIVE_FINGERPRINT=%s", userinfo.FingerPrint),
+		fmt.Sprintf("RECEIVE_FINGERPRINT=%s", userinfo.Fingerprint),
 		fmt.Sprintf("SSH_ORIGINAL_COMMAND=%s '%s'", operation, repo),
 		fmt.Sprintf("SSH_CONNECTION=%s", c.Get("SSH_CONNECTION", "0 0 0 0").(string)),
 	}
