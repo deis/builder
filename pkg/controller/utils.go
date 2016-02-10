@@ -22,7 +22,7 @@ const (
 type UserInfo struct {
 	Username    string
 	Key         string
-	FingerPrint string
+	Fingerprint string
 	Apps        []string
 }
 
@@ -98,6 +98,6 @@ func UserInfoFromKey(key ssh.PublicKey) (*UserInfo, error) {
 	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
 		return nil, err
 	}
-	ret.FingerPrint = fp
+	ret.Fingerprint = fp
 	return ret, nil
 }
