@@ -20,11 +20,11 @@ import:
   - /ssh
 - package: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
-- package: github.com/labstack/gommon
 - package: github.com/pborman/uuid
 - package: github.com/deis/pkg
   subpackages:
-  - /time
+  - time
+  - log
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
 - package: github.com/aws/aws-sdk-go

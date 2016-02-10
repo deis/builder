@@ -10,8 +10,8 @@ import (
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
-	pkglog "github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/sshd"
+	pkglog "github.com/deis/pkg/log"
 )
 
 const (
@@ -25,7 +25,7 @@ func init() {
 
 func main() {
 	if os.Getenv("DEBUG") == "true" {
-		pkglog.IsDebugging = true
+		pkglog.DefaultLogger.SetDebug(true)
 		cookoolog.Level = cookoolog.LogDebug
 	}
 	pkglog.Debug("Running in debug mode")
