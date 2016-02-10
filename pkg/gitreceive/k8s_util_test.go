@@ -1,7 +1,6 @@
 package gitreceive
 
 import (
-	// "reflect"
 	"fmt"
 	"strings"
 	"testing"
@@ -29,8 +28,8 @@ type slugBuildCase struct {
 	name      string
 	namespace string
 	env       map[string]interface{}
-	tarUrl    string
-	putUrl    string
+	tarURL    string
+	putURL    string
 	buildPack string
 }
 
@@ -40,7 +39,7 @@ type dockerBuildCase struct {
 	name      string
 	namespace string
 	env       map[string]interface{}
-	tarUrl    string
+	tarURL    string
 	imgName   string
 }
 
@@ -64,7 +63,7 @@ func TestBuildPod(t *testing.T) {
 	}
 
 	for _, build := range slugBuilds {
-		pod = slugbuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarUrl, build.putUrl, build.buildPack)
+		pod = slugbuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.putURL, build.buildPack)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -74,8 +73,8 @@ func TestBuildPod(t *testing.T) {
 			t.Errorf("expected %v but returned %v ", build.namespace, pod.ObjectMeta.Namespace)
 		}
 
-		checkForEnv(t, pod, "TAR_URL", build.tarUrl)
-		checkForEnv(t, pod, "put_url", build.putUrl)
+		checkForEnv(t, pod, "TAR_URL", build.tarURL)
+		checkForEnv(t, pod, "put_url", build.putURL)
 
 		if build.buildPack != "" {
 			checkForEnv(t, pod, "BUILDPACK_URL", build.buildPack)
@@ -94,7 +93,7 @@ func TestBuildPod(t *testing.T) {
 	}
 
 	for _, build := range dockerBuilds {
-		pod = dockerBuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarUrl, build.imgName)
+		pod = dockerBuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.imgName)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -103,7 +102,7 @@ func TestBuildPod(t *testing.T) {
 			t.Errorf("expected %v but returned %v ", build.namespace, pod.ObjectMeta.Namespace)
 		}
 		if !build.withAuth {
-			checkForEnv(t, pod, "TAR_URL", build.tarUrl)
+			checkForEnv(t, pod, "TAR_URL", build.tarURL)
 			checkForEnv(t, pod, "IMG_NAME", build.imgName)
 		}
 	}
