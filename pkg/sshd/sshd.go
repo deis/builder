@@ -71,15 +71,12 @@ func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Inte
 func AuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 	log.Debugf(c, "Starting ssh authentication")
 	key := p.Get("key", nil).(ssh.PublicKey)
-
-	strKey := string(ssh.MarshalAuthorizedKey(key))
-	log.Debugf(c, "Checking auth for user key %v", strKey)
-	userInfo, err := controller.UserInfoFromKey(strKey)
+	userInfo, err := controller.UserInfoFromKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	userInfo.Key = strKey
+	userInfo.Key = string(ssh.MarshalAuthorizedKey(key))
 	c.Put("userinfo", userInfo)
 
 	log.Infof(c, "Key accepted for user %s.", userInfo.Username)
