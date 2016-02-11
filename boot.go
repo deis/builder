@@ -6,7 +6,6 @@ import (
 
 	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
-	"github.com/deis/builder/fetcher"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
