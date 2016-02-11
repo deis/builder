@@ -20,7 +20,7 @@ IMAGE_PREFIX ?= deis
 # Docker Root FS
 BINDIR := ./rootfs
 
-DEIS_REGISTRY ?= quay.io/
+DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
 # Kubernetes-specific information for RC, Service, and Image.
 RC := manifests/deis-${SHORT_NAME}-rc.yaml
