@@ -2,12 +2,9 @@ package healthsrv
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/arschles/assert"
@@ -29,8 +26,7 @@ func TestHealthZCircuitOpen(t *testing.T) {
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
-	expectedBody := "SSH Server is not yet started"
-	assert.Equal(t, strings.TrimSpace(string(w.Body.Bytes())), expectedBody, "response body")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }
 
 func TestHealthZBucketListErr(t *testing.T) {
@@ -45,8 +41,7 @@ func TestHealthZBucketListErr(t *testing.T) {
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
-	expectedBody := fmt.Sprintf("Error listing buckets (%s)", testErr)
-	assert.Equal(t, strings.TrimSpace(string(w.Body.Bytes())), expectedBody, "response body")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }
 
 func TestHealthZNamespaceListErr(t *testing.T) {
@@ -61,8 +56,7 @@ func TestHealthZNamespaceListErr(t *testing.T) {
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
-	expectedBody := fmt.Sprintf("Error listing namespaces (%s)", testErr)
-	assert.Equal(t, strings.TrimSpace(string(w.Body.Bytes())), expectedBody, "response body")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }
 
 func TestHealthZSuccess(t *testing.T) {
@@ -77,8 +71,5 @@ func TestHealthZSuccess(t *testing.T) {
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusOK, "response code")
-	expectedResp := healthZResp{Namespaces: nil, S3Buckets: nil, SSHServerStarted: true}
-	var expectedRespBytes bytes.Buffer
-	assert.NoErr(t, json.NewEncoder(&expectedRespBytes).Encode(expectedResp))
-	assert.Equal(t, string(w.Body.Bytes()), string(expectedRespBytes.Bytes()), "response body")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }

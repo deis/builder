@@ -1,106 +1,68 @@
 package healthsrv
 
 import (
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	s3 "github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg/sshd"
-	"github.com/deis/pkg/log"
 	"k8s.io/kubernetes/pkg/api"
 )
 
-type healthZRespBucket struct {
-	Name         string    `json:"name"`
-	CreationDate time.Time `json:"creation_date"`
-}
-
-func convertBucket(b *s3.Bucket) healthZRespBucket {
-	return healthZRespBucket{
-		Name:         *b.Name,
-		CreationDate: *b.CreationDate,
-	}
-}
-
-type healthZResp struct {
-	Namespaces       []string            `json:"k8s_namespaces"`
-	S3Buckets        []healthZRespBucket `json:"s3_buckets"`
-	SSHServerStarted bool                `json:"ssh_server_started"`
-}
-
-func marshalHealthZResp(w http.ResponseWriter, rsp healthZResp) {
-	if err := json.NewEncoder(w).Encode(rsp); err != nil {
-		str := fmt.Sprintf("Error encoding JSON (%s)", err)
-		http.Error(w, str, http.StatusInternalServerError)
-		return
-	}
-}
+const (
+	waitTimeout = 2 * time.Second
+)
 
 func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		stopCh := make(chan struct{})
 
+		numChecks := 0
 		serverStateCh := make(chan struct{})
 		serverStateErrCh := make(chan error)
 		go circuitState(serverCircuit, serverStateCh, serverStateErrCh, stopCh)
+		numChecks++
 
 		listBucketsCh := make(chan *s3.ListBucketsOutput)
 		listBucketsErrCh := make(chan error)
 		go listBuckets(bLister, listBucketsCh, listBucketsErrCh, stopCh)
+		numChecks++
 
 		namespaceListerCh := make(chan *api.NamespaceList)
 		namespaceListerErrCh := make(chan error)
 		go listNamespaces(nsLister, namespaceListerCh, namespaceListerErrCh, stopCh)
+		numChecks++
 
-		var rsp healthZResp
-		serverState, bucketState, namespaceState := false, false, false
-		for {
+		timeoutCh := time.After(waitTimeout)
+		defer close(stopCh)
+		for i := 0; i < numChecks; i++ {
 			select {
-			case err := <-serverStateErrCh:
-				log.Err(err.Error())
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
-				close(stopCh)
-				return
-			case err := <-listBucketsErrCh:
-				str := fmt.Sprintf("Error listing buckets (%s)", err)
-				log.Err(str)
-				http.Error(w, str, http.StatusServiceUnavailable)
-				close(stopCh)
-				return
-			case err := <-namespaceListerErrCh:
-				str := fmt.Sprintf("Error listing namespaces (%s)", err)
-				log.Err(str)
-				http.Error(w, str, http.StatusServiceUnavailable)
-				close(stopCh)
-				return
+			// ensuring the SSH server has been started
 			case <-serverStateCh:
-				serverState = true
-				rsp.SSHServerStarted = true
-				if serverState && bucketState && namespaceState {
-					marshalHealthZResp(w, rsp)
-					return
-				}
-			case lbOut := <-listBucketsCh:
-				bucketState = true
-				for _, buck := range lbOut.Buckets {
-					rsp.S3Buckets = append(rsp.S3Buckets, convertBucket(buck))
-				}
-				if serverState && bucketState && namespaceState {
-					marshalHealthZResp(w, rsp)
-					return
-				}
-			case nsList := <-namespaceListerCh:
-				namespaceState = true
-				for _, ns := range nsList.Items {
-					rsp.Namespaces = append(rsp.Namespaces, ns.Name)
-				}
-				if serverState && bucketState && namespaceState {
-					marshalHealthZResp(w, rsp)
-					return
-				}
+			case err := <-serverStateErrCh:
+				log.Printf("Healthcheck error getting server state (%s)", err)
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			// listing S3 buckets
+			case <-listBucketsCh:
+			case err := <-listBucketsErrCh:
+				log.Printf("Healthcheck error listing buckets (%s)", err)
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			// listing k8s namespaces
+			case <-namespaceListerCh:
+			case err := <-namespaceListerErrCh:
+				log.Printf("Healthcheck error listing namespaces (%s)", err)
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			// timeout for everything all of the above
+			case <-timeoutCh:
+				log.Printf("Healthcheck endpoint timed out after %s", waitTimeout)
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
 			}
 		}
+		w.WriteHeader(http.StatusOK)
 	})
 }
