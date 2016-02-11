@@ -5,13 +5,15 @@ branches:
 cache:
   directories:
     - vendor
+env:
+  DEV_REGISTRY=quay.io
 services:
   - docker
 sudo: required
 install:
   - make bootstrap
 script:
-  - make test
+  - make test build docker-build
 deploy:
   provider: script
   script: _scripts/deploy.sh

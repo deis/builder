@@ -1,5 +1,9 @@
 FROM alpine:3.3
 
+# install git and configure gituser
+ENV GITHOME /home/git
+ENV GITUSER git
+
 # install common packages
 RUN apk add --update-cache \
   bash \
@@ -24,9 +28,6 @@ RUN mkdir -p /var/run/sshd && rm -rf /etc/ssh/ssh_host* \
 
 COPY . /
 
-# install git and configure gituser
-ENV GITHOME /home/git
-ENV GITUSER git
 # this is so the minio client (https://github.com/minio/mc) works properly
 ENV DOCKERIMAGE=1
 ENV DEIS_RELEASE 2.0.0-dev
