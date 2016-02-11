@@ -30,8 +30,8 @@ func main() {
 	if os.Getenv("DEBUG") == "true" {
 		pkglog.DefaultLogger.SetDebug(true)
 		cookoolog.Level = cookoolog.LogDebug
+		log.Printf("Running in debug mode")
 	}
-	pkglog.Debug("Running in debug mode")
 
 	app := cli.NewApp()
 
