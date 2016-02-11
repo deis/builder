@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"runtime"
 
@@ -49,15 +50,15 @@ func main() {
 
 				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
 				if err != nil {
-					pkglog.Err("getting s3 client [%s]", err)
+					log.Printf("Error getting s3 client (%s)", err)
 					os.Exit(1)
 				}
 				kubeClient, err := kcl.NewInCluster()
 				if err != nil {
-					pkglog.Err("getting kubernetes client [%s]", err)
+					log.Printf("Error getting kubernetes client [%s]", err)
 					os.Exit(1)
 				}
-				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
+				log.Printf("Starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
 					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client, circ); err != nil {
@@ -65,7 +66,7 @@ func main() {
 					}
 				}()
 
-				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
+				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
 					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, circ)
@@ -73,10 +74,10 @@ func main() {
 
 				select {
 				case err := <-healthSrvCh:
-					pkglog.Err("Error running health server (%s)", err)
+					log.Printf("Error running health server (%s)", err)
 					os.Exit(1)
 				case i := <-sshCh:
-					pkglog.Err("Unexpected SSH server stop with code %d", i)
+					log.Printf("Unexpected SSH server stop with code %d", i)
 					os.Exit(i)
 				}
 			},
@@ -88,13 +89,13 @@ func main() {
 			Action: func(c *cli.Context) {
 				cnf := new(gitreceive.Config)
 				if err := conf.EnvConfig(gitReceiveConfAppName, cnf); err != nil {
-					pkglog.Err("Error getting config for %s [%s]", gitReceiveConfAppName, err)
+					log.Printf("Error getting config for %s [%s]", gitReceiveConfAppName, err)
 					os.Exit(1)
 				}
 				cnf.CheckDurations()
 
 				if err := gitreceive.Run(cnf); err != nil {
-					pkglog.Err("running git receive hook [%s]", err)
+					log.Printf("Error running git receive hook [%s]", err)
 					os.Exit(1)
 				}
 			},
