@@ -1,6 +1,6 @@
 FROM alpine:3.3
 
-# install git and configure gituser
+# specify the git user's home and name
 ENV GITHOME /home/git
 ENV GITUSER git
 # this is so the minio client (https://github.com/minio/mc) works properly
