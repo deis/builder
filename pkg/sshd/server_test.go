@@ -9,7 +9,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var testingServerAddr = "127.0.0.1:2244"
+const (
+	testingServerAddr = "127.0.0.1:2244"
+)
 
 // TestServer tests the SSH server.
 //
