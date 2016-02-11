@@ -84,10 +84,6 @@ func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
 }
 
-func sshTestingClientKey() (ssh.Signer, error) {
-	return ssh.ParsePrivateKey([]byte(testingClientKey))
-}
-
 func runServer(config *ssh.ServerConfig, c *Circuit, t *testing.T) cookoo.Context {
 	reg, router, cxt := cookoo.Cookoo()
 	cxt.Put(ServerConfig, config)
