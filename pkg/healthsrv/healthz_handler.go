@@ -7,8 +7,8 @@ import (
 	"time"
 
 	s3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/deis/builder/pkg/gitreceive/log"
 	"github.com/deis/builder/pkg/sshd"
+	"github.com/deis/pkg/log"
 	"k8s.io/kubernetes/pkg/api"
 )
 

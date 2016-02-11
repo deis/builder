@@ -1,5 +1,5 @@
-hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-updated: 2016-02-10T02:53:37.929806212Z
+hash: b7693d48b0561bf438eb2751e26cc053cfe1c46aad0ca1d97dbf95c5b4665af1
+updated: 2016-02-10T22:34:55.109010629Z
 imports:
 - name: bitbucket.org/bertimus9/systemstat
   version: 1468fd0db20598383c9393cccaa547de6ad99e5e
@@ -25,7 +25,7 @@ imports:
   version: ""
   repo: https://code.google.com/p/google-api-go-client
 - name: code.google.com/p/goprotobuf
-  version: d20896fc31fb0e955e57970d61eb6eea054ff048
+  version: 001690d39bd620847bb265d93a7c5e1bd3737308
   repo: https://github.com/golang/protobuf
 - name: code.google.com/p/gosqlite
   version: ""
@@ -108,6 +108,7 @@ imports:
   version: 25325b46b67d1c3eb7d58bad37d34d89a31cf9ec
 - name: github.com/cheggaaa/pb
   version: e67c2c3b91b15e81659790a8644e0d3b4a40271d
+  repo: https://github.com/cheggaaa/pb
 - name: github.com/ClusterHQ/flocker-go
   version: 3f33ece70f6571f0ec45bfae2f243ab11fab6c52
 - name: github.com/codegangsta/cli
@@ -132,6 +133,7 @@ imports:
   - unit
 - name: github.com/coreos/gexpect
   version: 0b5620b695de57d5fcea082b9a062157ac60ed73
+  repo: https://github.com/coreos/gexpect
 - name: github.com/coreos/go-etcd
   version: 4cceaf7283b76f27c4a732b20730dcdb61053bf5
   subpackages:
@@ -179,7 +181,7 @@ imports:
 - name: github.com/deckarep/golang-set
   version: ef32fa3046d9f249d399f98ebaf9be944430fd1d
 - name: github.com/deis/pkg
-  version: c85c2ef5e9e5ea570df66131f8906e409408a145
+  version: b8679a4d7fe2fe0393c66c620eff7df86c9f7982
   subpackages:
   - time
   - log
@@ -192,7 +194,7 @@ imports:
 - name: github.com/dgrijalva/jwt-go
   version: 5ca80149b9d3f8b863af0e2bb6742e608603bd99
 - name: github.com/docker/distribution
-  version: db34a8ba9cdd1cb78fb08791025198e65b55046a
+  version: 77534e734063a203981df7024fe8ca9228b86930
   repo: https://github.com/docker/distribution
 - name: github.com/docker/docker
   version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
@@ -217,7 +219,7 @@ imports:
 - name: github.com/docker/libkv
   version: c2aac5dbbaa5c872211edea7c0f32b3bd67e7410
 - name: github.com/docker/libnetwork
-  version: b3690009eaa84275e2024a5b567baa2d26db5dd1
+  version: 48ebfd635268ae33c6275007cdace21d9af5786d
   repo: https://github.com/docker/libnetwork
 - name: github.com/docker/libtrust
   version: fa567046d9b14f6aa788882a950d69651d230b21
@@ -259,6 +261,7 @@ imports:
   version: 193d1ecb466bf97aae8b454a5cfc192941c64809
 - name: github.com/godbus/dbus
   version: 939230d2086a4f1870e04c52e0a376c25bae0ec4
+  repo: https://github.com/godbus/dbus
 - name: github.com/gogo/protobuf
   version: 64f27bf06efee53589314a6e5a4af34cdd85adf6
   subpackages:
@@ -308,6 +311,7 @@ imports:
   - compute/metadata
 - name: github.com/gorilla/context
   version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
+  repo: https://github.com/gorilla/context
 - name: github.com/gorilla/handlers
   version: 60c7bfde3e33c201519a200a4507a158cc03a17b
 - name: github.com/gorilla/mux
@@ -345,7 +349,7 @@ imports:
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   repo: https://github.com/hashicorp/golang-lru
 - name: github.com/hashicorp/hcl
-  version: 8cc810768200e949a2a92972845244f6a818f68d
+  version: 1c284ec98f4b398443cbabb0d9197f7f4cc0077c
   repo: https://github.com/hashicorp/hcl
 - name: github.com/hashicorp/logutils
   version: 0dc08b1671f34c4250ce212759ebd880f743d883
@@ -408,6 +412,7 @@ imports:
   version: 8fef92e41e22a70e700a96b29f066cda30ea24ef
 - name: github.com/kballard/go-shellquote
   version: d8ec1a69a250a17bb0e419c386eac1f3711dc142
+  repo: https://github.com/kballard/go-shellquote
 - name: github.com/kelseyhightower/envconfig
   version: 12c18e8343f6eb5fc3a9d5c8dc353e42e6bb40b9
 - name: github.com/kimor79/gollectd
@@ -417,6 +422,7 @@ imports:
   version: 088c856450c08c03eb32f7a6c221e6eefaa10e6f
 - name: github.com/kr/pty
   version: 05017fcccf23c823bfdea560dcc958a136e54fb7
+  repo: https://github.com/kr/pty
 - name: github.com/kr/text
   version: 6807e777504f54ad073ecef66747de158294b639
 - name: github.com/lsegal/gucumber
@@ -566,6 +572,7 @@ imports:
   version: 51ad44105773cafcbe91927f70ac68e1bf78f8b4
 - name: github.com/stretchr/objx
   version: d40df0cc104c06eae2dfe03d7dddb83802d52f9a
+  repo: https://github.com/stretchr/objx
 - name: github.com/stretchr/testify
   version: 9cc77fa25329013ce07362c7742952ff887361f2
   subpackages:
@@ -620,13 +627,16 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 2ea5e055772cf5daa0b1478d6e88c8d0c3d4cb79
+  version: 3cf1a407a4e2eedab950cb2caa897cb185354d0f
+  repo: https://golang.org/x/text
 - name: golang.org/x/tools
   version: 4f50f44d7a3206e9e28b984e023efce2a4a75369
 - name: google.golang.org/api
   version: 0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd
+  repo: https://google.golang.org/api
 - name: google.golang.org/appengine
   version: 6a436539be38c296a8075a871cc536686b458371
+  repo: https://google.golang.org/appengine
 - name: google.golang.org/cloud
   version: f20d6dcccb44ed49de45ae3703312cb46e627db1
   subpackages:
@@ -647,6 +657,7 @@ imports:
   version: d466437aa4adc35830964cffc5b5f262c63ddcb4
 - name: gopkg.in/yaml.v1
   version: 9f9df34309c04878acc86042b16630b0f696e1de
+  repo: https://gopkg.in/yaml.v1
 - name: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - name: k8s.io/heapster
