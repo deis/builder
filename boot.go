@@ -45,6 +45,8 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
+				circ := sshd.NewCircuit()
+
 				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
 				if err != nil {
 					pkglog.Err("getting s3 client [%s]", err)
@@ -58,7 +60,7 @@ func main() {
 				pkglog.Info("starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
-					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client); err != nil {
+					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client, circ); err != nil {
 						healthSrvCh <- err
 					}
 				}()
@@ -66,7 +68,7 @@ func main() {
 				pkglog.Info("starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.Run(cnf.SSHHostIP, cnf.SSHHostPort, "boot")
+					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, circ)
 				}()
 
 				select {
