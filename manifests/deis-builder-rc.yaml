@@ -21,8 +21,6 @@ spec:
           ports:
             - containerPort: 2223
               name: ssh
-            - containerPort: 3000
-              name: fetcher
             - containerPort: 8092
               name: healthsrv
           env:
