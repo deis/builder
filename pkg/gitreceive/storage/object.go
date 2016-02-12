@@ -2,6 +2,7 @@ package storage
 
 import (
 	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -26,4 +27,13 @@ func UploadObject(svc *s3.S3, bucketName, objKey string, reader io.Reader) error
 	}
 	_, err := svc.PutObject(params)
 	return err
+}
+
+func GetPresignedURL(svc *s3.S3, bucketName, objKey string, expiration time.Duration) (string, error) {
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objKey),
+	})
+
+	return req.Presign(expiration)
 }
