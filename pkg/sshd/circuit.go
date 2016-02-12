@@ -5,13 +5,17 @@ import (
 	"sync/atomic"
 )
 
+// CircuitState represents the state of a Circuit
 type CircuitState uint32
 
 const (
-	OpenState   CircuitState = 0
+	// OpenState indicates that the circuit is in the open state, and thus non-functional
+	OpenState CircuitState = 0
+	// ClosedState indicates that the circuit is in the closed state, and thus functional
 	ClosedState CircuitState = 1
 )
 
+// String is the fmt.Stringer interface implementation
 func (c CircuitState) String() string {
 	if c == OpenState {
 		return "OPEN"
@@ -31,11 +35,12 @@ func (s CircuitState) toUint32() uint32 {
 // - OpenState - non functional
 // - ClosedState - functional
 //
-//
+// The circuit is intended as a point-in-time indicator of functionality. It has no backoff mechanism, jitter or ramp-up/ramp-down functionality
 type Circuit struct {
 	bit uint32
 }
 
+// NewCircuit creates a new circuit, in the open (non-functional) state
 func NewCircuit() *Circuit {
 	return &Circuit{bit: OpenState.toUint32()}
 }
