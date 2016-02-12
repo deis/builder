@@ -1,7 +1,15 @@
-SHORT_NAME ?= builder
+# makeup-managed:begin
+include makeup.mk
+# makeup-managed:end
 
-# Enable vendor/ directory support.
-export GO15VENDOREXPERIMENT=1
+ORG_NAME := deis
+PROJECT_NAME := builder
+BINARY_DEST_DIR := rootfs/usr/bin
+
+include .makeup/makeup-bag-deis/info.mk
+include .makeup/makeup-bag-deis/docker-based-builds.mk
+
+SHORT_NAME ?= builder
 
 # dockerized development environment variables
 REPO_PATH := github.com/deis/${SHORT_NAME}
@@ -13,7 +21,7 @@ DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
 VERSION ?= git-$(shell git rev-parse --short HEAD)
-BINARY_DEST_DIR := rootfs/usr/bin
+
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
 IMAGE_PREFIX ?= deis
@@ -27,26 +35,18 @@ RC := manifests/deis-${SHORT_NAME}-rc.yaml
 SVC := manifests/deis-${SHORT_NAME}-service.yaml
 IMAGE := ${DEIS_REGISTRY}${IMAGE_PREFIX}/${SHORT_NAME}:${VERSION}
 
-TEST_PACKAGES := $(shell ${DEV_ENV_CMD} glide nv)
-
 all:
 	@echo "Use a Makefile to control top-level building of the project."
 
-bootstrap:
-	${DEV_ENV_CMD} glide install
+bootstrap: docker-go-bootstrap
 
 glideup:
 	${DEV_ENV_CMD} glide up
 
-# This illustrates a two-stage Docker build. docker-compile runs inside of
-# the Docker environment. Other alternatives are cross-compiling, doing
-# the build as a `docker build`.
-build:
-	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go || exit 1
+build: docker-go-build
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
 
-test:
-	${DEV_ENV_CMD} go test ${TEST_PACKAGES}
+test: docker-go-test
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs

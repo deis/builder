@@ -1,0 +1,3 @@
+[submodule ".makeup/makeup-bag-deis"]
+	path = .makeup/makeup-bag-deis
+	url = https://github.com/sgoings/makeup-bag-deis.git
