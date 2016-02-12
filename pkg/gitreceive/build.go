@@ -221,9 +221,6 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	if err != nil {
 		return fmt.Errorf("Timed out waiting for object in storage. Aborting build...")
 	}
-	log.Info("Build complete.")
-	log.Info("Launching app.")
-	log.Info("Launching...")
 
 	buildHook := &pkg.BuildHook{
 		Sha:         gitSha.Short(),
@@ -235,10 +232,26 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	if !usingDockerfile {
 		buildHook.Dockerfile = ""
 		// need this to tell the controller what URL to give the slug runner
-		buildHook.Image = slugBuilderInfo.PushURL() + "/slug.tgz"
+		log.Info("Building docker image")
+		dockerName, err := buildImage(&buildContext{
+			AppName: appName,
+			Sha:     gitSha,
+			Tgz:     slugBuilderInfo.PushURL() + "/slug.tgz",
+		})
+
+		if err != nil {
+			return err
+		}
+		log.Debug("Application image: %v", dockerName)
+		buildHook.Image = dockerName
 	} else {
 		buildHook.Dockerfile = "true"
 	}
+
+	log.Info("Build complete.")
+	log.Info("Launching app.")
+	log.Info("Launching...")
+
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)
