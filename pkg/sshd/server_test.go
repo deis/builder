@@ -9,7 +9,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var testingServerAddr = "127.0.0.1:2244"
+const (
+	testingServerAddr = "127.0.0.1:2244"
+)
 
 // TestServer tests the SSH server.
 //
@@ -29,10 +31,15 @@ func TestServer(t *testing.T) {
 	}
 	cfg.AddHostKey(key)
 
-	cxt := runServer(&cfg, t)
+	c := NewCircuit()
+	cxt := runServer(&cfg, c, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
+
+	if c.State() != ClosedState {
+		t.Fatalf("circuit was not in closed state")
+	}
 
 	// Connect to the server and issue env var set. This should return true.
 	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
@@ -77,7 +84,7 @@ func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
 }
 
-func runServer(config *ssh.ServerConfig, t *testing.T) cookoo.Context {
+func runServer(config *ssh.ServerConfig, c *Circuit, t *testing.T) cookoo.Context {
 	reg, router, cxt := cookoo.Cookoo()
 	cxt.Put(ServerConfig, config)
 	cxt.Put(Address, testingServerAddr)
@@ -99,7 +106,7 @@ func runServer(config *ssh.ServerConfig, t *testing.T) cookoo.Context {
 	})
 
 	go func() {
-		if err := Serve(reg, router, cxt); err != nil {
+		if err := Serve(reg, router, c, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()

@@ -46,7 +46,7 @@ const (
 //
 // This puts the following variables into the context:
 // 	- ssh.Closer (chan interface{}): Send a message to this to shutdown the server.
-func Serve(reg *cookoo.Registry, router *cookoo.Router, c cookoo.Context) cookoo.Interrupt {
+func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, c cookoo.Context) cookoo.Interrupt {
 	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
 	addr := c.Get(Address, "0.0.0.0:2223").(string)
 	cfg := c.Get(ServerConfig, &ssh.ServerConfig{}).(*ssh.ServerConfig)
@@ -70,6 +70,7 @@ func Serve(reg *cookoo.Registry, router *cookoo.Router, c cookoo.Context) cookoo
 	c.Put("sshd.Closer", closer)
 
 	log.Infof(c, "Listening on %s", addr)
+	serverCircuit.Close()
 	srv.listen(listener, cfg, closer)
 
 	return nil
