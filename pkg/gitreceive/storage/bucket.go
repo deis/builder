@@ -6,6 +6,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+const (
+	bucketAlreadyExistsCode = "BucketAlreadyExists"
+)
+
 var (
 	// ACLPublicRead default ACL for objects in the S3 API compatible storage
 	ACLPublicRead = aws.String("public-read")
@@ -38,7 +42,7 @@ func CreateBucket(svc *s3.S3, bucketName string) error {
 
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == "409" {
+			if awsErr.Code() == bucketAlreadyExistsCode {
 				return nil
 			}
 		}
