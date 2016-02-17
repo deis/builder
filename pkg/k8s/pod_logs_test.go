@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -35,4 +36,13 @@ func TestStreamPodLogs(t *testing.T) {
 	case <-time.After(chanReadTimeout):
 		t.Fatalf("receiving success from streamPodLogs after %s", chanReadTimeout)
 	}
+}
+
+func TestWritePodLogs(t *testing.T) {
+	buf := new(bytes.Buffer)
+	streamer := fakeLogStreamer{str: "abcdef"}
+	num, err := WritePodLogs(streamer, buf)
+	assert.NoErr(t, err)
+	assert.Equal(t, num, len(streamer.str), "length of bytes written")
+	assert.Equal(t, string(buf.Bytes()), streamer.str, "logs written")
 }
