@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -168,7 +169,6 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 
 	podInterface := kubeClient.Pods(conf.PodNamespace)
-	podLogStreamer := k8s.LogStreamerFromKubeClient(kubeClient, conf.PodNamespace, buildPodName, true, time.Time{})
 
 	addedEventCh := make(chan watch.Event)
 	podErrEventCh := make(chan watch.Event)
@@ -196,7 +196,12 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 
 	log.Debug("Getting build pod logs")
-	logSize, err := k8s.WritePodLogs(podLogStreamer, os.Stdout)
+	rc, err := k8s.LogStreamerFromKubeClient(kubeClient, conf.PodNamespace, pod.Name).Stream()
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	logSize, err := io.Copy(os.Stdout, rc)
 	if err != nil {
 		return err
 	}
