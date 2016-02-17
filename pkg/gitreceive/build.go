@@ -190,19 +190,23 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 	select {
 	case <-addedEventCh:
+		log.Debug("Build Pod Added")
 	case <-time.After(conf.BuilderPodWaitDuration()):
 		return fmt.Errorf("waiting for builder pod %s to start after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
 
+	log.Debug("Getting build pod logs")
 	logSize, err := k8s.WritePodLogs(podLogStreamer, os.Stdout)
 	if err != nil {
 		return err
 	}
 
-	log.Debug("size of streamed logs was %d", logSize)
+	log.Debug("Size of streamed logs was %d", logSize)
+	log.Debug("Waiting for build pod to shut down")
 
 	select {
 	case <-podErrEventCh:
+		log.Debug("Build pod shut down")
 	case <-time.After(conf.BuilderPodWaitDuration()):
 		return fmt.Errorf("waiting for builder pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
