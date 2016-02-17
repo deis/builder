@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
@@ -23,6 +23,7 @@ import (
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/kubernetes/pkg/watch"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -166,48 +167,54 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		log.Debug("Error creating json representaion of pod spec: %v", err)
 	}
 
-	podsInterface := kubeClient.Pods(conf.PodNamespace)
-	watcher, err := podsInterface.Watch(labels.Everything(), fields.Everything(), "0")
+	podInterface := kubeClient.Pods(conf.PodNamespace)
+	podLogStreamer := k8s.LogStreamerFromKubeClient(kubeClient, conf.PodNamespace, buildPodName, true, time.Time{})
+
+	addedEventCh := make(chan watch.Event)
+	errorEventCh := make(chan watch.Event)
+	initialWatchers := map[watch.EventType][]chan<- watch.Event{
+		watch.Added: []chan<- watch.Event{addedEventCh},
+		// we have to watch for the Error state here, even though the pod exits successfully.
+		// This is a hack until we have access to the Jobs API. See https://github.com/deis/builder/issues/55
+		watch.Error: []chan<- watch.Event{errorEventCh},
+	}
+	watcher, err := podInterface.Watch(labels.Everything(), fields.Everything(), "0")
+	if err != nil {
+		return err
+	}
+	podStates := k8s.NewPodStates(watcher, initialWatchers)
+	defer podStates.Stop()
+
+	if _, err := podInterface.Create(pod); err != nil {
+		return fmt.Errorf("creating pod %s (%s)", pod.Name, err)
+	}
+	select {
+	case <-addedEventCh:
+	case <-time.After(conf.BuilderPodWaitDuration()):
+		return fmt.Errorf("waiting for builder pod %s to start after %s", pod.Name, conf.BuilderPodWaitDuration())
+	}
+
+	logSize, err := k8s.WritePodLogs(podLogStreamer, os.Stdout)
 	if err != nil {
 		return err
 	}
 
-	if _, err := k8s.CreateAndWaitForPod(podsInterface, watcher, pod, conf.BuilderPodWaitDuration()); err != nil {
-		return err
+	log.Debug("size of streamed logs was %d", logSize)
+
+	select {
+	case <-errorEventCh:
+	case <-time.After(conf.BuilderPodWaitDuration()):
+		return fmt.Errorf("waiting for pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
 
-	req := kubeClient.Get().Namespace(conf.PodNamespace).Name(buildPodName).Resource("pods").SubResource("log").VersionedParams(
-		&api.PodLogOptions{
-			Follow: true,
-		}, api.Scheme)
-
-	rc, err := req.Stream()
+	found, code, err := k8s.PodHasAnyContainerStatus(podInterface, buildPodName, func(code int) bool {
+		return code != 0
+	})
 	if err != nil {
-		return fmt.Errorf("attempting to stream logs (%s)", err)
+		return fmt.Errorf("error getting final builder pod status (%s)", err)
 	}
-	defer rc.Close()
-
-	size, err := io.Copy(os.Stdout, rc)
-	if err != nil {
-		return fmt.Errorf("fetching builder logs (%s)", err)
-	}
-	log.Debug("size of streamed logs %v", size)
-
-	// check the state and exit code of the build pod.
-	// if the code is not 0 return error
-	if err := waitForPodEnd(kubeClient, conf.PodNamespace, buildPodName, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
-		return fmt.Errorf("error getting builder pod status (%s)", err)
-	}
-	buildPod, err := kubeClient.Pods(conf.PodNamespace).Get(buildPodName)
-	if err != nil {
-		return fmt.Errorf("error getting builder pod status (%s)", err)
-	}
-
-	for _, containerStatus := range buildPod.Status.ContainerStatuses {
-		state := containerStatus.State.Terminated
-		if state.ExitCode != 0 {
-			return fmt.Errorf("Stopping build.")
-		}
+	if found {
+		return fmt.Errorf("build pod exited with code %d", code)
 	}
 
 	// poll the s3 server to ensure the slug exists
