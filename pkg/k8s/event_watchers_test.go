@@ -9,10 +9,6 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-const (
-	broadcastTimeout = 200 * time.Millisecond
-)
-
 func TestAddWatcher(t *testing.T) {
 	ch1 := make(chan watch.Event)
 	initial := map[watch.EventType][]chan<- watch.Event{
