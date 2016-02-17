@@ -29,7 +29,6 @@ func (p *PodStates) Stop() {
 
 func startWatchLoop(watcher watch.Interface, watchers *eventWatchers) {
 	for evt := range watcher.ResultChan() {
-		fmt.Printf("EVENT TYPE %s", evt.Type)
 		watchers.broadcast(evt.Type, evt)
 	}
 }
