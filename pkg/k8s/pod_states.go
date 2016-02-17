@@ -1,8 +1,6 @@
 package k8s
 
 import (
-	"fmt"
-
 	"k8s.io/kubernetes/pkg/watch"
 )
 
