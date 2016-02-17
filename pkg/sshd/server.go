@@ -54,7 +54,7 @@ var (
 //
 // This puts the following variables into the context:
 // 	- ssh.Closer (chan interface{}): Send a message to this to shutdown the server.
-func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, c cookoo.Context) cookoo.Interrupt {
+func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, gitHomeDir string, c cookoo.Context) cookoo.Interrupt {
 	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
 	addr := c.Get(Address, "0.0.0.0:2223").(string)
 	cfg := c.Get(ServerConfig, &ssh.ServerConfig{}).(*ssh.ServerConfig)
@@ -71,7 +71,7 @@ func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, 
 
 	srv := &server{
 		c:       c,
-		gitHome: "/home/git",
+		gitHome: gitHomeDir,
 	}
 
 	closer := make(chan interface{}, 1)

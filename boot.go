@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"time"
 
 	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
@@ -20,6 +21,8 @@ import (
 const (
 	serverConfAppName     = "deis-builder-server"
 	gitReceiveConfAppName = "deis-builder-git-receive"
+	gitHomeDir            = "/home/git"
+	cleanerPollDuration   = 1 * time.Second // TODO: make this configurable
 )
 
 func init() {
@@ -69,7 +72,7 @@ func main() {
 				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, circ)
+					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, gitHomeDir, circ)
 				}()
 
 				select {

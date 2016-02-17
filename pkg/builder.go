@@ -27,7 +27,7 @@ const (
 // Git.
 //
 // Run returns on of the Status* status code constants.
-func RunBuilder(sshHostIP string, sshHostPort int, sshServerCircuit *sshd.Circuit) int {
+func RunBuilder(sshHostIP string, sshHostPort int, gitHomeDir string, sshServerCircuit *sshd.Circuit) int {
 	reg, router, ocxt := cookoo.Cookoo()
 	log.SetFlags(0) // Time is captured elsewhere.
 
@@ -58,7 +58,7 @@ func RunBuilder(sshHostIP string, sshHostPort int, sshServerCircuit *sshd.Circui
 	// Start the SSH service.
 	// TODO: We could refactor Serve to be a command, and then run this as
 	// a route.
-	if err := sshd.Serve(reg, router, sshServerCircuit, cxt); err != nil {
+	if err := sshd.Serve(reg, router, sshServerCircuit, gitHomeDir, cxt); err != nil {
 		clog.Errf(cxt, "SSH server failed: %s", err)
 		return StatusLocalError
 	}
