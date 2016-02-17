@@ -169,6 +169,10 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 
 	podInterface := kubeClient.Pods(conf.PodNamespace)
+	newPod, err := podInterface.Create(pod)
+	if err != nil {
+		return fmt.Errorf("creating pod %s (%s)", pod.Name, err)
+	}
 
 	addedEventCh := make(chan watch.Event)
 	podErrEventCh := make(chan watch.Event)
@@ -178,16 +182,13 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		// This is a hack until we have access to the Jobs API. See https://github.com/deis/builder/issues/55
 		watch.Error: []chan<- watch.Event{podErrEventCh},
 	}
-	watcher, err := podInterface.Watch(labels.Everything(), fields.Everything(), "0")
+	watcher, err := podInterface.Watch(labels.Everything(), fields.Everything(), newPod.ObjectMeta.ResourceVersion)
 	if err != nil {
 		return err
 	}
 	podStates := k8s.NewPodStates(watcher, initialWatchers)
 	defer podStates.Stop()
 
-	if _, err := podInterface.Create(pod); err != nil {
-		return fmt.Errorf("creating pod %s (%s)", pod.Name, err)
-	}
 	select {
 	case <-addedEventCh:
 		log.Debug("Build Pod Added")
