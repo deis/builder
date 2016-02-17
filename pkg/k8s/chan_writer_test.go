@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"sync"
 	"testing"
 	"time"
 )
@@ -11,31 +10,33 @@ const (
 )
 
 func TestWrite(t *testing.T) {
-	strs := map[string]bool{"abc": false, "def": false}
+	strLookup := map[string]bool{"abc": false, "def": false}
+	strs := make([]string, len(strLookup))
+	i := 0
+	for str, _ := range strLookup {
+		strs[i] = str
+		i++
+	}
+
 	ch := make(chan []byte)
 	wr := chanWriter{ch: ch}
-	var wg sync.WaitGroup
-	for str, _ := range strs {
-		wg.Add(1)
-		go func(s string) {
-			defer wg.Done()
-			wr.Write([]byte(s))
-		}(str)
-	}
-	for str, _ := range strs {
-		select {
-		case s := <-ch:
-			if str == string(s) {
-				strs[str] = true
+
+	go func(strs []string) {
+		defer close(ch)
+		for _, str := range strs {
+			if _, err := wr.Write([]byte(str)); err != nil {
+				t.Fatalf("error writing to chan writer (%s)", err)
 			}
-		case <-time.After(chanReadTimeout):
-			t.Errorf("couldn't read string after %s", chanReadTimeout)
 		}
+	}(strs)
+
+	for byteStr := range ch {
+		strLookup[string(byteStr)] = true
 	}
-	wg.Wait()
-	for str, read := range strs {
-		if !read {
-			t.Errorf("didn't read %s after written", str)
+
+	for str, ok := range strLookup {
+		if !ok {
+			t.Fatalf("didn't read %s after it was supposed to be written", str)
 		}
 	}
 }
