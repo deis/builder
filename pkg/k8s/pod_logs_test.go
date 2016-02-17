@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/arschles/assert"
 )
@@ -19,30 +18,11 @@ func (f fakeLogStreamer) Stream() (io.ReadCloser, error) {
 	return ioutil.NopCloser(strings.NewReader(f.str)), nil
 }
 
-func TestStreamPodLogs(t *testing.T) {
-	streamer := fakeLogStreamer{str: "abcdef"}
-	succCh := make(chan struct{})
-	logsCh := make(chan []byte)
-	errCh := make(chan error)
-	go streamPodLogs(streamer, succCh, logsCh, errCh)
-	select {
-	case s := <-logsCh:
-		assert.Equal(t, streamer.str, string(s), "received string")
-	case err := <-errCh:
-		t.Fatalf("receiving a log from streamPodLogs (%s)", err)
-	}
-	select {
-	case <-succCh:
-	case <-time.After(chanReadTimeout):
-		t.Fatalf("receiving success from streamPodLogs after %s", chanReadTimeout)
-	}
-}
-
 func TestWritePodLogs(t *testing.T) {
 	buf := new(bytes.Buffer)
 	streamer := fakeLogStreamer{str: "abcdef"}
 	num, err := WritePodLogs(streamer, buf)
 	assert.NoErr(t, err)
-	assert.Equal(t, num, len(streamer.str), "length of bytes written")
+	assert.Equal(t, num, int64(len(streamer.str)), "length of bytes written")
 	assert.Equal(t, string(buf.Bytes()), streamer.str, "logs written")
 }
