@@ -204,7 +204,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	select {
 	case <-errorEventCh:
 	case <-time.After(conf.BuilderPodWaitDuration()):
-		return fmt.Errorf("waiting for pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
+		return fmt.Errorf("waiting for builder pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
 
 	found, code, err := k8s.PodHasAnyContainerStatus(podInterface, buildPodName, func(code int) bool {
