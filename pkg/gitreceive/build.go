@@ -197,7 +197,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	}
 
 	log.Debug("Getting build pod logs")
-	rc, err := k8s.LogStreamerFromKubeClient(kubeClient, conf.PodNamespace, pod.Name).Stream()
+	rc, err := k8s.LogStreamerFromKubeClient(kubeClient, newPod.Namespace, newPod.Name).Stream()
 	if err != nil {
 		return err
 	}
