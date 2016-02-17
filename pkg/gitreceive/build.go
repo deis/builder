@@ -171,12 +171,12 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	podLogStreamer := k8s.LogStreamerFromKubeClient(kubeClient, conf.PodNamespace, buildPodName, true, time.Time{})
 
 	addedEventCh := make(chan watch.Event)
-	errorEventCh := make(chan watch.Event)
+	podErrEventCh := make(chan watch.Event)
 	initialWatchers := map[watch.EventType][]chan<- watch.Event{
 		watch.Added: []chan<- watch.Event{addedEventCh},
 		// we have to watch for the Error state here, even though the pod exits successfully.
 		// This is a hack until we have access to the Jobs API. See https://github.com/deis/builder/issues/55
-		watch.Error: []chan<- watch.Event{errorEventCh},
+		watch.Error: []chan<- watch.Event{podErrEventCh},
 	}
 	watcher, err := podInterface.Watch(labels.Everything(), fields.Everything(), "0")
 	if err != nil {
@@ -202,7 +202,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	log.Debug("size of streamed logs was %d", logSize)
 
 	select {
-	case <-errorEventCh:
+	case <-podErrEventCh:
 	case <-time.After(conf.BuilderPodWaitDuration()):
 		return fmt.Errorf("waiting for builder pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
