@@ -9,6 +9,7 @@ import (
 	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
 	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/cleaner"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/gitreceive/storage"
@@ -68,6 +69,13 @@ func main() {
 						healthSrvCh <- err
 					}
 				}()
+				log.Printf("Starting deleted app cleaner")
+				cleanerErrCh := make(chan error)
+				go func() {
+					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), cleanerPollDuration); err != nil {
+						cleanerErrCh <- err
+					}
+				}()
 
 				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
@@ -82,6 +90,9 @@ func main() {
 				case i := <-sshCh:
 					log.Printf("Unexpected SSH server stop with code %d", i)
 					os.Exit(i)
+				case err := <-cleanerErrCh:
+					log.Printf("Error running the deleted app cleaner (%s)", err)
+					os.Exit(1)
 				}
 			},
 		},
