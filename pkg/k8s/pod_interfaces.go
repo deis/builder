@@ -2,10 +2,8 @@ package k8s
 
 import (
 	"io"
-	"time"
 
 	"k8s.io/kubernetes/pkg/api"
-	apiunver "k8s.io/kubernetes/pkg/api/unversioned"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
@@ -37,12 +35,7 @@ type PodLogStreamer interface {
 
 // LogStreamerFromKubeClient returns a PodLogStreamer using the given *(k8s.io/kubernetes/pkg/client/unversioned).Client. The returned PodLogStreamer will stream logs for the given pod in the given namespace.
 // If previous is true, the streamer will include logs even if the pod is terminated. the sinceTime parameter determines the earliest log to show
-func LogStreamerFromKubeClient(kc *client.Client, namespace, podName string, previous bool, sinceTime time.Time) PodLogStreamer {
-	t := apiunver.NewTime(sinceTime)
-	podLogOptions := &api.PodLogOptions{
-		Follow:    true,
-		Previous:  previous,
-		SinceTime: &t,
-	}
+func LogStreamerFromKubeClient(kc *client.Client, namespace, podName string) PodLogStreamer {
+	podLogOptions := &api.PodLogOptions{Follow: true, Previous: true}
 	return kc.Get().Namespace(namespace).Name(podName).Resource("pods").SubResource("log").VersionedParams(podLogOptions, api.Scheme)
 }
