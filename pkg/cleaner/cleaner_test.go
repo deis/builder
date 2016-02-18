@@ -10,14 +10,14 @@ import (
 	"k8s.io/kubernetes/pkg/api"
 )
 
-func TestGetDisjunction(t *testing.T) {
+func TestGetDiff(t *testing.T) {
 	nsList := []api.Namespace{
 		api.Namespace{ObjectMeta: api.ObjectMeta{Name: "app1"}},
 		api.Namespace{ObjectMeta: api.ObjectMeta{Name: "app2"}},
 	}
 	dirList := []string{"app1", "app3"}
-	disj := getDisjunction(nsList, dirList)
-	assert.Equal(t, len(disj), 2, "number of items in the disjunction")
+	diff := getDiff(nsList, dirList)
+	assert.Equal(t, len(diff), 1, "number of items in the disjunction")
 }
 
 func TestLocalDirs(t *testing.T) {

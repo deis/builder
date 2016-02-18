@@ -34,35 +34,21 @@ func localDirs(gitHome string) ([]string, error) {
 	return ret, nil
 }
 
-// getDisjunction gets the items that are in namespaceList and not in dirs or vice versa
-func getDisjunction(namespaceList []api.Namespace, dirs []string) []string {
+// getDiff gets the directories that are not in namespaceList
+func getDiff(namespaceList []api.Namespace, dirs []string) []string {
 	var ret []string
-	namespacesSet := make(map[string]struct{})
-	dirsSet := make(map[string]struct{})
 
-	// create sets of the namespaces and dirs
+	// create a set of lowercase namespace names
+	namespacesSet := make(map[string]struct{})
 	for _, ns := range namespaceList {
 		lowerName := strings.ToLower(ns.Name)
 		namespacesSet[lowerName] = struct{}{}
-	}
-
-	for _, dir := range dirs {
-		lowerName := strings.ToLower(dir)
-		dirsSet[lowerName] = struct{}{}
 	}
 
 	// get dirs not in the namespaces set
 	for _, dir := range dirs {
 		lowerName := strings.ToLower(dir)
 		if _, ok := namespacesSet[lowerName]; !ok {
-			ret = append(ret, lowerName)
-		}
-	}
-
-	// get namespaces not in the dirs set
-	for _, ns := range namespaceList {
-		lowerName := strings.ToLower(ns.Name)
-		if _, ok := dirsSet[lowerName]; !ok {
 			ret = append(ret, lowerName)
 		}
 	}
@@ -84,17 +70,17 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 			log.Debug("Cleaner error listing local git directories (%s)", err)
 		}
 
-		disjunctions := getDisjunction(nsList.Items, gitDirs)
-		for _, disj := range disjunctions {
-			if err := repoLock.Lock(disj, time.Duration(0)); err != nil {
-				log.Debug("Cleaner error locking repository %s for deletion (%s)", disj, err)
+		dirsToDelete := getDiff(nsList.Items, gitDirs)
+		for _, dirToDelete := range dirsToDelete {
+			if err := repoLock.Lock(dirToDelete, time.Duration(0)); err != nil {
+				log.Debug("Cleaner error locking repository %s for deletion (%s)", dirToDelete, err)
 				continue
 			}
-			if err := os.RemoveAll(disj); err != nil {
-				log.Debug("Cleaner error removing deleted app %s (%s)", disj, err)
+			if err := os.RemoveAll(dirToDelete); err != nil {
+				log.Debug("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
 			}
-			if err := repoLock.Unlock(disj, time.Duration(0)); err != nil {
-				log.Debug("Cleaner error unlocking repository %s for deletion (%s)", disj, err)
+			if err := repoLock.Unlock(dirToDelete, time.Duration(0)); err != nil {
+				log.Debug("Cleaner error unlocking repository %s for deletion (%s)", dirToDelete, err)
 				continue
 			}
 		}
