@@ -9,10 +9,12 @@ package sshd
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
@@ -27,6 +29,12 @@ const (
 	Address string = "ssh.Address"
 	// ServerConfig is the context key for ServerConfig object.
 	ServerConfig string = "ssh.ServerConfig"
+
+	multiplePush string = "Another git push is ongoing"
+)
+
+var (
+	buildingRepos = NewInMemoryRepositoryLock()
 )
 
 // Serve starts a native SSH server.
@@ -215,6 +223,19 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					req.Reply(ok, nil)
 					break
 				}
+
+				repoName := parts[1]
+				if err := buildingRepos.Lock(repoName, time.Duration(0)); err != nil {
+					log.Errf(s.c, multiplePush)
+					// The error must be in git format
+					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
+						log.Errf(s.c, "Failed to write to channel: %s", err)
+					}
+					sendExitStatus(1, channel)
+					req.Reply(false, nil)
+					return nil
+				}
+
 				req.Reply(true, nil) // We processed. Yay.
 
 				cxt.Put("channel", channel)
@@ -223,12 +244,14 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				cxt.Put("repository", parts[1])
 				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
 				err := router.HandleRequest(sshGitReceive, cxt, true)
+				buildingRepos.Unlock(repoName, time.Duration(0))
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
 					xs = 1
 				}
 				sendExitStatus(xs, channel)
+
 				return nil
 			default:
 				log.Warnf(s.c, "Illegal command is '%s'\n", clean)
@@ -295,4 +318,11 @@ func Ping(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 	sendExitStatus(0, channel)
 	req.Reply(true, nil)
 	return nil, nil
+}
+
+// gitPktLine writes a line following the git protocol
+// https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt
+func gitPktLine(w io.Writer, s string) error {
+	_, err := fmt.Fprintf(w, "%04x%s", len(s)+4, s)
+	return err
 }
