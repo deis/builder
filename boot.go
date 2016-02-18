@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"time"
 
 	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
@@ -23,7 +22,6 @@ const (
 	serverConfAppName     = "deis-builder-server"
 	gitReceiveConfAppName = "deis-builder-git-receive"
 	gitHomeDir            = "/home/git"
-	cleanerPollDuration   = 1 * time.Second // TODO: make this configurable
 )
 
 func init() {
@@ -72,7 +70,7 @@ func main() {
 				log.Printf("Starting deleted app cleaner")
 				cleanerErrCh := make(chan error)
 				go func() {
-					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), cleanerPollDuration); err != nil {
+					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), cnf.CleanerPollSleepDuration); err != nil {
 						cleanerErrCh <- err
 					}
 				}()
