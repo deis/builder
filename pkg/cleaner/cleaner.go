@@ -69,9 +69,9 @@ func getDisjunction(namespaceList []api.Namespace, dirs []string) []string {
 	return ret
 }
 
-// Run starts the deleted app cleaner. Every pollInterval, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log.Debug to output a human readable description of what happened.
+// Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log.Debug to output a human readable description of what happened.
 // TODO: locking mechanism on repositories. Nobody should be able to push to a repo while one is being deleted
-func Run(gitHome string, nsLister k8s.NamespaceLister, pollInterval time.Duration) error {
+func Run(gitHome string, nsLister k8s.NamespaceLister, pollSleepDuration time.Duration) error {
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
@@ -91,6 +91,6 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, pollInterval time.Duratio
 			}
 		}
 
-		time.Sleep(pollInterval)
+		time.Sleep(pollSleepDuration)
 	}
 }
