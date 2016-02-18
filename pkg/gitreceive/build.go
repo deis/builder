@@ -14,10 +14,10 @@ import (
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
 	"gopkg.in/yaml.v2"
-
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -155,22 +155,18 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	}
 
 	podsInterface := kubeClient.Pods(conf.PodNamespace)
+	podGetter := podsInterface.Get
 
 	newPod, err := podsInterface.Create(pod)
 	if err != nil {
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	if err := k8s.WaitForPodRunning(podGetter, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("watching events for builder pod startup (%s)", err)
 	}
 
-	req := kubeClient.Get().Namespace(newPod.Namespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
-		&api.PodLogOptions{
-			Follow: true,
-		}, api.Scheme)
-
-	rc, err := req.Stream()
+	rc, err := k8s.LogStreamRequest(kubeClient, newPod.Namespace, newPod.Name).Stream()
 	if err != nil {
 		return fmt.Errorf("attempting to stream logs (%s)", err)
 	}
@@ -191,7 +187,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	)
 	// check the state and exit code of the build pod.
 	// if the code is not 0 return error
-	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	if err := k8s.WaitForPodEnded(podGetter, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
 	}
 	log.Debug("Done")
