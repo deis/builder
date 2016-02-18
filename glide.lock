@@ -1,5 +1,5 @@
-hash: eeb1a1d39e18e4f3fb49b5a91289693a271646d9c12330302855845b8949cce0
-updated: 2016-02-18T14:05:14.146914898-08:00
+hash: f4239a6fb593d10c6a58faecf170be2168ea7d0884d6c6823b1b9b3efa156113
+updated: 2016-02-18T22:46:02.154250682Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -47,11 +47,25 @@ imports:
   - time
   - log
   - prettyprint
+- name: github.com/docker/docker
+  version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
+  subpackages:
+  - pkg/jsonmessage
+  - pkg/mount
+  - pkg/parsers
+  - pkg/symlink
+  - pkg/term
+  - pkg/timeutils
+  - pkg/units
+- name: github.com/docker/libcontainer
+  version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
+  subpackages:
+  - cgroups/fs
+  - configs
+  - cgroups
+  - system
 - name: github.com/emicklei/go-restful
   version: 1f9a0ee00ff93717a275e15b30cf7df356255877
-  subpackages:
-  - swagger
-  - log
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
@@ -86,7 +100,7 @@ imports:
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/gorilla/context
-  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
+  version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
 - name: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - name: github.com/jmespath/go-jmespath
@@ -98,18 +112,16 @@ imports:
 - name: github.com/Masterminds/cookoo
   version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
-  - /log
-  - /safely
-  - /fmt
   - log
   - safely
+  - fmt
   - io
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
 - name: github.com/pborman/uuid
-  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+  version: c55201b036063326c5b1b89ccfe45a184973d073
 - name: github.com/prometheus/client_golang
   version: 3b78d7a77f51ccbc364d4bc170920153022cfd08
   subpackages:
@@ -124,13 +136,12 @@ imports:
   - expfmt
   - model
 - name: github.com/prometheus/procfs
-  version: ee2372b58cee877abe07cde670d04d3b3bac5ee6
+  version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
 - name: github.com/spf13/pflag
   version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
 - name: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
-  - /ssh
   - ssh
 - name: golang.org/x/net
   version: c2528b2dd8352441850638a8bb678c2ad056fd3e
