@@ -10,5 +10,5 @@ type Config struct {
 	SSHHostPort                int           `envconfig:"SSH_HOST_PORT" default:"2223" required:"true"`
 	HealthSrvPort              int           `envconfig:"HEALTH_SERVER_PORT" default:"8092"`
 	HealthSrvTestStorageRegion string        `envconfig:"HEALTH_SERVER_TEST_STORAGE_REGION" default:"us-east-1"`
-	CleanerPollSleepDuration   time.Duration `envconfig:"CLEANER_POLL_SLEEP_DURATION" default:"1"`
+	CleanerPollSleepDuration   time.Duration `envconfig:"CLEANER_POLL_SLEEP_DURATION" default:"1s"`
 }
