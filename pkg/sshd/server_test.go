@@ -5,12 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deis/builder/pkg/controller"
+
 	"github.com/Masterminds/cookoo"
 	"golang.org/x/crypto/ssh"
 )
 
 const (
-	testingServerAddr = "127.0.0.1:2244"
+	testingServerAddr  = "127.0.0.1:2244"
+	testingServerAddr2 = "127.0.0.1:2245"
 )
 
 // TestServer tests the SSH server.
@@ -20,7 +23,7 @@ const (
 // used here. It's not recommended that you try to start another SSH server on
 // the same port (at a later time) or else you will have key issues that you
 // must manually resolve.
-func TestServer(t *testing.T) {
+func TestReceive(t *testing.T) {
 	key, err := sshTestingHostKey()
 	if err != nil {
 		t.Fatal(err)
@@ -32,7 +35,7 @@ func TestServer(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	cxt := runServer(&cfg, c, t)
+	cxt := runServer(&cfg, c, testingServerAddr, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -79,15 +82,79 @@ func TestServer(t *testing.T) {
 	closer <- true
 }
 
+func TestPush(t *testing.T) {
+	key, err := sshTestingHostKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := ssh.ServerConfig{
+		NoClientAuth: true,
+	}
+	cfg.AddHostKey(key)
+
+	c := NewCircuit()
+	runServer(&cfg, c, testingServerAddr2, t)
+
+	// Give server time to initialize.
+	time.Sleep(200 * time.Millisecond)
+
+	if c.State() != ClosedState {
+		t.Fatalf("circuit was not in closed state")
+	}
+
+	// Connect to the server and issue env var set. This should return true.
+	client, err := ssh.Dial("tcp", testingServerAddr2, &ssh.ClientConfig{})
+	if err != nil {
+		t.Fatalf("Failed to connect client to local server: %s", err)
+	}
+	sess, err := client.NewSession()
+	if err != nil {
+		t.Fatalf("Failed to create client session: %s", err)
+	}
+
+	// check for invalid length of arguments
+	if out, err := sess.Output("git-upload-pack"); err == nil {
+		t.Errorf("Expected an error but '%s' was received", out)
+	} else if string(out) != "" {
+		t.Errorf("Expected , got '%s'", out)
+	}
+	sess.Close()
+
+	go func() {
+		sess, err = client.NewSession()
+		if err != nil {
+			t.Fatalf("Failed to create client session: %s", err)
+		}
+		if out, err := sess.Output("git-upload-pack /demo.git"); err != nil {
+			t.Errorf("Unexpected error %s, Output '%s'", err, out)
+		} else if string(out) != "OK" {
+			t.Errorf("Expected 'OK' got '%s'", out)
+		}
+		sess.Close()
+	}()
+
+	time.Sleep(2 * time.Second)
+
+	sess, err = client.NewSession()
+	if err != nil {
+		t.Fatalf("Failed to create client session: %s", err)
+	}
+	if out, err := sess.Output("git-upload-pack /demo.git"); err == nil {
+		t.Errorf("Expected an error but returned without errors '%s'", out)
+	}
+	sess.Close()
+}
+
 // sshTestingHostKey loads the testing key.
 func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
 }
 
-func runServer(config *ssh.ServerConfig, c *Circuit, t *testing.T) cookoo.Context {
+func runServer(config *ssh.ServerConfig, c *Circuit, testAddr string, t *testing.T) cookoo.Context {
 	reg, router, cxt := cookoo.Cookoo()
 	cxt.Put(ServerConfig, config)
-	cxt.Put(Address, testingServerAddr)
+	cxt.Put(Address, testAddr)
 	cxt.Put("cookoo.Router", router)
 
 	reg.AddRoute(cookoo.Route{
@@ -105,6 +172,39 @@ func runServer(config *ssh.ServerConfig, c *Circuit, t *testing.T) cookoo.Contex
 		},
 	})
 
+	reg.AddRoute(cookoo.Route{
+		Name: "pubkeyAuth",
+		Does: []cookoo.Task{
+			cookoo.Cmd{
+				Name: "authN",
+				Fn:   mockAuthKey,
+				Using: []cookoo.Param{
+					{Name: "metadata", From: "cxt:metadata"},
+					{Name: "key", From: "cxt:key"},
+					{Name: "repoName", From: "cxt:repository"},
+				},
+			},
+		},
+	})
+
+	reg.AddRoute(cookoo.Route{
+		Name: "sshGitReceive",
+		Does: []cookoo.Task{
+			cookoo.Cmd{
+				Name: "receive",
+				Fn:   mockDummyReceive,
+				Using: []cookoo.Param{
+					{Name: "request", From: "cxt:request"},
+					{Name: "channel", From: "cxt:channel"},
+					{Name: "operation", From: "cxt:operation"},
+					{Name: "repoName", From: "cxt:repository"},
+					{Name: "permissions", From: "cxt:authN"},
+					{Name: "userinfo", From: "cxt:userinfo"},
+				},
+			},
+		},
+	})
+
 	go func() {
 		if err := Serve(reg, router, c, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
@@ -112,7 +212,32 @@ func runServer(config *ssh.ServerConfig, c *Circuit, t *testing.T) cookoo.Contex
 	}()
 
 	return cxt
+}
 
+func mockAuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
+	c.Put("userinfo", &controller.UserInfo{
+		Username:    "deis",
+		Key:         testingClientPubKey,
+		Fingerprint: "",
+		Apps:        []string{"demo"},
+	})
+
+	perm := &ssh.Permissions{
+		Extensions: map[string]string{
+			"user": "deis",
+		},
+	}
+	return perm, nil
+}
+
+func mockDummyReceive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
+	channel := p.Get("channel", nil).(ssh.Channel)
+	req := p.Get("request", nil).(*ssh.Request)
+	time.Sleep(5 * time.Second)
+	channel.Write([]byte("OK"))
+	sendExitStatus(0, channel)
+	req.Reply(true, nil)
+	return nil, nil
 }
 
 // connMetadata mocks ssh.ConnMetadata for authentication.

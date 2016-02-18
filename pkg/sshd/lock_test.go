@@ -34,7 +34,7 @@ func TestInvalidUnlock(t *testing.T) {
 	key := "fakeid"
 	err := rl.Unlock(key, time.Duration(0))
 	if err == nil {
-		t.Fatalf("expected error but returned nil", err)
+		t.Fatal("expected error but returned nil")
 	}
 }
 
