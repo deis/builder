@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/deis/builder/pkg/k8s"
+	"github.com/deis/builder/pkg/sshd"
 	"github.com/deis/pkg/log"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/fields"
@@ -70,8 +71,7 @@ func getDisjunction(namespaceList []api.Namespace, dirs []string) []string {
 }
 
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log.Debug to output a human readable description of what happened.
-// TODO: locking mechanism on repositories. Nobody should be able to push to a repo while one is being deleted
-func Run(gitHome string, nsLister k8s.NamespaceLister, pollSleepDuration time.Duration) error {
+func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryLock, pollSleepDuration time.Duration) error {
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
@@ -86,8 +86,16 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, pollSleepDuration time.Du
 
 		disjunctions := getDisjunction(nsList.Items, gitDirs)
 		for _, disj := range disjunctions {
+			if err := repoLock.Lock(disj, time.Duration(0)); err != nil {
+				log.Debug("Cleaner error locking repository %s for deletion (%s)", disj, err)
+				continue
+			}
 			if err := os.RemoveAll(disj); err != nil {
 				log.Debug("Cleaner error removing deleted app %s (%s)", disj, err)
+			}
+			if err := repoLock.Unlock(disj, time.Duration(0)); err != nil {
+				log.Debug("Cleaner error unlocking repository %s for deletion (%s)", disj, err)
+				continue
 			}
 		}
 

@@ -48,6 +48,8 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
+				pushLock := sshd.NewInMemoryRepositoryLock()
+				deleteLock := sshd.NewInMemoryRepositoryLock()
 				circ := sshd.NewCircuit()
 
 				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
@@ -70,7 +72,7 @@ func main() {
 				log.Printf("Starting deleted app cleaner")
 				cleanerErrCh := make(chan error)
 				go func() {
-					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), cnf.CleanerPollSleepDuration); err != nil {
+					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), deleteLock, cnf.CleanerPollSleepDuration); err != nil {
 						cleanerErrCh <- err
 					}
 				}()
@@ -78,7 +80,7 @@ func main() {
 				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, gitHomeDir, circ)
+					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, gitHomeDir, circ, pushLock, deleteLock)
 				}()
 
 				select {

@@ -12,8 +12,6 @@ import (
 	"io"
 	"net"
 	"strings"
-	"sync"
-	"text/template"
 	"time"
 
 	"github.com/Masterminds/cookoo"
@@ -31,10 +29,8 @@ const (
 	ServerConfig string = "ssh.ServerConfig"
 
 	multiplePush string = "Another git push is ongoing"
-)
 
-var (
-	buildingRepos = NewInMemoryRepositoryLock()
+	inProgressDelete string = "This app was deleted and is being cleaned up. Please re-create it with 'deis create your_app'"
 )
 
 // Serve starts a native SSH server.
@@ -54,7 +50,7 @@ var (
 //
 // This puts the following variables into the context:
 // 	- ssh.Closer (chan interface{}): Send a message to this to shutdown the server.
-func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, gitHomeDir string, c cookoo.Context) cookoo.Interrupt {
+func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, gitHomeDir string, concurrentPushLock RepositoryLock, concurrentDeleteLock RepositoryLock, c cookoo.Context) cookoo.Interrupt {
 	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
 	addr := c.Get(Address, "0.0.0.0:2223").(string)
 	cfg := c.Get(ServerConfig, &ssh.ServerConfig{}).(*ssh.ServerConfig)
@@ -70,8 +66,10 @@ func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, 
 	}
 
 	srv := &server{
-		c:       c,
-		gitHome: gitHomeDir,
+		c:          c,
+		gitHome:    gitHomeDir,
+		pushLock:   concurrentPushLock,
+		deleteLock: concurrentDeleteLock,
 	}
 
 	closer := make(chan interface{}, 1)
@@ -88,8 +86,8 @@ func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, 
 type server struct {
 	c          cookoo.Context
 	gitHome    string
-	hookTpl    *template.Template
-	createLock sync.Mutex
+	pushLock   RepositoryLock
+	deleteLock RepositoryLock
 }
 
 // listen handles accepting and managing connections. However, since closer
@@ -225,7 +223,17 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				if err := buildingRepos.Lock(repoName, time.Duration(0)); err != nil {
+				if err := s.deleteLock.Lock(repoName, time.Duration(0)); err != nil {
+					log.Errf(s.c, inProgressDelete)
+					// The error must be in git format
+					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", inProgressDelete)); err != nil {
+						log.Errf(s.c, "Failed to write to channel: %s", err)
+					}
+					sendExitStatus(1, channel)
+					req.Reply(false, nil)
+					return nil
+				}
+				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
 					// The error must be in git format
 					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
@@ -244,7 +252,16 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				cxt.Put("repository", parts[1])
 				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
 				err := router.HandleRequest(sshGitReceive, cxt, true)
-				buildingRepos.Unlock(repoName, time.Duration(0))
+				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
+					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
+					// TODO: this is an important error case that needs to be covered
+					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
+				}
+				if err := s.deleteLock.Unlock(repoName, time.Duration(0)); err != nil {
+					log.Errf(s.c, "unable to unlock delete lock for %s (%s)", repoName, err)
+					// TODO: this is an important error case that needs to be covered
+					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
+				}
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
