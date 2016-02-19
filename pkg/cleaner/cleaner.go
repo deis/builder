@@ -20,7 +20,8 @@ const (
 	dotGitSuffix = ".git"
 )
 
-func localDirs(gitHome string) ([]string, error) {
+// localDirs returns all of the local directories immediately under gitHome that filter returns true for. filter will receive only the names of each of the top level directories (not their fully qualified paths), and should return true if it should be included in the output
+func localDirs(gitHome string, filter func(string) bool) ([]string, error) {
 	fileInfos, err := ioutil.ReadDir(gitHome)
 	if err != nil {
 		return nil, err
@@ -31,7 +32,9 @@ func localDirs(gitHome string) ([]string, error) {
 		if len(nm) <= 0 || nm == "." || !fileInfo.IsDir() {
 			continue
 		}
-		ret = append(ret, filepath.Join(gitHome, nm))
+		if filter(nm) {
+			ret = append(ret, filepath.Join(gitHome, nm))
+		}
 	}
 	return ret, nil
 }
@@ -71,6 +74,10 @@ func stripSuffixes(strs []string, suffix string) []string {
 	return ret
 }
 
+func dirHasGitSuffix(dir string) bool {
+	return strings.HasSuffix(dir, dotGitSuffix)
+}
+
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log messages to output a human readable description of what happened.
 func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryLock, pollSleepDuration time.Duration) error {
 	for {
@@ -86,7 +93,7 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 			log.Printf("Cleaner found namespaces %s", lst)
 		}
 
-		gitDirs, err := localDirs(gitHome)
+		gitDirs, err := localDirs(gitHome, dirHasGitSuffix)
 		if err != nil {
 			log.Printf("Cleaner error listing local git directories (%s)", err)
 			continue

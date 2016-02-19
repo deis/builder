@@ -20,12 +20,20 @@ func TestGetDiff(t *testing.T) {
 	assert.Equal(t, len(diff), 1, "number of items in the disjunction")
 }
 
+func TestDirHasGitSuffix(t *testing.T) {
+	assert.True(t, dirHasGitSuffix("a.git"), "'a.git' reported no git suffix")
+	assert.False(t, dirHasGitSuffix("abc"), "'a' reported git suffix")
+}
+
 func TestLocalDirs(t *testing.T) {
 	wd, err := os.Getwd()
 	assert.NoErr(t, err)
 	pkgDir, err := filepath.Abs(wd + "/..")
 	assert.NoErr(t, err)
-	lDirs, err := localDirs(pkgDir)
+	lDirs, err := localDirs(pkgDir, func(dir string) bool {
+		// no directories with any dots in them
+		return len(strings.Split(dir, ".")) == 1
+	})
 	assert.NoErr(t, err)
 
 	expectedPackages := map[string]int{
