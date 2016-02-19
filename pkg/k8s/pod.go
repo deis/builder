@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	ErrPodInFailedState = errors.New("Pod is in the Failed state")
+	ErrPodInFailedState           = errors.New("Pod is in the Failed state")
+	ErrIntervalGreaterThanTimeout = errors.New("Given interval is greater than given timeout")
 )
 
 // ConditionFunc is called in WaitForPodCondition on every successful poll event. Given a pod, it should return true if the condition is true and polling should stop successfully, false if polling should continue and an error if polling should stop with failure
@@ -26,7 +27,9 @@ type PodGetter func(string) (*api.Pod, error)
 // - Call podGetter(podName) to get the pod, and return with an error if the pod was not found
 // - If the pod was found, return directly the result of condition(pod)
 func WaitForPodCondition(getPod PodGetter, podName string, condition ConditionFunc, interval, timeout time.Duration) error {
-
+	if interval > timeout {
+		return ErrIntervalGreaterThanTimeout
+	}
 	return wait.PollImmediate(interval, timeout, func() (bool, error) {
 		pod, err := getPod(podName)
 		if err != nil {
