@@ -71,6 +71,11 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 		}
 
 		dirsToDelete := getDiff(nsList.Items, gitDirs)
+		if len(dirsToDelete) > 0 {
+			log.Debug("Cleaner found the following git directories to delete: %s", dirsToDelete)
+		} else {
+			log.Debug("Cleaner found no git directories to delete")
+		}
 		for _, dirToDelete := range dirsToDelete {
 			if err := repoLock.Lock(dirToDelete, time.Duration(0)); err != nil {
 				log.Debug("Cleaner error locking repository %s for deletion (%s)", dirToDelete, err)
