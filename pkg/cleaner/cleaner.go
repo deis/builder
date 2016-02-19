@@ -2,6 +2,7 @@
 package cleaner
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,21 +16,22 @@ import (
 	"k8s.io/kubernetes/pkg/labels"
 )
 
-func localDirs(gitHome string) ([]string, error) {
-	var ret []string
-	err := filepath.Walk(gitHome, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			return filepath.SkipDir
-		}
-		ret = append(ret, filepath.Join(gitHome, path))
-		return nil
-	})
+const (
+	dotGitSuffix = ".git"
+)
 
+func localDirs(gitHome string) ([]string, error) {
+	fileInfos, err := ioutil.ReadDir(gitHome)
 	if err != nil {
 		return nil, err
+	}
+	var ret []string
+	for _, fileInfo := range fileInfos {
+		nm := fileInfo.Name()
+		if len(nm) <= 0 || nm == "." || !fileInfo.IsDir() {
+			continue
+		}
+		ret = append(ret, filepath.Join(gitHome, nm))
 	}
 	return ret, nil
 }
@@ -56,6 +58,17 @@ func getDiff(namespaceList []api.Namespace, dirs []string) []string {
 	return ret
 }
 
+func stripSuffixes(strs []string, suffix string) []string {
+	ret := make([]string, len(strs))
+	for i, str := range strs {
+		idx := strings.LastIndex(str, suffix)
+		if idx >= 0 {
+			ret[i] = str[:idx]
+		}
+	}
+	return ret
+}
+
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log.Debug to output a human readable description of what happened.
 func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryLock, pollSleepDuration time.Duration) error {
 	for {
@@ -63,12 +76,23 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 		if err != nil {
 			log.Err("Cleaner error listing namespaces (%s)", err)
 			continue
+		} else {
+			lst := make([]string, len(nsList.Items))
+			for i, ns := range nsList.Items {
+				lst[i] = strings.ToLower(ns.Name)
+			}
+			log.Debug("Cleaner found namespaces %s", lst)
 		}
 
 		gitDirs, err := localDirs(gitHome)
 		if err != nil {
 			log.Err("Cleaner error listing local git directories (%s)", err)
+			continue
+		} else {
+			log.Debug("Cleaner found local git directories in %s: %s", gitHome, gitDirs)
 		}
+
+		gitDirs = stripSuffixes(gitDirs, dotGitSuffix)
 
 		dirsToDelete := getDiff(nsList.Items, gitDirs)
 		if len(dirsToDelete) > 0 {
