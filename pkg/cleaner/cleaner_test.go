@@ -63,8 +63,9 @@ func TestLocalDirs(t *testing.T) {
 }
 
 func TestStripSuffixes(t *testing.T) {
-	strs := []string{"a.git", "b.git", "c.git"}
+	strs := []string{"a.git", "b.git", "c.git", "d"}
 	newStrs := stripSuffixes(strs, dotGitSuffix)
+	assert.Equal(t, len(newStrs), len(strs), "number of strings")
 	for _, str := range newStrs {
 		assert.False(t, strings.HasSuffix(str, dotGitSuffix), "string %s has suffix %s", str, dotGitSuffix)
 	}

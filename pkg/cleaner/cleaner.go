@@ -64,6 +64,8 @@ func stripSuffixes(strs []string, suffix string) []string {
 		idx := strings.LastIndex(str, suffix)
 		if idx >= 0 {
 			ret[i] = str[:idx]
+		} else {
+			ret[i] = str
 		}
 	}
 	return ret
