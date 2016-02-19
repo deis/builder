@@ -3,6 +3,7 @@ package cleaner
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/sshd"
-	"github.com/deis/pkg/log"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
@@ -69,47 +69,51 @@ func stripSuffixes(strs []string, suffix string) []string {
 	return ret
 }
 
-// Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log.Debug to output a human readable description of what happened.
+// Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log messages to output a human readable description of what happened.
 func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryLock, pollSleepDuration time.Duration) error {
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
-			log.Err("Cleaner error listing namespaces (%s)", err)
+			log.Printf("Cleaner error listing namespaces (%s)", err)
 			continue
 		} else {
 			lst := make([]string, len(nsList.Items))
 			for i, ns := range nsList.Items {
 				lst[i] = strings.ToLower(ns.Name)
 			}
-			log.Debug("Cleaner found namespaces %s", lst)
+			log.Printf("Cleaner found namespaces %s", lst)
 		}
 
 		gitDirs, err := localDirs(gitHome)
 		if err != nil {
-			log.Err("Cleaner error listing local git directories (%s)", err)
+			log.Printf("Cleaner error listing local git directories (%s)", err)
 			continue
 		} else {
-			log.Debug("Cleaner found local git directories in %s: %s", gitHome, gitDirs)
+			log.Printf("Cleaner found local git directories in %s: %s", gitHome, gitDirs)
 		}
 
 		gitDirs = stripSuffixes(gitDirs, dotGitSuffix)
 
-		dirsToDelete := getDiff(nsList.Items, gitDirs)
-		if len(dirsToDelete) > 0 {
-			log.Debug("Cleaner found the following git directories to delete: %s", dirsToDelete)
+		appsToDelete := getDiff(nsList.Items, gitDirs)
+		if len(appsToDelete) > 0 {
+			log.Printf("Cleaner found the following %d apps to delete: %v", len(appsToDelete), appsToDelete)
 		} else {
-			log.Debug("Cleaner found no git directories to delete")
+			log.Printf("Cleaner found no apps to delete")
 		}
-		for _, dirToDelete := range dirsToDelete {
-			if err := repoLock.Lock(dirToDelete, time.Duration(0)); err != nil {
-				log.Err("Cleaner error locking repository %s for deletion (%s)", dirToDelete, err)
+		for _, appToDelete := range appsToDelete {
+			if err := repoLock.Lock(appToDelete, time.Duration(0)); err != nil {
+				log.Printf("Cleaner error locking repository %s for deletion (%s)", appToDelete, err)
 				continue
 			}
+			dirToDelete := appToDelete + dotGitSuffix
+			log.Printf("Cleaner deleting %s", dirToDelete)
 			if err := os.RemoveAll(dirToDelete); err != nil {
-				log.Err("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
+				log.Printf("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
 			}
-			if err := repoLock.Unlock(dirToDelete, time.Duration(0)); err != nil {
-				log.Err("Cleaner error unlocking repository %s for deletion (%s)", dirToDelete, err)
+			log.Printf("Cleaner deleted %s", dirToDelete)
+
+			if err := repoLock.Unlock(appToDelete, time.Duration(0)); err != nil {
+				log.Printf("Cleaner error unlocking repository %s for deletion (%s)", appToDelete, err)
 				continue
 			}
 		}
