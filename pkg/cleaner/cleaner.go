@@ -61,13 +61,13 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
-			log.Debug("Cleaner error listing namespaces (%s)", err)
+			log.Err("Cleaner error listing namespaces (%s)", err)
 			continue
 		}
 
 		gitDirs, err := localDirs(gitHome)
 		if err != nil {
-			log.Debug("Cleaner error listing local git directories (%s)", err)
+			log.Err("Cleaner error listing local git directories (%s)", err)
 		}
 
 		dirsToDelete := getDiff(nsList.Items, gitDirs)
@@ -78,14 +78,14 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 		}
 		for _, dirToDelete := range dirsToDelete {
 			if err := repoLock.Lock(dirToDelete, time.Duration(0)); err != nil {
-				log.Debug("Cleaner error locking repository %s for deletion (%s)", dirToDelete, err)
+				log.Err("Cleaner error locking repository %s for deletion (%s)", dirToDelete, err)
 				continue
 			}
 			if err := os.RemoveAll(dirToDelete); err != nil {
-				log.Debug("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
+				log.Err("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
 			}
 			if err := repoLock.Unlock(dirToDelete, time.Duration(0)); err != nil {
-				log.Debug("Cleaner error unlocking repository %s for deletion (%s)", dirToDelete, err)
+				log.Err("Cleaner error unlocking repository %s for deletion (%s)", dirToDelete, err)
 				continue
 			}
 		}
