@@ -8,12 +8,15 @@ import (
 	"github.com/deis/builder/pkg/controller"
 
 	"github.com/Masterminds/cookoo"
+	"github.com/deis/builder/pkg/cleaner"
 	"golang.org/x/crypto/ssh"
 )
 
 const (
 	testingServerAddr  = "127.0.0.1:2244"
 	testingServerAddr2 = "127.0.0.1:2245"
+	testingServerAddr3 = "127.0.0.1:2246"
+	gitHome            = "/git"
 )
 
 // TestServer tests the SSH server.
@@ -35,7 +38,9 @@ func TestReceive(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	cxt := runServer(&cfg, c, testingServerAddr, t)
+	pushLock := NewInMemoryRepositoryLock()
+	deleteLock := NewInMemoryRepositoryLock()
+	cxt := runServer(&cfg, c, pushLock, deleteLock, testingServerAddr, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -94,7 +99,9 @@ func TestPush(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	runServer(&cfg, c, testingServerAddr2, t)
+	pushLock := NewInMemoryRepositoryLock()
+	deleteLock := NewInMemoryRepositoryLock()
+	runServer(&cfg, c, pushLock, deleteLock, testingServerAddr2, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -146,12 +153,70 @@ func TestPush(t *testing.T) {
 	sess.Close()
 }
 
+func TestDelete(t *testing.T) {
+	key, err := sshTestingHostKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := ssh.ServerConfig{
+		NoClientAuth: true,
+	}
+	cfg.AddHostKey(key)
+
+	c := NewCircuit()
+	pushLock := NewInMemoryRepositoryLock()
+	deleteLock := NewInMemoryRepositoryLock()
+	runServer(&cfg, c, pushLock, deleteLock, testingServerAddr3, t)
+
+	// Give server time to initialize.
+	time.Sleep(200 * time.Millisecond)
+
+	if c.State() != ClosedState {
+		t.Fatalf("circuit was not in closed state")
+	}
+
+	// Connect to the server and issue env var set. This should return true.
+	client, err := ssh.Dial("tcp", testingServerAddr2, &ssh.ClientConfig{})
+	if err != nil {
+		t.Fatalf("Failed to connect client to local server: %s", err)
+	}
+	sess, err := client.NewSession()
+	if err != nil {
+		t.Fatalf("Failed to create client session: %s", err)
+	}
+
+	// check for invalid length of arguments
+	if out, err := sess.Output("git-upload-pack"); err == nil {
+		t.Errorf("Expected an error but '%s' was received", out)
+	} else if string(out) != "" {
+		t.Errorf("Expected , got '%s'", out)
+	}
+	sess.Close()
+
+	repoName := "demo"
+	if err := deleteLock.Lock(repoName, time.Duration(0)); err != nil {
+		t.Fatalf("Error locking the delete lock (%s)", err)
+	}
+
+	sess, err = client.NewSession()
+	if err != nil {
+		t.Fatalf("Failed to create client session: %s", err)
+	}
+	if out, err := sess.Output("git-upload-pack /" + repoName + ".git"); err != nil {
+		t.Errorf("expected no error, got %s", err)
+	} else if string(out) != "OK" {
+		t.Errorf("Expected 'OK' output, got %s", string(out))
+	}
+	sess.Close()
+}
+
 // sshTestingHostKey loads the testing key.
 func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
 }
 
-func runServer(config *ssh.ServerConfig, c *Circuit, testAddr string, t *testing.T) cookoo.Context {
+func runServer(config *ssh.ServerConfig, c *Circuit, pushLock RepositoryLock, deleteLock RepositoryLock, testAddr string, t *testing.T) cookoo.Context {
 	reg, router, cxt := cookoo.Cookoo()
 	cxt.Put(ServerConfig, config)
 	cxt.Put(Address, testAddr)
@@ -205,8 +270,9 @@ func runServer(config *ssh.ServerConfig, c *Circuit, testAddr string, t *testing
 		},
 	})
 
+	cleanerRef := cleaner.NewRef()
 	go func() {
-		if err := Serve(reg, router, c, cxt); err != nil {
+		if err := Serve(reg, router, c, gitHome, pushLock, cleanerRef, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()

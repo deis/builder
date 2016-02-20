@@ -8,6 +8,7 @@ import (
 	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
 	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/cleaner"
 	"github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/gitreceive/storage"
@@ -20,6 +21,7 @@ import (
 const (
 	serverConfAppName     = "deis-builder-server"
 	gitReceiveConfAppName = "deis-builder-git-receive"
+	gitHomeDir            = "/home/git"
 )
 
 func init() {
@@ -46,6 +48,8 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
+				pushLock := sshd.NewInMemoryRepositoryLock()
+				cleanerRef := cleaner.NewRef()
 				circ := sshd.NewCircuit()
 
 				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
@@ -65,11 +69,18 @@ func main() {
 						healthSrvCh <- err
 					}
 				}()
+				log.Printf("Starting deleted app cleaner")
+				cleanerErrCh := make(chan error)
+				go func() {
+					if err := cleanerRef.Run(gitHomeDir, kubeClient.Namespaces(), cleanerRef, cnf.CleanerPollSleepDuration()); err != nil {
+						cleanerErrCh <- err
+					}
+				}()
 
 				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, circ)
+					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, gitHomeDir, circ, pushLock, cleanerRef)
 				}()
 
 				select {
@@ -79,6 +90,9 @@ func main() {
 				case i := <-sshCh:
 					log.Printf("Unexpected SSH server stop with code %d", i)
 					os.Exit(i)
+				case err := <-cleanerErrCh:
+					log.Printf("Error running the deleted app cleaner (%s)", err)
+					os.Exit(1)
 				}
 			},
 		},
