@@ -203,10 +203,10 @@ func TestDelete(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create client session: %s", err)
 	}
-	if out, err := sess.Output("git-upload-pack /" + repoName + ".git"); err == nil {
-		t.Error("Expected concurrent delete error, got nothing")
-	} else if string(out) == "OK" {
-		t.Errorf("Expected error output, got %s", string(out))
+	if out, err := sess.Output("git-upload-pack /" + repoName + ".git"); err != nil {
+		t.Errorf("expected no error, got %s", err)
+	} else if string(out) != "OK" {
+		t.Errorf("Expected 'OK' output, got %s", string(out))
 	}
 	sess.Close()
 }
