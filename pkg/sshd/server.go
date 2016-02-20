@@ -232,7 +232,6 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				fmt.Printf("Server locking %s for delete\n", repoName)
 				s.cleanerRef.Lock()
 				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
@@ -260,7 +259,6 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
 				}
 				s.cleanerRef.Unlock()
-				fmt.Printf("Server unlocked %s for delete\n", repoName)
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
