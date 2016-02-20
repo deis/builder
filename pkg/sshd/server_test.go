@@ -8,6 +8,7 @@ import (
 	"github.com/deis/builder/pkg/controller"
 
 	"github.com/Masterminds/cookoo"
+	"github.com/deis/builder/pkg/cleaner"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -269,8 +270,9 @@ func runServer(config *ssh.ServerConfig, c *Circuit, pushLock RepositoryLock, de
 		},
 	})
 
+	cleanerRef := cleaner.NewRef()
 	go func() {
-		if err := Serve(reg, router, c, gitHome, pushLock, deleteLock, cxt); err != nil {
+		if err := Serve(reg, router, c, gitHome, pushLock, cleanerRef, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()
