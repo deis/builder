@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/deis/builder/pkg/k8s"
-	"github.com/deis/builder/pkg/sshd"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
@@ -19,6 +19,22 @@ import (
 const (
 	dotGitSuffix = ".git"
 )
+
+type Ref struct {
+	mut *sync.Mutex
+}
+
+func NewRef() Ref {
+	return Ref{mut: new(sync.Mutex)}
+}
+
+func (c Ref) Lock() {
+	c.mut.Lock()
+}
+
+func (c Ref) Unlock() {
+	c.mut.Unlock()
+}
 
 // localDirs returns all of the local directories immediately under gitHome that filter returns true for. filter will receive only the names of each of the top level directories (not their fully qualified paths), and should return true if it should be included in the output
 func localDirs(gitHome string, filter func(string) bool) ([]string, error) {
@@ -79,7 +95,7 @@ func dirHasGitSuffix(dir string) bool {
 }
 
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log messages to output a human readable description of what happened.
-func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryLock, pollSleepDuration time.Duration) error {
+func (c Ref) Run(gitHome string, nsLister k8s.NamespaceLister, ref Ref, pollSleepDuration time.Duration) error {
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
@@ -104,21 +120,11 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, repoLock sshd.RepositoryL
 
 		for _, appToDelete := range appsToDelete {
 			dirToDelete := appToDelete + dotGitSuffix
-			// this value must be the same as what's in sshd/server.go. search for repoName := parts[0]
-			lockValue := "/" + filepath.Base(dirToDelete)
-			if err := repoLock.Lock(lockValue, time.Duration(0)); err != nil {
-				log.Printf("Cleaner error locking directory %s for deletion (%s)", dirToDelete, err)
-				continue
-			}
-
+			ref.Lock()
 			if err := os.RemoveAll(dirToDelete); err != nil {
 				log.Printf("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
 			}
-
-			if err := repoLock.Unlock(lockValue, time.Duration(0)); err != nil {
-				log.Printf("Cleaner error unlocking directory %s for deletion (%s)", dirToDelete, err)
-				continue
-			}
+			ref.Unlock()
 		}
 
 		time.Sleep(pollSleepDuration)

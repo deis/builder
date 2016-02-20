@@ -20,12 +20,27 @@ type RepositoryLock interface {
 	Unlock(repoName string, timeout time.Duration) error
 }
 
+type mutexLock struct {
+	mut *sync.Mutex
+}
+
+func (m *mutexLock) Lock(string, time.Duration) error {
+	m.mut.Lock()
+	return nil
+}
+
+func (m *mutexLock) Unlock(string, time.Duration) error {
+	m.mut.Unlock()
+	return nil
+}
+
 // NewInMemoryRepositoryLock returns a new instance of a RepositoryLock
 func NewInMemoryRepositoryLock() RepositoryLock {
-	return &inMemoryRepoLock{
-		mutex:   &sync.RWMutex{},
-		dataMap: make(map[string]bool),
-	}
+	return &mutexLock{mut: new(sync.Mutex)}
+	// return &inMemoryRepoLock{
+	// 	mutex:   &sync.RWMutex{},
+	// 	dataMap: make(map[string]bool),
+	// }
 }
 
 type inMemoryRepoLock struct {

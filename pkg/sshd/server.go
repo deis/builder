@@ -17,6 +17,7 @@ import (
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
+	"github.com/deis/builder/pkg/cleaner"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -50,7 +51,15 @@ const (
 //
 // This puts the following variables into the context:
 // 	- ssh.Closer (chan interface{}): Send a message to this to shutdown the server.
-func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, gitHomeDir string, concurrentPushLock RepositoryLock, concurrentDeleteLock RepositoryLock, c cookoo.Context) cookoo.Interrupt {
+func Serve(
+	reg *cookoo.Registry,
+	router *cookoo.Router,
+	serverCircuit *Circuit,
+	gitHomeDir string,
+	concurrentPushLock RepositoryLock,
+	cleanerRef cleaner.Ref,
+	c cookoo.Context) cookoo.Interrupt {
+
 	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
 	addr := c.Get(Address, "0.0.0.0:2223").(string)
 	cfg := c.Get(ServerConfig, &ssh.ServerConfig{}).(*ssh.ServerConfig)
@@ -69,7 +78,7 @@ func Serve(reg *cookoo.Registry, router *cookoo.Router, serverCircuit *Circuit, 
 		c:          c,
 		gitHome:    gitHomeDir,
 		pushLock:   concurrentPushLock,
-		deleteLock: concurrentDeleteLock,
+		cleanerRef: cleanerRef,
 	}
 
 	closer := make(chan interface{}, 1)
@@ -87,7 +96,7 @@ type server struct {
 	c          cookoo.Context
 	gitHome    string
 	pushLock   RepositoryLock
-	deleteLock RepositoryLock
+	cleanerRef cleaner.Ref
 }
 
 // listen handles accepting and managing connections. However, since closer
@@ -223,16 +232,8 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				if err := s.deleteLock.Lock(repoName, time.Duration(0)); err != nil {
-					log.Errf(s.c, inProgressDelete)
-					// The error must be in git format
-					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", inProgressDelete)); err != nil {
-						log.Errf(s.c, "Failed to write to channel: %s", err)
-					}
-					sendExitStatus(1, channel)
-					req.Reply(false, nil)
-					return nil
-				}
+				fmt.Printf("Server locking %s for delete\n", repoName)
+				s.cleanerRef.Lock()
 				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
 					// The error must be in git format
@@ -241,6 +242,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					}
 					sendExitStatus(1, channel)
 					req.Reply(false, nil)
+					s.cleanerRef.Unlock()
 					return nil
 				}
 
@@ -257,11 +259,8 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					// TODO: this is an important error case that needs to be covered
 					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
 				}
-				if err := s.deleteLock.Unlock(repoName, time.Duration(0)); err != nil {
-					log.Errf(s.c, "unable to unlock delete lock for %s (%s)", repoName, err)
-					// TODO: this is an important error case that needs to be covered
-					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
-				}
+				s.cleanerRef.Unlock()
+				fmt.Printf("Server unlocked %s for delete\n", repoName)
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
