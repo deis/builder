@@ -10,17 +10,21 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/pkg/log"
 	"gopkg.in/yaml.v2"
-
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/fields"
+	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/wait"
+	"k8s.io/kubernetes/pkg/watch"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -164,49 +168,63 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		log.Debug("Error creating json representaion of pod spec: %v", err)
 	}
 
-	podsInterface := kubeClient.Pods(conf.PodNamespace)
-
-	newPod, err := podsInterface.Create(pod)
+	podInterface := kubeClient.Pods(conf.PodNamespace)
+	newPod, err := podInterface.Create(pod)
 	if err != nil {
-		return fmt.Errorf("creating builder pod (%s)", err)
+		return fmt.Errorf("creating pod %s (%s)", pod.Name, err)
 	}
 
-	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
-		return fmt.Errorf("watching events for builder pod startup (%s)", err)
+	addedEventCh := make(chan watch.Event)
+	podErrEventCh := make(chan watch.Event)
+	initialWatchers := map[watch.EventType][]chan<- watch.Event{
+		watch.Added: []chan<- watch.Event{addedEventCh},
+		// we have to watch for the Error state here, even though the pod exits successfully.
+		// This is a hack until we have access to the Jobs API. See https://github.com/deis/builder/issues/55
+		watch.Error: []chan<- watch.Event{podErrEventCh},
+	}
+	watcher, err := podInterface.Watch(labels.Everything(), fields.Everything(), newPod.ObjectMeta.ResourceVersion)
+	if err != nil {
+		return err
+	}
+	podStates := k8s.NewPodStates(watcher, initialWatchers)
+	defer podStates.Stop()
+
+	select {
+	case <-addedEventCh:
+		log.Debug("Build Pod Added")
+	case <-time.After(conf.BuilderPodWaitDuration()):
+		return fmt.Errorf("waiting for builder pod %s to start after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
 
-	req := kubeClient.Get().Namespace(newPod.Namespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
-		&api.PodLogOptions{
-			Follow: true,
-		}, api.Scheme)
-
-	rc, err := req.Stream()
+	log.Debug("Getting build pod logs")
+	rc, err := k8s.LogStreamerFromKubeClient(kubeClient, newPod.Namespace, newPod.Name).Stream()
 	if err != nil {
-		return fmt.Errorf("attempting to stream logs (%s)", err)
+		return err
 	}
 	defer rc.Close()
-
-	size, err := io.Copy(os.Stdout, rc)
+	logSize, err := io.Copy(os.Stdout, rc)
 	if err != nil {
-		return fmt.Errorf("fetching builder logs (%s)", err)
+		return err
 	}
-	log.Debug("size of streamed logs %v", size)
 
-	// check the state and exit code of the build pod.
-	// if the code is not 0 return error
-	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
-		return fmt.Errorf("error getting builder pod status (%s)", err)
+	log.Debug("Size of streamed logs was %d", logSize)
+	log.Debug("Waiting for build pod to shut down")
+
+	select {
+	case <-podErrEventCh:
+		log.Debug("Build pod shut down")
+	case <-time.After(conf.BuilderPodWaitDuration()):
+		return fmt.Errorf("waiting for builder pod %s to end after %s", pod.Name, conf.BuilderPodWaitDuration())
 	}
-	buildPod, err := kubeClient.Pods(newPod.Namespace).Get(newPod.Name)
+
+	found, code, err := k8s.PodHasAnyContainerStatus(podInterface, buildPodName, func(code int) bool {
+		return code != 0
+	})
 	if err != nil {
-		return fmt.Errorf("error getting builder pod status (%s)", err)
+		return fmt.Errorf("error getting final builder pod status (%s)", err)
 	}
-
-	for _, containerStatus := range buildPod.Status.ContainerStatuses {
-		state := containerStatus.State.Terminated
-		if state.ExitCode != 0 {
-			return fmt.Errorf("Stopping build.")
-		}
+	if found {
+		return fmt.Errorf("build pod exited with code %d", code)
 	}
 
 	// poll the s3 server to ensure the slug exists

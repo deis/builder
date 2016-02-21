@@ -28,7 +28,7 @@ type Config struct {
 	Debug                         bool   `envconfig:"DEBUG" default:"false"`
 	BuilderPodTickDurationMSec    int    `envconfig:"BUILDER_POD_TICK_DURATION" default:"100"`
 	BuilderPodWaitDurationMSec    int    `envconfig:"BUILDER_POD_WAIT_DURATION" default:"300000"` // 5 minutes
-	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
+	ObjectStorageTickDurationMSec int    `envconfig:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
 }
 

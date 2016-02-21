@@ -6,8 +6,9 @@ import (
 
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api"
-	apierrs "k8s.io/kubernetes/pkg/api/errors"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/fields"
+	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/wait"
 )
 
@@ -145,20 +146,20 @@ func addEnvToPod(pod api.Pod, key, value string) {
 	}
 }
 
-// waitForPod waits for a pod in state running or failed
-func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
-	condition := func(pod *api.Pod) (bool, error) {
-		if pod.Status.Phase == api.PodRunning {
-			return true, nil
-		}
-		if pod.Status.Phase == api.PodFailed {
-			return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
-		}
-		return false, nil
-	}
-
-	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
-}
+// // waitForPod waits for a pod in state running or failed
+// func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
+// 	condition := func(pod *api.Pod) (bool, error) {
+// 		if pod.Status.Phase == api.PodRunning {
+// 			return true, nil
+// 		}
+// 		if pod.Status.Phase == api.PodFailed {
+// 			return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
+// 		}
+// 		return false, nil
+// 	}
+//
+// 	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+// }
 
 // waitForPodEnd waits for a pod in state succeeded or failed
 func waitForPodEnd(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
@@ -175,15 +176,29 @@ func waitForPodEnd(c *client.Client, ns, podName string, interval, timeout time.
 	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
 }
 
-// waitForPodCondition waits for a pod in state defined by a condition (func)
-func waitForPodCondition(c *client.Client, ns, podName string, condition func(pod *api.Pod) (bool, error),
-	interval, timeout time.Duration) error {
+// podExists returns the pod of the given name if it exists, nil otherwise
+func findPod(name string, list []api.Pod) *api.Pod {
+	for _, pod := range list {
+		if pod.Name == name {
+			return &pod
+		}
+	}
+	return nil
+}
+
+// waitForPodCondition waits for a pod in state defined by a condition (func).
+func waitForPodCondition(c *client.Client, ns, podName string, condition func(pod *api.Pod) (bool, error), interval, timeout time.Duration) error {
+	podInterface := c.Pods(ns)
 	return wait.PollImmediate(interval, timeout, func() (bool, error) {
-		pod, err := c.Pods(ns).Get(podName)
+		podList, err := podInterface.List(labels.Everything(), fields.Everything())
+		// error listing pods
 		if err != nil {
-			if apierrs.IsNotFound(err) {
-				return true, err
-			}
+			return false, err
+		}
+		pod := findPod(podName, podList.Items)
+		// pod not found
+		if pod == nil {
+			return false, nil
 		}
 
 		done, err := condition(pod)
