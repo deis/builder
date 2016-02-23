@@ -30,6 +30,7 @@ type Config struct {
 	BuilderPodWaitDurationMSec    int    `envconfig:"BUILDER_POD_WAIT_DURATION" default:"300000"` // 5 minutes
 	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
+	Bucket                        string `envconfig:"BUCKET" default:"git"`
 }
 
 func (c Config) App() string {

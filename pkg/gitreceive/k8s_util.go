@@ -35,7 +35,7 @@ func slugBuilderPodName(appName, shortSha string) string {
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, imageName string) *api.Pod {
+func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, imageName, region string) *api.Pod {
 	pod := buildPod(debug, withAuth, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
@@ -46,6 +46,7 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[stri
 
 	addEnvToPod(pod, tarURLKey, tarURL)
 	addEnvToPod(pod, "IMG_NAME", imageName)
+	addEnvToPod(pod, "REGION", region)
 
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
 		Name:      dockerSocketName,

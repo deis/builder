@@ -41,6 +41,7 @@ type dockerBuildCase struct {
 	env       map[string]interface{}
 	tarURL    string
 	imgName   string
+	region    string
 }
 
 func TestBuildPod(t *testing.T) {
@@ -82,18 +83,18 @@ func TestBuildPod(t *testing.T) {
 	}
 
 	dockerBuilds := []dockerBuildCase{
-		{true, true, "test", "default", emptyEnv, "tar", ""},
-		{true, false, "test", "default", emptyEnv, "tar", ""},
-		{true, true, "test", "default", env, "tar", ""},
-		{true, false, "test", "default", env, "tar", ""},
-		{true, true, "test", "default", emptyEnv, "tar", "img"},
-		{true, false, "test", "default", emptyEnv, "tar", "img"},
-		{true, true, "test", "default", env, "tar", "img"},
-		{true, false, "test", "default", env, "tar", "img"},
+		{true, true, "test", "default", emptyEnv, "tar", "", "us-east-1"},
+		{true, false, "test", "default", emptyEnv, "tar", "", "us-east-1"},
+		{true, true, "test", "default", env, "tar", "", "us-east-1"},
+		{true, false, "test", "default", env, "tar", "", "us-east-1"},
+		{true, true, "test", "default", emptyEnv, "tar", "img", "us-east-1"},
+		{true, false, "test", "default", emptyEnv, "tar", "img", "us-east-1"},
+		{true, true, "test", "default", env, "tar", "img", "us-east-1"},
+		{true, false, "test", "default", env, "tar", "img", "us-east-1"},
 	}
 
 	for _, build := range dockerBuilds {
-		pod = dockerBuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.imgName)
+		pod = dockerBuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.imgName, build.region)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
