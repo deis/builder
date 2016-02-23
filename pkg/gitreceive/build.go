@@ -63,7 +63,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, appName, slugName, gitSha)
+	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -111,8 +111,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		}
 	}
 
-	bucketName := "git"
-	if err := storage.CreateBucket(s3Client, bucketName); err != nil {
+	if err := storage.CreateBucket(s3Client, conf.Bucket); err != nil {
 		log.Warn("create bucket error: %+v", err)
 	}
 
@@ -121,9 +120,9 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
 
-	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, bucketName, slugBuilderInfo.TarKey())
-	if err := storage.UploadObject(s3Client, bucketName, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
-		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, bucketName, slugBuilderInfo.TarKey(), err)
+	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, conf.Bucket, slugBuilderInfo.TarKey())
+	if err := storage.UploadObject(s3Client, conf.Bucket, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
+		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, conf.Bucket, slugBuilderInfo.TarKey(), err)
 	}
 
 	creds := storage.CredsOK()
@@ -140,6 +139,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 			appConf.Values,
 			slugBuilderInfo.TarURL(),
 			slugName,
+			conf.StorageRegion,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -211,9 +211,9 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 
 	// poll the s3 server to ensure the slug exists
 	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {
-		exists, err := storage.ObjectExists(s3Client, bucketName, slugBuilderInfo.PushKey())
+		exists, err := storage.ObjectExists(s3Client, conf.Bucket, slugBuilderInfo.PushKey())
 		if err != nil {
-			return false, fmt.Errorf("Checking if object %s/%s exists (%s)", bucketName, slugBuilderInfo.PushKey(), err)
+			return false, fmt.Errorf("Checking if object %s/%s exists (%s)", conf.Bucket, slugBuilderInfo.PushKey(), err)
 		}
 		return exists, nil
 	})
