@@ -183,7 +183,7 @@ func waitForPodCondition(c *client.Client, ns, podName string, condition func(po
 		pod, err := c.Pods(ns).Get(podName)
 		if err != nil {
 			if apierrs.IsNotFound(err) {
-				return true, err
+				return false, nil
 			}
 		}
 
