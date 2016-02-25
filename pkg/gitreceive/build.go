@@ -194,7 +194,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 
 	// check the state and exit code of the build pod.
 	// if the code is not 0 return error
-	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickEndDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
 	}
 	buildPod, err := kubeClient.Pods(newPod.Namespace).Get(newPod.Name)

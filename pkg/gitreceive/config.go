@@ -26,7 +26,8 @@ type Config struct {
 	PodNamespace                  string `envconfig:"POD_NAMESPACE" required:"true"`
 	StorageRegion                 string `envconfig:"STORAGE_REGION" default:"us-east-1"`
 	Debug                         bool   `envconfig:"DEBUG" default:"false"`
-	BuilderPodTickDurationMSec    int    `envconfig:"BUILDER_POD_TICK_DURATION" default:"300"`
+	BuilderPodTickDurationMSec    int    `envconfig:"BUILDER_POD_TICK_DURATION" default:"50"`
+	BuilderPodTickEndDurationMSec int    `envconfig:"BUILDER_POD_TICK_END_DURATION" default:"10"`
 	BuilderPodWaitDurationMSec    int    `envconfig:"BUILDER_POD_WAIT_DURATION" default:"300000"` // 5 minutes
 	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
@@ -51,6 +52,12 @@ func (c Config) BuilderPodTickDuration() time.Duration {
 // of the execution of a Pod building an application
 func (c Config) BuilderPodWaitDuration() time.Duration {
 	return time.Duration(time.Duration(c.BuilderPodWaitDurationMSec) * time.Millisecond)
+}
+
+// BuilderPodTickEndDuration returns the size of the interval used to check for
+// the succeeded status of a pod
+func (c Config) BuilderPodTickEndDuration() time.Duration {
+	return time.Duration(time.Duration(c.BuilderPodTickEndDurationMSec) * time.Millisecond)
 }
 
 // ObjectStorageTickDuration returns the size of the interval used to check for

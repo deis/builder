@@ -152,13 +152,16 @@ func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Dur
 		if pod.Status.Phase == api.PodRunning {
 			return true, nil
 		}
+		if pod.Status.Phase == api.PodSucceeded {
+			return true, nil
+		}
 		if pod.Status.Phase == api.PodFailed {
 			return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
 		}
 		return false, nil
 	}
 
-	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+	return waitForPodCondition(c, false, ns, podName, condition, interval, timeout)
 }
 
 // waitForPodEnd waits for a pod in state succeeded or failed
@@ -173,17 +176,17 @@ func waitForPodEnd(c *client.Client, ns, podName string, interval, timeout time.
 		return false, nil
 	}
 
-	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+	return waitForPodCondition(c, true, ns, podName, condition, interval, timeout)
 }
 
 // waitForPodCondition waits for a pod in state defined by a condition (func)
-func waitForPodCondition(c *client.Client, ns, podName string, condition func(pod *api.Pod) (bool, error),
+func waitForPodCondition(c *client.Client, ret bool, ns, podName string, condition func(pod *api.Pod) (bool, error),
 	interval, timeout time.Duration) error {
 	return wait.PollImmediate(interval, timeout, func() (bool, error) {
 		pod, err := c.Pods(ns).Get(podName)
 		if err != nil {
 			if apierrs.IsNotFound(err) {
-				return false, nil
+				return ret, nil
 			}
 		}
 
