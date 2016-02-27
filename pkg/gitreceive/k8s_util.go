@@ -96,8 +96,7 @@ func buildPod(debug, withAuth bool, name, namespace string, env map[string]inter
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"heritage": "deis",
-				"version":  "2.0.0-beta",
+				"heritage": name,
 			},
 		},
 	}
