@@ -1,6 +1,7 @@
 package sshd
 
 import (
+	"bytes"
 	"net"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/deis/builder/pkg/controller"
 
 	"github.com/Masterminds/cookoo"
+	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/cleaner"
 	"golang.org/x/crypto/ssh"
 )
@@ -18,6 +20,14 @@ const (
 	testingServerAddr3 = "127.0.0.1:2246"
 	gitHome            = "/git"
 )
+
+func TestGitPktLine(t *testing.T) {
+	b := new(bytes.Buffer)
+	str := "hello world"
+	err := gitPktLine(b, str)
+	assert.NoErr(t, err)
+	t.Logf(string(b.Bytes()))
+}
 
 // TestServer tests the SSH server.
 //
