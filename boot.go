@@ -72,7 +72,7 @@ func main() {
 				log.Printf("Starting deleted app cleaner")
 				cleanerErrCh := make(chan error)
 				go func() {
-					if err := cleanerRef.Run(gitHomeDir, kubeClient.Namespaces(), cleanerRef, cnf.CleanerPollSleepDuration()); err != nil {
+					if err := cleanerRef.Run(gitHomeDir, kubeClient.Namespaces(), cnf.CleanerPollSleepDuration()); err != nil {
 						cleanerErrCh <- err
 					}
 				}()
