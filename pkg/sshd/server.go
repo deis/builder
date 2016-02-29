@@ -232,7 +232,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				s.cleanerRef.Lock()
+				s.cleanerRef.RLock()
 				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
 					// The error must be in git format
@@ -241,7 +241,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					}
 					sendExitStatus(1, channel)
 					req.Reply(false, nil)
-					s.cleanerRef.Unlock()
+					s.cleanerRef.RUnlock()
 					return nil
 				}
 
@@ -258,7 +258,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					// TODO: this is an important error case that needs to be covered
 					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
 				}
-				s.cleanerRef.Unlock()
+				s.cleanerRef.RUnlock()
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
