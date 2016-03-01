@@ -94,7 +94,42 @@ func TestReceive(t *testing.T) {
 	closer <- true
 }
 
-func TestPush(t *testing.T) {
+// TestPushInvalidArgsLength tests trying to do a push with only the command, not the repo
+func TestPushInvalidArgsLength(t *testing.T) {
+	const testingServerAddr = "127.0.0.1:2252"
+	key, err := sshTestingHostKey()
+	assert.NoErr(t, err)
+
+	cfg := ssh.ServerConfig{NoClientAuth: true}
+	cfg.AddHostKey(key)
+
+	c := NewCircuit()
+	pushLock := NewInMemoryRepositoryLock()
+	cleanerRef := cleaner.NewRef()
+	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 0*time.Second, t)
+
+	// Give server time to initialize.
+	time.Sleep(200 * time.Millisecond)
+
+	assert.Equal(t, c.State(), ClosedState, "circuit state")
+
+	// Connect to the server and issue env var set. This should return true.
+	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
+	assert.NoErr(t, err)
+
+	// check for invalid length of arguments
+	sess, err := client.NewSession()
+	assert.NoErr(t, err)
+	defer sess.Close()
+	if out, err := sess.Output("git-upload-pack"); err == nil {
+		t.Errorf("Expected an error but '%s' was received", out)
+	} else if string(out) != "" {
+		t.Errorf("Expected , got '%s'", out)
+	}
+}
+
+// TestConcurrentPushSameRepo tests many concurrent pushes, each to the same repo
+func TestConcurrentPushSameRepo(t *testing.T) {
 	const testingServerAddr = "127.0.0.1:2245"
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
@@ -107,59 +142,57 @@ func TestPush(t *testing.T) {
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
 	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 5*time.Second, t)
+	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 2*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
 
-	if c.State() != ClosedState {
-		t.Fatalf("circuit was not in closed state")
-	}
+	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
 	// Connect to the server and issue env var set. This should return true.
 	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
-	if err != nil {
-		t.Fatalf("Failed to connect client to local server: %s", err)
-	}
-	sess, err := client.NewSession()
-	if err != nil {
-		t.Fatalf("Failed to create client session: %s", err)
+	assert.NoErr(t, err)
+
+	const numPushers = 10
+	outCh := make(chan *sshSessionOutput, numPushers)
+	for i := 0; i < numPushers; i++ {
+		go func() {
+			sess, err := client.NewSession()
+			assert.NoErr(t, err)
+			defer sess.Close()
+			out, err := sess.Output("git-upload-pack /demo.git")
+			outCh <- &sshSessionOutput{outStr: string(out), err: err}
+		}()
 	}
 
-	// check for invalid length of arguments
-	if out, err := sess.Output("git-upload-pack"); err == nil {
-		t.Errorf("Expected an error but '%s' was received", out)
-	} else if string(out) != "" {
-		t.Errorf("Expected , got '%s'", out)
-	}
-	sess.Close()
+	foundOK := false
+	to := 1 * time.Second
+	multiPushLine, err := gitPktLineStr(multiplePush)
+	assert.NoErr(t, err)
+	for i := 0; i < numPushers; i++ {
+		select {
+		case sessOut := <-outCh:
+			if sessOut.outStr != multiPushLine && sessOut.outStr != "OK" {
+				t.Fatalf("expected 'OK' or '%s', but got '%s' (error '%s')", multiPushLine, sessOut.outStr, sessOut.err)
+			}
 
-	go func() {
-		sess, err = client.NewSession()
-		if err != nil {
-			t.Fatalf("Failed to create client session: %s", err)
+			if sessOut.outStr == "OK" && sessOut.err != nil {
+				t.Fatalf("found 'OK' output with an error %s", err)
+			}
+
+			if !foundOK && sessOut.outStr == "OK" {
+				foundOK = true
+			} else if sessOut.outStr == "OK" {
+				t.Fatalf("found second OK when shouldn't have")
+			}
+		case <-time.After(to):
+			t.Fatalf("didn't receive an output within %s", to)
 		}
-		if out, err := sess.Output("git-upload-pack /demo.git"); err != nil {
-			t.Errorf("Unexpected error %s, Output '%s'", err, out)
-		} else if string(out) != "OK" {
-			t.Errorf("Expected 'OK' got '%s'", out)
-		}
-		sess.Close()
-	}()
-
-	time.Sleep(2 * time.Second)
-
-	sess, err = client.NewSession()
-	if err != nil {
-		t.Fatalf("Failed to create client session: %s", err)
 	}
-	if out, err := sess.Output("git-upload-pack /demo.git"); err == nil {
-		t.Errorf("Expected an error but returned without errors '%s'", out)
-	}
-	sess.Close()
 }
 
-func TestManyConcurrentPushes(t *testing.T) {
+// TestConcurrentPushDifferentRepo tests many concurrent pushes, each to a different repo
+func TestConcurrentPushDifferentRepo(t *testing.T) {
 	const testingServerAddr = "127.0.0.1:2247"
 	key, err := sshTestingHostKey()
 	if err != nil {
@@ -361,6 +394,14 @@ func mockDummyReceive(sleepDur time.Duration) func(cookoo.Context, *cookoo.Param
 		req.Reply(true, nil)
 		return nil, nil
 	}
+}
+
+func gitPktLineStr(str string) (string, error) {
+	var buf bytes.Buffer
+	if err := gitPktLine(&buf, str); err != nil {
+		return "", err
+	}
+	return string(buf.Bytes()), nil
 }
 
 // connMetadata mocks ssh.ConnMetadata for authentication.

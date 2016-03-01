@@ -28,3 +28,9 @@ func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) error {
 		return nil
 	}
 }
+
+// sshSessionOutput is the output from a *(golang.org/x/crypto/ssh).Session's Output() call
+type sshSessionOutput struct {
+	outStr string
+	err    error
+}
