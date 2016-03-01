@@ -197,7 +197,7 @@ func TestManyConcurrentPushes(t *testing.T) {
 			assert.Equal(t, string(out), "OK", "output")
 		}(repoName)
 	}
-	wg.Wait()
+	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
 }
 
 func TestDelete(t *testing.T) {
