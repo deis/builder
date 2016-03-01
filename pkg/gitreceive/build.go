@@ -205,7 +205,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 	for _, containerStatus := range buildPod.Status.ContainerStatuses {
 		state := containerStatus.State.Terminated
 		if state.ExitCode != 0 {
-			return fmt.Errorf("Stopping build.")
+			return fmt.Errorf("Build pod exited with code %d, stopping build.", state.ExitCode)
 		}
 	}
 
