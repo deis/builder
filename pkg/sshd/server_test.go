@@ -198,6 +198,22 @@ func TestManyConcurrentPushes(t *testing.T) {
 	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
 }
 
+func TestWithCleanerLock(t *testing.T) {
+	srv := &server{cleanerRef: cleaner.NewRef()}
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(i int) {
+			err := srv.withCleanerLock(func() error {
+				wg.Done()
+				return nil
+			})
+			assert.NoErr(t, err)
+		}(i)
+	}
+	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
+}
+
 func TestDelete(t *testing.T) {
 	const testingServerAddr = "127.0.0.1:2246"
 	key, err := sshTestingHostKey()
