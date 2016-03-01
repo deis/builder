@@ -50,7 +50,7 @@ func TestReceive(t *testing.T) {
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
 	cleanerRef := cleaner.NewRef()
-	cxt := runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, t)
+	cxt := runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -107,7 +107,7 @@ func TestPush(t *testing.T) {
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
 	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, t)
+	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 5*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -170,7 +170,7 @@ func TestManyConcurrentPushes(t *testing.T) {
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
 	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, t)
+	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
@@ -225,7 +225,7 @@ func TestDelete(t *testing.T) {
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
 	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, t)
+	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -264,7 +264,15 @@ func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
 }
 
-func runServer(config *ssh.ServerConfig, c *Circuit, pushLock RepositoryLock, cleanerRef cleaner.Ref, testAddr string, t *testing.T) cookoo.Context {
+func runServer(
+	config *ssh.ServerConfig,
+	c *Circuit,
+	pushLock RepositoryLock,
+	cleanerRef cleaner.Ref,
+	testAddr string,
+	handlerSleepDur time.Duration,
+	t *testing.T) cookoo.Context {
+
 	reg, router, cxt := cookoo.Cookoo()
 	cxt.Put(ServerConfig, config)
 	cxt.Put(Address, testAddr)
@@ -305,7 +313,7 @@ func runServer(config *ssh.ServerConfig, c *Circuit, pushLock RepositoryLock, cl
 		Does: []cookoo.Task{
 			cookoo.Cmd{
 				Name: "receive",
-				Fn:   mockDummyReceive,
+				Fn:   mockDummyReceive(handlerSleepDur),
 				Using: []cookoo.Param{
 					{Name: "request", From: "cxt:request"},
 					{Name: "channel", From: "cxt:channel"},
@@ -343,14 +351,16 @@ func mockAuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interr
 	return perm, nil
 }
 
-func mockDummyReceive(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	channel := p.Get("channel", nil).(ssh.Channel)
-	req := p.Get("request", nil).(*ssh.Request)
-	time.Sleep(5 * time.Second)
-	channel.Write([]byte("OK"))
-	sendExitStatus(0, channel)
-	req.Reply(true, nil)
-	return nil, nil
+func mockDummyReceive(sleepDur time.Duration) func(cookoo.Context, *cookoo.Params) (interface{}, cookoo.Interrupt) {
+	return func(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
+		channel := p.Get("channel", nil).(ssh.Channel)
+		req := p.Get("request", nil).(*ssh.Request)
+		time.Sleep(sleepDur)
+		channel.Write([]byte("OK"))
+		sendExitStatus(0, channel)
+		req.Reply(true, nil)
+		return nil, nil
+	}
 }
 
 // connMetadata mocks ssh.ConnMetadata for authentication.
