@@ -334,8 +334,7 @@ func Ping(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 	return nil, nil
 }
 
-// gitPktLine writes a line following the git protocol
-// https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt
+// gitPktLine writes a line following the pkt-line git protocol. See https://github.com/git/git/blob/master/Documentation/technical/protocol-common.txt for the protocol and https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt for its usage.
 func gitPktLine(w io.Writer, s string) error {
 	_, err := fmt.Fprintf(w, "%04x%s", len(s)+4, s)
 	return err
