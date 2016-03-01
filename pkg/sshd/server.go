@@ -180,9 +180,9 @@ func sendExitStatus(status uint32, channel ssh.Channel) error {
 	return err
 }
 
-func (s *server) withCleanerRLock(f func() error) error {
-	s.cleanerRef.RLock()
-	defer s.cleanerRef.RUnlock()
+func (s *server) withCleanerLock(f func() error) error {
+	s.cleanerRef.Lock()
+	defer s.cleanerRef.Unlock()
 	return f()
 }
 
@@ -240,7 +240,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 
 				repoName := parts[1]
 				errConcurrentPush := errors.New("concurrent push")
-				err := s.withCleanerRLock(func() error {
+				err := s.withCleanerLock(func() error {
 					if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 						return errConcurrentPush
 					}

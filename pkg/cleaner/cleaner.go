@@ -21,19 +21,11 @@ const (
 )
 
 type Ref struct {
-	mut *sync.RWMutex
+	mut *sync.Mutex
 }
 
 func NewRef() Ref {
-	return Ref{mut: new(sync.RWMutex)}
-}
-
-func (c Ref) RLock() {
-	c.mut.RLock()
-}
-
-func (c Ref) RUnlock() {
-	c.mut.RUnlock()
+	return Ref{mut: new(sync.Mutex)}
 }
 
 func (c Ref) Lock() {
