@@ -172,19 +172,22 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	for i := 0; i < numPushers; i++ {
 		select {
 		case sessOut := <-outCh:
-			if sessOut.outStr != multiPushLine && sessOut.outStr != "OK" {
-				t.Fatalf("expected 'OK' or '%s', but got '%s' (error '%s')", multiPushLine, sessOut.outStr, sessOut.err)
+			output := sessOut.outStr
+			err := sessOut.err
+			if output != multiPushLine && output != "OK" {
+				t.Fatalf("expected 'OK' or '%s', but got '%s' (error '%s')", multiPushLine, output, err)
 			}
 
-			if sessOut.outStr == "OK" && sessOut.err != nil {
-				t.Fatalf("found 'OK' output with an error %s", err)
+			if sessOut.err != nil {
+				t.Fatalf("found '%s' output with an error '%s'", output, err)
 			}
 
-			if !foundOK && sessOut.outStr == "OK" {
+			if !foundOK && output == "OK" {
 				foundOK = true
-			} else if sessOut.outStr == "OK" {
-				t.Fatalf("found second OK when shouldn't have")
+			} else if output == "OK" {
+				t.Fatalf("found second 'OK' when shouldn't have")
 			}
+
 		case <-time.After(to):
 			t.Fatalf("didn't receive an output within %s", to)
 		}
