@@ -130,6 +130,8 @@ func TestPushInvalidArgsLength(t *testing.T) {
 
 // TestConcurrentPushSameRepo tests many concurrent pushes, each to the same repo
 func TestConcurrentPushSameRepo(t *testing.T) {
+	t.Skip("skipping because the global lock prevents testing the repository lock, for multiple concurrent pushes to the same repo")
+	t.SkipNow()
 	const testingServerAddr = "127.0.0.1:2245"
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
