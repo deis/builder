@@ -31,8 +31,6 @@ const (
 	ServerConfig string = "ssh.ServerConfig"
 
 	multiplePush string = "Another git push is ongoing"
-
-	inProgressDelete string = "This app was deleted and is being cleaned up. Please re-create it with 'deis create your_app'"
 )
 
 // Serve starts a native SSH server.
