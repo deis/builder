@@ -2,6 +2,7 @@ package sshd
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"testing"
 	"time"
@@ -26,7 +27,10 @@ func TestGitPktLine(t *testing.T) {
 	str := "hello world"
 	err := gitPktLine(b, str)
 	assert.NoErr(t, err)
-	t.Logf(string(b.Bytes()))
+	outStr := string(b.Bytes())
+	assert.True(t, len(outStr) > 4, "output string <= 4 chars")
+	assert.Equal(t, outStr[:4], fmt.Sprintf("%04x", len(str)+4), "hex prefix")
+	assert.Equal(t, outStr[4:], str, "remainder of string")
 }
 
 // TestServer tests the SSH server.
