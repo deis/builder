@@ -177,8 +177,6 @@ func TestManyConcurrentPushes(t *testing.T) {
 	// Connect to the server and issue env var set. This should return true.
 	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
 	assert.NoErr(t, err)
-	sess, err := client.NewSession()
-	assert.NoErr(t, err)
 
 	const numRepos = 20
 	repoNames := make([]string, numRepos)
@@ -190,7 +188,7 @@ func TestManyConcurrentPushes(t *testing.T) {
 		wg.Add(1)
 		go func(repoName string) {
 			defer wg.Done()
-			sess, err = client.NewSession()
+			sess, err := client.NewSession()
 			assert.NoErr(t, err)
 			out, err := sess.Output("git-upload-pack /" + repoName + ".git")
 			assert.NoErr(t, err)
