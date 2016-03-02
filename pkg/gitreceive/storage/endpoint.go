@@ -33,19 +33,19 @@ func stripScheme(str string) string {
 	return str
 }
 
-type endpoint struct {
-	urlStr string
-	secure bool
+type Endpoint struct {
+	URLStr string
+	Secure bool
 }
 
-func getEndpoint(env sys.Env) (*endpoint, error) {
+func getEndpoint(env sys.Env) (*Endpoint, error) {
 	mHost := env.Get(minioHostEnvVar)
 	mPort := env.Get(minioPortEnvVar)
 	S3EP := env.Get(outsideStorageEndpoint)
 	if S3EP != "" {
-		return &endpoint{urlStr: stripScheme(S3EP), secure: true}, nil
+		return &Endpoint{URLStr: stripScheme(S3EP), Secure: true}, nil
 	} else if mHost != "" && mPort != "" {
-		return &endpoint{urlStr: fmt.Sprintf("%s:%s", mHost, mPort), secure: false}, nil
+		return &Endpoint{URLStr: fmt.Sprintf("%s:%s", mHost, mPort), Secure: false}, nil
 	} else {
 		return nil, errNoStorageConfig
 	}
