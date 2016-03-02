@@ -16,12 +16,16 @@ const (
 var (
 	errMissingKey    = fmt.Errorf("missing %s", accessKeyIDFile)
 	errMissingSecret = fmt.Errorf("missing %s", accessSecretKeyFile)
-	emptyAuth        = credentials.AnonymousCredentials
+	emptyCreds       = creds{}
 )
 
 type creds struct {
 	accessKeyID     string
 	accessKeySecret string
+}
+
+func (c *creds) isZero() bool {
+	return c.accessKeyID == "" && c.accessKeySecret == ""
 }
 
 // getAuth gets storage credentials from accessKeyIDFile and accessSecretKeyFile.
@@ -32,7 +36,7 @@ func getAuth(fs sys.FS) (*credentials.Credentials, error) {
 	accessKeyIDBytes, accessKeyErr := fs.ReadFile(accessKeyIDFile)
 	accessSecretKeyBytes, accessSecretKeyErr := fs.ReadFile(accessSecretKeyFile)
 	if accessKeyErr == os.ErrNotExist && accessSecretKeyErr == os.ErrNotExist {
-		return emptyAuth, nil
+		return &emptyCreds, nil
 	}
 	if accessKeyErr != nil && accessSecretKeyErr == nil {
 		return nil, errMissingKey
