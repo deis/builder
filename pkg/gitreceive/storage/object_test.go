@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/arschles/assert"
@@ -36,4 +37,16 @@ func TestObjectExistsNoObject(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.False(t, exists, "object found when it should be missing")
 	assert.Equal(t, len(statter.Calls), 1, "number of StatObject calls")
+}
+
+func TestObjectExistsOtherErr(t *testing.T) {
+	expectedErr := errors.New("other error")
+	statter := &FakeObjectStatter{
+		Fn: func(string, string) (s3.ObjectInfo, error) {
+			return s3.ObjectInfo{}, expectedErr
+		},
+	}
+	exists, err := ObjectExists(statter, bucketName, objKey)
+	assert.Err(t, err, expectedErr)
+	assert.False(t, exists, "object found when the statter errored")
 }
