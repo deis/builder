@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/deis/builder/pkg/sys"
 )
@@ -21,15 +23,30 @@ var (
 	)
 )
 
-func getEndpoint(env sys.Env) (string, error) {
+func stripScheme(str string) string {
+	schemes := []string{"http://", "https://"}
+	for _, scheme := range schemes {
+		if strings.HasPrefix(str, scheme) {
+			str = str[len(scheme):]
+		}
+	}
+	return str
+}
+
+type endpoint struct {
+	urlStr string
+	secure bool
+}
+
+func getEndpoint(env sys.Env) (*endpoint, error) {
 	mHost := env.Get(minioHostEnvVar)
 	mPort := env.Get(minioPortEnvVar)
 	S3EP := env.Get(outsideStorageEndpoint)
 	if S3EP != "" {
-		return S3EP, nil
+		return &endpoint{urlStr: stripScheme(S3EP), secure: true}, nil
 	} else if mHost != "" && mPort != "" {
-		return fmt.Sprintf("http://%s:%s", mHost, mPort), nil
+		return &endpoint{urlStr: fmt.Sprintf("%s:%s", mHost, mPort), secure: false}, nil
 	} else {
-		return "", errNoStorageConfig
+		return nil, errNoStorageConfig
 	}
 }

@@ -3,27 +3,27 @@ package storage
 import (
 	"io"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	s3 "github.com/minio/minio-go"
 )
 
-func ObjectExists(svc *s3.S3, bucket, objName string) (bool, error) {
-	_, err := svc.HeadBucket(&s3.HeadBucketInput{
-		Bucket: aws.String(bucket),
-	})
+const (
+	noSuchKeyCode = "NoSuchKey"
+
+	octetStream = "application/octet-stream"
+)
+
+func ObjectExists(statter ObjectStatter, bucket, objName string) (bool, error) {
+	objInfo, err := statter.StatObject(bucketName, objKey)
 	if err != nil {
 		return false, err
+	}
+	if objInfo.Code == noSuchKeyCode || objInfo.Err != nil {
+		return false, nil
 	}
 	return true, nil
 }
 
-func UploadObject(svc *s3.S3, bucketName, objKey string, reader io.Reader) error {
-	params := &s3.PutObjectInput{
-		Body:   aws.ReadSeekCloser(reader),
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(objKey),
-		ACL:    ACLPublicRead,
-	}
-	_, err := svc.PutObject(params)
+func UploadObject(putter ObjectPutter, bucketName, objKey string, reader io.Reader) error {
+	_, err := putter.PutObject(bucketName, objKey, reader, octetStream)
 	return err
 }

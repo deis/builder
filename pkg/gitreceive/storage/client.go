@@ -1,14 +1,12 @@
 package storage
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg/sys"
+	s3 "github.com/minio/minio-go"
 )
 
 // GetClient returns a S3 API compatible storage client
-func GetClient(regionStr string, fs sys.FS, env sys.Env) (*s3.S3, error) {
+func GetClient(regionStr string, fs sys.FS, env sys.Env) (*s3.Client, error) {
 	auth, err := getAuth(fs)
 	if err != nil {
 		return nil, err
@@ -19,10 +17,5 @@ func GetClient(regionStr string, fs sys.FS, env sys.Env) (*s3.S3, error) {
 		return nil, err
 	}
 
-	return s3.New(session.New(&aws.Config{
-		Credentials:      auth,
-		Region:           aws.String(regionStr),
-		Endpoint:         aws.String(endpoint),
-		S3ForcePathStyle: aws.Bool(true),
-	})), nil
+	return s3.New(endpoint, auth.accessKeyID, auth.accessKeySecret, false), nil
 }

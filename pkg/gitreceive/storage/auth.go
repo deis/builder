@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/deis/builder/pkg/sys"
 )
 
@@ -19,6 +18,11 @@ var (
 	errMissingSecret = fmt.Errorf("missing %s", accessSecretKeyFile)
 	emptyAuth        = credentials.AnonymousCredentials
 )
+
+type creds struct {
+	accessKeyID     string
+	accessKeySecret string
+}
 
 // getAuth gets storage credentials from accessKeyIDFile and accessSecretKeyFile.
 // if a key exists but not a secret, or vice-versa, returns an error.
@@ -39,7 +43,7 @@ func getAuth(fs sys.FS) (*credentials.Credentials, error) {
 
 	id := strings.TrimSpace(string(accessKeyIDBytes))
 	secret := strings.TrimSpace(string(accessSecretKeyBytes))
-	return credentials.NewStaticCredentials(id, secret, ""), nil
+	return &creds{accessKeyID: id, accessKeySecret: secret}, nil
 }
 
 // CredsOK checks if the required credentials to make a request exist
@@ -49,8 +53,7 @@ func CredsOK(fs sys.FS) bool {
 		return false
 	}
 
-	auth, _ := cred.Get()
-	if auth.AccessKeyID == "" && auth.SecretAccessKey == "" {
+	if creds.accessKeyID == "" && creds.accessKeySecret == "" {
 		return false
 	}
 
