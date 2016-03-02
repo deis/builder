@@ -12,12 +12,16 @@ const (
 	octetStream = "application/octet-stream"
 )
 
-func ObjectExists(statter ObjectStatter, bucket, objName string) (bool, error) {
+func ObjectExists(statter ObjectStatter, bucketName, objKey string) (bool, error) {
 	objInfo, err := statter.StatObject(bucketName, objKey)
 	if err != nil {
+		minioErr := s3.ToErrorResponse(err)
+		if minioErr.Code == noSuchKeyCode {
+			return false, nil
+		}
 		return false, err
 	}
-	if objInfo.Code == noSuchKeyCode || objInfo.Err != nil {
+	if objInfo.Err != nil {
 		return false, nil
 	}
 	return true, nil
