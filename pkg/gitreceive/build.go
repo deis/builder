@@ -16,7 +16,6 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
-	s3 "github.com/minio/minio-go"
 	"gopkg.in/yaml.v2"
 
 	"k8s.io/kubernetes/pkg/api"
@@ -42,7 +41,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.Client, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
+func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -64,7 +63,7 @@ func build(conf *Config, s3Client *s3.Client, kubeClient *client.Client, fs sys.
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
+	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint.URLStr, conf.Bucket, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
