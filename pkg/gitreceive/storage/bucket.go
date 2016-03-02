@@ -17,8 +17,7 @@ var (
 // CreateBucket creates a new bucket in the S3 API compatible storage or
 // return an error in case the bucket already exists
 func CreateBucket(creator BucketCreator, bucketName string) error {
-	_, err := creator.MakeBucket(bucketName, ACLPublicRead, "")
-	if err != nil {
+	if err := creator.MakeBucket(bucketName, ACLPublicRead, ""); err != nil {
 		minioErr := s3.ToErrorResponse(err)
 		if minioErr.Code == bucketAlreadyExistsCode {
 			return nil
