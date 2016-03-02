@@ -95,7 +95,7 @@ func dirHasGitSuffix(dir string) bool {
 }
 
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system. On any error, it uses log messages to output a human readable description of what happened.
-func (c Ref) Run(gitHome string, nsLister k8s.NamespaceLister, ref Ref, pollSleepDuration time.Duration) error {
+func (c Ref) Run(gitHome string, nsLister k8s.NamespaceLister, pollSleepDuration time.Duration) error {
 	for {
 		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
 		if err != nil {
@@ -120,11 +120,11 @@ func (c Ref) Run(gitHome string, nsLister k8s.NamespaceLister, ref Ref, pollSlee
 
 		for _, appToDelete := range appsToDelete {
 			dirToDelete := appToDelete + dotGitSuffix
-			ref.Lock()
+			c.Lock()
 			if err := os.RemoveAll(dirToDelete); err != nil {
 				log.Printf("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
 			}
-			ref.Unlock()
+			c.Unlock()
 		}
 
 		time.Sleep(pollSleepDuration)

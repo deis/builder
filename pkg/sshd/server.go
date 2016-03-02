@@ -8,6 +8,7 @@
 package sshd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -30,8 +31,6 @@ const (
 	ServerConfig string = "ssh.ServerConfig"
 
 	multiplePush string = "Another git push is ongoing"
-
-	inProgressDelete string = "This app was deleted and is being cleaned up. Please re-create it with 'deis create your_app'"
 )
 
 // Serve starts a native SSH server.
@@ -179,6 +178,12 @@ func sendExitStatus(status uint32, channel ssh.Channel) error {
 	return err
 }
 
+func (s *server) withCleanerLock(f func() error) error {
+	s.cleanerRef.Lock()
+	defer s.cleanerRef.Unlock()
+	return f()
+}
+
 // answer handles answering requests and channel requests
 //
 // Currently, an exec must be either "ping", "git-receive-pack" or
@@ -232,8 +237,29 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				s.cleanerRef.Lock()
-				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
+				errConcurrentPush := errors.New("concurrent push")
+				err := s.withCleanerLock(func() error {
+					if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
+						return errConcurrentPush
+					}
+
+					req.Reply(true, nil) // We processed. Yay.
+
+					cxt.Put("channel", channel)
+					cxt.Put("request", req)
+					cxt.Put("operation", parts[0])
+					cxt.Put("repository", parts[1])
+					sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
+					err := router.HandleRequest(sshGitReceive, cxt, true)
+					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
+						log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
+						// TODO: this is an important error case that needs to be covered
+						// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
+					}
+					return err
+				})
+
+				if err == errConcurrentPush {
 					log.Errf(s.c, multiplePush)
 					// The error must be in git format
 					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
@@ -241,31 +267,15 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					}
 					sendExitStatus(1, channel)
 					req.Reply(false, nil)
-					s.cleanerRef.Unlock()
 					return nil
 				}
 
-				req.Reply(true, nil) // We processed. Yay.
-
-				cxt.Put("channel", channel)
-				cxt.Put("request", req)
-				cxt.Put("operation", parts[0])
-				cxt.Put("repository", parts[1])
-				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
-				err := router.HandleRequest(sshGitReceive, cxt, true)
-				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
-					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
-					// TODO: this is an important error case that needs to be covered
-					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
-				}
-				s.cleanerRef.Unlock()
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
 					xs = 1
 				}
 				sendExitStatus(xs, channel)
-
 				return nil
 			default:
 				log.Warnf(s.c, "Illegal command is '%s'\n", clean)

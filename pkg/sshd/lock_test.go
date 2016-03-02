@@ -1,13 +1,41 @@
 package sshd
 
 import (
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/arschles/assert"
 )
 
 const (
 	callbackTimeout = 1 * time.Second
 )
+
+func TestMultipleSameRepoLocks(t *testing.T) {
+	var wg sync.WaitGroup
+	const repo = "repo1"
+	const numTries = 100
+	lck := NewInMemoryRepositoryLock()
+	assert.NoErr(t, lck.Lock(repo, 0*time.Second))
+	for i := 0; i < numTries; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			assert.True(t, lck.Lock(repo, 0*time.Second) != nil, "lock of already locked repo should return error")
+		}()
+	}
+	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
+	assert.NoErr(t, lck.Unlock(repo, 0*time.Second))
+	for i := 0; i < numTries; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			assert.True(t, lck.Unlock(repo, 0*time.Second) != nil, "unlock of already unlocked repo should return error")
+		}()
+	}
+	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
+}
 
 func TestSingleLock(t *testing.T) {
 	rl := NewInMemoryRepositoryLock()
