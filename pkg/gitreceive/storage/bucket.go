@@ -11,7 +11,7 @@ const (
 
 var (
 	// ACLPublicRead default ACL for objects in the S3 API compatible storage
-	ACLPublicRead = "public-read"
+	ACLPublicRead = s3.BucketACL("public-read")
 )
 
 // CreateBucket creates a new bucket in the S3 API compatible storage or
