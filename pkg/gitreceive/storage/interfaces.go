@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"io"
+
 	s3 "github.com/minio/minio-go"
 )
 
