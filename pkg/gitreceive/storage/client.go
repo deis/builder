@@ -11,13 +11,8 @@ type Client struct {
 }
 
 // GetClient returns a S3 API compatible storage client
-<<<<<<< 7c8dc9bdf6ffed171ed952661229ae2b8590cef7
-func GetClient(regionStr string, fs sys.FS, env sys.Env) (*s3.Client, error) {
+func GetClient(regionStr string, fs sys.FS, env sys.Env) (*Client, error) {
 	auth, err := getAuth(fs)
-=======
-func GetClient(regionStr string) (*Client, error) {
-	auth, err := getAuth()
->>>>>>> fix(pkg/gitreceive): create and use a storage.Client
 	if err != nil {
 		return nil, err
 	}
