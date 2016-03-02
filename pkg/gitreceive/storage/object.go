@@ -12,6 +12,11 @@ const (
 	octetStream = "application/octet-stream"
 )
 
+// ObjectExists determines whether the object in ${bucketName}/${objKey} exists, as reported by statter. Returns the following:
+//
+// - false, nil if statter succeeded and reported the object doesn't exist
+// - false, err with the appropriate error if the statter failed
+// - true, nil if the statter succeeded and reported the object exists
 func ObjectExists(statter ObjectStatter, bucketName, objKey string) (bool, error) {
 	objInfo, err := statter.StatObject(bucketName, objKey)
 	if err != nil {
