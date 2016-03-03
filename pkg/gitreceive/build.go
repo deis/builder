@@ -193,7 +193,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	log.Debug("size of streamed logs %v", size)
 
 	log.Debug(
-		"Waiting for %s/%s pod to end. Checking every %s for %s",
+		"Waiting for the %s/%s pod to end. Checking every %s for %s",
 		newPod.Namespace,
 		newPod.Name,
 		conf.BuilderPodTickDuration(),
