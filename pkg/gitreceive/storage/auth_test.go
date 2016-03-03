@@ -15,7 +15,7 @@ func TestGetAuthEmptyAuth(t *testing.T) {
 	assert.Equal(t, creds, credentials.AnonymousCredentials, "returned credentials")
 }
 
-func TestGetAuthMissingKey(t *testing.T) {
+func TestGetAuthMissingSecret(t *testing.T) {
 	fs := sys.NewFakeFS()
 	fs.Files[accessSecretKeyFile] = []byte("hello world")
 	creds, err := getAuth(fs)
@@ -23,7 +23,7 @@ func TestGetAuthMissingKey(t *testing.T) {
 	assert.True(t, creds == nil, "returned credentials were not nil")
 }
 
-func TestGetAuthMissingSecret(t *testing.T) {
+func TestGetAuthMissingKey(t *testing.T) {
 	fs := sys.NewFakeFS()
 	fs.Files[accessKeyIDFile] = []byte("hello world")
 	creds, err := getAuth(fs)
