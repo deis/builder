@@ -41,6 +41,15 @@ type Endpoint struct {
 	Secure bool
 }
 
+// FullURL returns the full URL string of an endpoint, including its URL scheme, based on e.Secure
+func (e *Endpoint) FullURL() string {
+	if e.Secure {
+		return fmt.Sprintf("https://%s", e.URLStr)
+	} else {
+		return fmt.Sprintf("http://%s", e.URLStr)
+	}
+}
+
 func getEndpoint(env sys.Env) (*Endpoint, error) {
 	mHost := env.Get(minioHostEnvVar)
 	mPort := env.Get(minioPortEnvVar)
