@@ -7,11 +7,14 @@ import (
 )
 
 const (
-	rawSha     = "c3b4e4ba8b7267226ff02ad07a3a2cca9c9237de"
-	s3Endpoint = "http://10.1.2.3:9090"
-	appName    = "myapp"
-	slugName   = "myslug"
-	bucket     = "git"
+	rawSha   = "c3b4e4ba8b7267226ff02ad07a3a2cca9c9237de"
+	appName  = "myapp"
+	slugName = "myslug"
+	bucket   = "git"
+)
+
+var (
+	s3Endpoint = &Endpoint{URLStr: "10.1.2.3:9090", Secure: false}
 )
 
 func TestS3Endpoint(t *testing.T) {
@@ -21,11 +24,11 @@ func TestS3Endpoint(t *testing.T) {
 	}
 	sbi := NewSlugBuilderInfo(s3Endpoint, bucket, appName, slugName, sha)
 
-	expectedPushURL := s3Endpoint + "/" + bucket + "/" + sbi.PushKey()
+	expectedPushURL := s3Endpoint.FullURL() + "/" + bucket + "/" + sbi.PushKey()
 	if sbi.PushURL() != expectedPushURL {
 		t.Errorf("push URL %s didn't match expected %s", sbi.PushURL(), expectedPushURL)
 	}
-	expectedTarURL := s3Endpoint + "/" + bucket + "/" + sbi.TarKey()
+	expectedTarURL := s3Endpoint.FullURL() + "/" + bucket + "/" + sbi.TarKey()
 	if sbi.TarURL() != expectedTarURL {
 		t.Errorf("tar URL %s didn't match expected %s", sbi.TarURL(), expectedTarURL)
 	}

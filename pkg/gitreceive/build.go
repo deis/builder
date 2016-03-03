@@ -63,7 +63,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint.URLStr, conf.Bucket, appName, slugName, gitSha)
+	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
