@@ -57,7 +57,7 @@ func Run(conf *Config, fs sys.FS, env sys.Env) error {
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, s3Client, kubeClient, env, fs, builderKey, newRev); err != nil {
+			if err := build(conf, s3Client, kubeClient, fs, env, builderKey, newRev); err != nil {
 				return err
 			}
 		}

@@ -42,7 +42,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, env sys.Env, fs sys.FS, builderKey, rawGitSha string) error {
+func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
