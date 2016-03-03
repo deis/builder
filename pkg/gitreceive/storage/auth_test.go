@@ -30,3 +30,12 @@ func TestGetAuthMissingSecret(t *testing.T) {
 	assert.Err(t, err, errMissingSecret)
 	assert.True(t, creds == nil, "returned credentials were not nil")
 }
+
+func TestGetAuthSuccess(t *testing.T) {
+	fs := sys.NewFakeFS()
+	fs.Files[accessKeyIDFile] = []byte("invalid")
+	fs.Files[accessSecretKeyFile] = []byte("also invalid")
+	creds, err := getAuth(fs)
+	assert.NoErr(t, err)
+	assert.True(t, creds != nil, "creds were nil when they shouldn't have been")
+}
