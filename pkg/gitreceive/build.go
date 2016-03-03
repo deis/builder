@@ -20,7 +20,6 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -224,15 +223,13 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		slugBuilderInfo.PushKey(),
 	)
 	// poll the s3 server to ensure the slug exists
-	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {
-		exists, err := storage.ObjectExists(s3Client, conf.Bucket, slugBuilderInfo.PushKey())
-		if err != nil {
-			return false, fmt.Errorf("Checking if object %s/%s exists (%s)", conf.Bucket, slugBuilderInfo.PushKey(), err)
-		}
-		return exists, nil
-	})
-
-	if err != nil {
+	if err := storage.WaitForObject(
+		s3Client,
+		conf.Bucket,
+		slugBuilderInfo.PushKey(),
+		conf.ObjectStorageTickDuration(),
+		conf.ObjectStorageWaitDuration(),
+	); err != nil {
 		return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
 	}
 	log.Info("Build complete.")

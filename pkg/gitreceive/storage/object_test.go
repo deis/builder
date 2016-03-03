@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/arschles/assert"
 	s3 "github.com/minio/minio-go"
@@ -77,4 +78,27 @@ func TestUploadObjectFailure(t *testing.T) {
 	}
 	assert.Err(t, UploadObject(putter, bucketName, objKey, rdr), err)
 	assert.Equal(t, len(putter.Calls), 1, "number of calls to PutObject")
+}
+
+func TestWaitForObjectMissing(t *testing.T) {
+	statter := &FakeObjectStatter{
+		Fn: func(string, string) (s3.ObjectInfo, error) {
+			return s3.ObjectInfo{}, s3.ErrorResponse{Code: noSuchKeyCode}
+		},
+	}
+	err := WaitForObject(statter, bucketName, objKey, 1*time.Millisecond, 2*time.Millisecond)
+	assert.True(t, err != nil, "no error received when there should have been")
+	// it should make 1 call immediately, then calls at 1ms and 2ms
+	assert.Equal(t, len(statter.Calls), 3, "number of calls to the statter")
+}
+
+func TestWaitForObjectExists(t *testing.T) {
+	statter := &FakeObjectStatter{
+		Fn: func(string, string) (s3.ObjectInfo, error) {
+			return s3.ObjectInfo{}, nil
+		},
+	}
+	assert.NoErr(t, WaitForObject(statter, bucketName, objKey, 1*time.Millisecond, 2*time.Millisecond))
+	// it should make 1 call immediately, then immediateley succeed
+	assert.Equal(t, len(statter.Calls), 1, "number of calls to the statter")
 }
