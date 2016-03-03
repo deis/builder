@@ -223,13 +223,13 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		conf.ObjectStorageTickDuration(),
 		conf.ObjectStorageWaitDuration(),
 		conf.Bucket,
-		slugBuilderInfo.PushKey(),
+		slugBuilderInfo.AbsoluteSlugObjectKey(),
 	)
 	// poll the s3 server to ensure the slug exists
 	if err := storage.WaitForObject(
 		s3Client,
 		conf.Bucket,
-		slugBuilderInfo.PushKey(),
+		slugBuilderInfo.AbsoluteSlugObjectKey(),
 		conf.ObjectStorageTickDuration(),
 		conf.ObjectStorageWaitDuration(),
 	); err != nil {

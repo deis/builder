@@ -3,6 +3,7 @@ package storage
 import (
 	"testing"
 
+	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/gitreceive/git"
 )
 
@@ -56,4 +57,18 @@ func TestTarKey(t *testing.T) {
 	if sbi.TarKey() != expectedTarKey {
 		t.Errorf("tar key %s didn't match expected %s", sbi.TarKey(), expectedTarKey)
 	}
+}
+
+func TestAbsoluteSlugObjectKey(t *testing.T) {
+	sha, err := git.NewSha(rawSha)
+	assert.NoErr(t, err)
+	sbi := NewSlugBuilderInfo(s3Endpoint, bucket, appName, slugName, sha)
+	assert.Equal(t, sbi.AbsoluteSlugObjectKey(), sbi.PushKey()+"/"+slugTGZName, "absolute slug key")
+}
+
+func TestAbsoluteSlugURL(t *testing.T) {
+	sha, err := git.NewSha(rawSha)
+	assert.NoErr(t, err)
+	sbi := NewSlugBuilderInfo(s3Endpoint, bucket, appName, slugName, sha)
+	assert.Equal(t, sbi.AbsoluteSlugURL(), sbi.PushURL()+"/"+sbi.PushKey()+"/"+slugTGZName, "absolute slug URL")
 }

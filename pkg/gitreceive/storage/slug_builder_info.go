@@ -6,6 +6,10 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/git"
 )
 
+const (
+	slugTGZName = "slug.tgz"
+)
+
 // SlugBuilderInfo contains all of the object storage related information needed to pass to a slug builder
 type SlugBuilderInfo struct {
 	pushKey string
@@ -28,7 +32,11 @@ func NewSlugBuilderInfo(s3Endpoint *Endpoint, bucket, appName, slugName string, 
 	}
 }
 
-func (s SlugBuilderInfo) PushKey() string { return s.pushKey }
-func (s SlugBuilderInfo) PushURL() string { return s.pushURL }
-func (s SlugBuilderInfo) TarKey() string  { return s.tarKey }
-func (s SlugBuilderInfo) TarURL() string  { return s.tarURL }
+func (s SlugBuilderInfo) PushKey() string               { return s.pushKey }
+func (s SlugBuilderInfo) PushURL() string               { return s.pushURL }
+func (s SlugBuilderInfo) TarKey() string                { return s.tarKey }
+func (s SlugBuilderInfo) TarURL() string                { return s.tarURL }
+func (s SlugBuilderInfo) AbsoluteSlugObjectKey() string { return s.PushKey() + "/" + slugTGZName }
+func (s SlugBuilderInfo) AbsoluteSlugURL() string {
+	return s.PushURL() + "/" + s.AbsoluteSlugObjectKey()
+}
