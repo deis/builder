@@ -15,6 +15,7 @@ import (
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
 	"gopkg.in/yaml.v2"
 
@@ -41,7 +42,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey, rawGitSha string) error {
+func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, env sys.Env, fs sys.FS, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -125,7 +126,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, builderKey,
 		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, conf.Bucket, slugBuilderInfo.TarKey(), err)
 	}
 
-	creds := storage.CredsOK()
+	creds := storage.CredsOK(fs)
 
 	var pod *api.Pod
 	var buildPodName string

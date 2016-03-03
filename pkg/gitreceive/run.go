@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
 
 	builderconf "github.com/deis/builder/pkg/conf"
@@ -22,7 +23,7 @@ func readLine(line string) (string, string, string, error) {
 	return spl[0], spl[1], spl[2], nil
 }
 
-func Run(conf *Config) error {
+func Run(conf *Config, fs sys.FS, env sys.Env) error {
 	log.Debug("Running git hook")
 
 	builderKey, err := builderconf.GetBuilderKey()
@@ -30,7 +31,7 @@ func Run(conf *Config) error {
 		return err
 	}
 
-	s3Client, err := storage.GetClient(conf.StorageRegion)
+	s3Client, err := storage.GetClient(conf.StorageRegion, fs, env)
 	if err != nil {
 		return fmt.Errorf("configuring S3 client (%s)", err)
 	}
@@ -56,7 +57,7 @@ func Run(conf *Config) error {
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, s3Client, kubeClient, builderKey, newRev); err != nil {
+			if err := build(conf, s3Client, kubeClient, env, fs, builderKey, newRev); err != nil {
 				return err
 			}
 		}
