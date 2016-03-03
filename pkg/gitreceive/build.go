@@ -203,6 +203,8 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
 	}
+	log.Debug("Done")
+	log.Debug("Checking for builder pod exit code")
 	buildPod, err := kubeClient.Pods(newPod.Namespace).Get(newPod.Name)
 	if err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
@@ -214,6 +216,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 			return fmt.Errorf("Build pod exited with code %d, stopping build.", state.ExitCode)
 		}
 	}
+	log.Debug("Done")
 
 	log.Debug(
 		"Polling the S3 server every %s for %s for the resultant slug at %s/%s",
