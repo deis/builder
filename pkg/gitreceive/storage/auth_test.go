@@ -33,8 +33,8 @@ func TestGetAuthMissingKey(t *testing.T) {
 
 func TestGetAuthSuccess(t *testing.T) {
 	fs := sys.NewFakeFS()
-	fs.Files[accessKeyIDFile] = []byte("invalid")
-	fs.Files[accessSecretKeyFile] = []byte("also invalid")
+	fs.Files[accessKeyIDFile] = []byte("stuff")
+	fs.Files[accessSecretKeyFile] = []byte("other stuff")
 	creds, err := getAuth(fs)
 	assert.NoErr(t, err)
 	assert.True(t, creds != nil, "creds were nil when they shouldn't have been")
