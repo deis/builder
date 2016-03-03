@@ -38,5 +38,5 @@ func (s SlugBuilderInfo) TarKey() string                { return s.tarKey }
 func (s SlugBuilderInfo) TarURL() string                { return s.tarURL }
 func (s SlugBuilderInfo) AbsoluteSlugObjectKey() string { return s.PushKey() + "/" + slugTGZName }
 func (s SlugBuilderInfo) AbsoluteSlugURL() string {
-	return s.PushURL() + "/" + s.AbsoluteSlugObjectKey()
+	return s.PushURL() + "/" + slugTGZName
 }

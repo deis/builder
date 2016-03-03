@@ -70,5 +70,5 @@ func TestAbsoluteSlugURL(t *testing.T) {
 	sha, err := git.NewSha(rawSha)
 	assert.NoErr(t, err)
 	sbi := NewSlugBuilderInfo(s3Endpoint, bucket, appName, slugName, sha)
-	assert.Equal(t, sbi.AbsoluteSlugURL(), sbi.PushURL()+"/"+sbi.PushKey()+"/"+slugTGZName, "absolute slug URL")
+	assert.Equal(t, sbi.AbsoluteSlugURL(), sbi.PushURL()+"/"+slugTGZName, "absolute slug URL")
 }
