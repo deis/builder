@@ -219,7 +219,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	})
 
 	if err != nil {
-		return fmt.Errorf("Timed out waiting for object in storage. Aborting build...")
+		return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
 	}
 	log.Info("Build complete.")
 	log.Info("Launching app.")
