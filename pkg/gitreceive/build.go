@@ -209,6 +209,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		}
 	}
 
+	log.Debug("Polling the S3 server every %d for %d for the resultant slug", conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration())
 	// poll the s3 server to ensure the slug exists
 	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {
 		exists, err := storage.ObjectExists(s3Client, conf.Bucket, slugBuilderInfo.PushKey())
