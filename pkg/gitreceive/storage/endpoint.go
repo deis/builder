@@ -33,8 +33,11 @@ func stripScheme(str string) string {
 	return str
 }
 
+// Endpoint represents all the details about a storage endpoint
 type Endpoint struct {
+	// URLStr is the url string, stripped of its scheme
 	URLStr string
+	// Secure determines if TLS should be used (e.g. a "https://" scheme)
 	Secure bool
 }
 
