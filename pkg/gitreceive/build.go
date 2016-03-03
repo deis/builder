@@ -217,7 +217,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	}
 
 	log.Debug(
-		"Polling the S3 server every %d for %d for the resultant slug at %s/%s",
+		"Polling the S3 server every %s for %s for the resultant slug at %s/%s",
 		conf.ObjectStorageTickDuration(),
 		conf.ObjectStorageWaitDuration(),
 		conf.Bucket,
