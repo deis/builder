@@ -8,7 +8,6 @@
 package sshd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -18,7 +17,6 @@ import (
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
-	"github.com/deis/builder/pkg/cleaner"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -56,7 +54,6 @@ func Serve(
 	serverCircuit *Circuit,
 	gitHomeDir string,
 	concurrentPushLock RepositoryLock,
-	cleanerRef cleaner.Ref,
 	c cookoo.Context) cookoo.Interrupt {
 
 	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
@@ -74,10 +71,9 @@ func Serve(
 	}
 
 	srv := &server{
-		c:          c,
-		gitHome:    gitHomeDir,
-		pushLock:   concurrentPushLock,
-		cleanerRef: cleanerRef,
+		c:        c,
+		gitHome:  gitHomeDir,
+		pushLock: concurrentPushLock,
 	}
 
 	closer := make(chan interface{}, 1)
@@ -92,10 +88,9 @@ func Serve(
 
 // server is the struct that encapsulates the SSH server.
 type server struct {
-	c          cookoo.Context
-	gitHome    string
-	pushLock   RepositoryLock
-	cleanerRef cleaner.Ref
+	c        cookoo.Context
+	gitHome  string
+	pushLock RepositoryLock
 }
 
 // listen handles accepting and managing connections. However, since closer
@@ -178,12 +173,6 @@ func sendExitStatus(status uint32, channel ssh.Channel) error {
 	return err
 }
 
-func (s *server) withCleanerLock(f func() error) error {
-	s.cleanerRef.Lock()
-	defer s.cleanerRef.Unlock()
-	return f()
-}
-
 // answer handles answering requests and channel requests
 //
 // Currently, an exec must be either "ping", "git-receive-pack" or
@@ -237,29 +226,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				repoName := parts[1]
-				errConcurrentPush := errors.New("concurrent push")
-				err := s.withCleanerLock(func() error {
-					if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
-						return errConcurrentPush
-					}
-
-					req.Reply(true, nil) // We processed. Yay.
-
-					cxt.Put("channel", channel)
-					cxt.Put("request", req)
-					cxt.Put("operation", parts[0])
-					cxt.Put("repository", parts[1])
-					sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
-					err := router.HandleRequest(sshGitReceive, cxt, true)
-					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
-						log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
-						// TODO: this is an important error case that needs to be covered
-						// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
-					}
-					return err
-				})
-
-				if err == errConcurrentPush {
+				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
 					// The error must be in git format
 					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
@@ -270,12 +237,26 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					return nil
 				}
 
+				req.Reply(true, nil) // We processed. Yay.
+
+				cxt.Put("channel", channel)
+				cxt.Put("request", req)
+				cxt.Put("operation", parts[0])
+				cxt.Put("repository", parts[1])
+				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
+				err := router.HandleRequest(sshGitReceive, cxt, true)
+				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
+					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
+					// TODO: this is an important error case that needs to be covered
+					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
+				}
 				var xs uint32
 				if err != nil {
 					log.Errf(s.c, "Failed git receive: %v", err)
 					xs = 1
 				}
 				sendExitStatus(xs, channel)
+
 				return nil
 			default:
 				log.Warnf(s.c, "Illegal command is '%s'\n", clean)

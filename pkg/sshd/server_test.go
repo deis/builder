@@ -10,7 +10,6 @@ import (
 
 	"github.com/Masterminds/cookoo"
 	"github.com/arschles/assert"
-	"github.com/deis/builder/pkg/cleaner"
 	"github.com/deis/builder/pkg/controller"
 	"golang.org/x/crypto/ssh"
 )
@@ -49,8 +48,7 @@ func TestReceive(t *testing.T) {
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	cleanerRef := cleaner.NewRef()
-	cxt := runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
+	cxt := runServer(&cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -105,8 +103,7 @@ func TestPushInvalidArgsLength(t *testing.T) {
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 0*time.Second, t)
+	runServer(&cfg, c, pushLock, testingServerAddr, 0*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -143,8 +140,7 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, 2*time.Second, t)
+	runServer(&cfg, c, pushLock, testingServerAddr, 2*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -207,8 +203,7 @@ func TestConcurrentPushDifferentRepo(t *testing.T) {
 	cfg.AddHostKey(key)
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
+	runServer(&cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
@@ -236,67 +231,6 @@ func TestConcurrentPushDifferentRepo(t *testing.T) {
 	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
 }
 
-func TestWithCleanerLock(t *testing.T) {
-	srv := &server{cleanerRef: cleaner.NewRef()}
-	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func(i int) {
-			err := srv.withCleanerLock(func() error {
-				wg.Done()
-				return nil
-			})
-			assert.NoErr(t, err)
-		}(i)
-	}
-	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
-}
-
-func TestDelete(t *testing.T) {
-	const testingServerAddr = "127.0.0.1:2246"
-	key, err := sshTestingHostKey()
-	assert.NoErr(t, err)
-
-	cfg := ssh.ServerConfig{NoClientAuth: true}
-	cfg.AddHostKey(key)
-
-	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock()
-	cleanerRef := cleaner.NewRef()
-	runServer(&cfg, c, pushLock, cleanerRef, testingServerAddr, time.Duration(0), t)
-
-	// Give server time to initialize.
-	time.Sleep(200 * time.Millisecond)
-	assert.Equal(t, c.State(), ClosedState, "circuit state")
-
-	// Connect to the server and issue env var set. This should return true.
-	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
-	assert.NoErr(t, err)
-	sess, err := client.NewSession()
-	assert.NoErr(t, err)
-
-	repoName := "demo"
-	cleanerRef.Lock()
-
-	doneCh := make(chan struct{})
-	go func() {
-		defer close(doneCh)
-		sess, err = client.NewSession()
-		assert.NoErr(t, err)
-		// this is expected to hang because cleanerRef is locked
-		out, err := sess.Output("git-upload-pack /" + repoName + ".git")
-		assert.NoErr(t, err)
-		assert.Equal(t, string(out), "OK", "output")
-		sess.Close()
-	}()
-
-	select {
-	case <-doneCh:
-		t.Fatalf("push succeeded while cleaner was locked")
-	case <-time.After(100 * time.Millisecond):
-	}
-}
-
 // sshTestingHostKey loads the testing key.
 func sshTestingHostKey() (ssh.Signer, error) {
 	return ssh.ParsePrivateKey([]byte(testingHostKey))
@@ -306,7 +240,6 @@ func runServer(
 	config *ssh.ServerConfig,
 	c *Circuit,
 	pushLock RepositoryLock,
-	cleanerRef cleaner.Ref,
 	testAddr string,
 	handlerSleepDur time.Duration,
 	t *testing.T) cookoo.Context {
@@ -365,7 +298,7 @@ func runServer(
 	})
 
 	go func() {
-		if err := Serve(reg, router, c, gitHome, pushLock, cleanerRef, cxt); err != nil {
+		if err := Serve(reg, router, c, gitHome, pushLock, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()
