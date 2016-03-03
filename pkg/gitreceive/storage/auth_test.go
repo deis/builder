@@ -39,3 +39,15 @@ func TestGetAuthSuccess(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.True(t, creds != nil, "creds were nil when they shouldn't have been")
 }
+
+func TestCredsOKFail(t *testing.T) {
+	fs := sys.NewFakeFS()
+	assert.False(t, CredsOK(fs), "true returned when there were no credentials")
+}
+
+func TestCredsOKSuccess(t *testing.T) {
+	fs := sys.NewFakeFS()
+	fs.Files[accessKeyIDFile] = []byte("stuff")
+	fs.Files[accessSecretKeyFile] = []byte("other stuff")
+	assert.True(t, CredsOK(fs), "false returned when there were valid credentials")
+}
