@@ -120,7 +120,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
 
-	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, conf.Bucket, slugBuilderInfo.TarKey())
+	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint.URLStr, conf.Bucket, slugBuilderInfo.TarKey())
 	if err := storage.UploadObject(s3Client, conf.Bucket, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
 		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, conf.Bucket, slugBuilderInfo.TarKey(), err)
 	}
