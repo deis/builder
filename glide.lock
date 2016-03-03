@@ -1,29 +1,10 @@
-hash: 776bcb49def4b6230d6ddc175ac9393bbe9cbc25b225e0d7880e4efd712a4318
-updated: 2016-03-02T22:49:17.194276804Z
+hash: 819f2c05823c24ce9d87e2beb40880659bfd7c944d7c35939d4851a0435c4c5a
+updated: 2016-03-03T00:14:27.72805884Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
-- name: github.com/aws/aws-sdk-go
-  version: 87b1e60a50b09e4812dee560b33a238f67305804
-  subpackages:
-  - aws
-  - aws/session
-  - service/s3
-  - aws/awserr
-  - aws/awsutil
-  - aws/client
-  - aws/client/metadata
-  - aws/request
-  - private/protocol/restxml
-  - private/signer/v4
-  - private/waiter
-  - aws/credentials
-  - private/protocol/query
-  - private/protocol/rest
-  - private/protocol/xml/xmlutil
-  - private/protocol/query/queryutil
 - name: github.com/beorn7/perks
   version: b965b613227fddccbfffe13eae360ed3fa822f8d
   subpackages:
@@ -66,8 +47,6 @@ imports:
   - log
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
-- name: github.com/go-ini/ini
-  version: 193d1ecb466bf97aae8b454a5cfc192941c64809
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
@@ -101,8 +80,6 @@ imports:
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 - name: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
-- name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
