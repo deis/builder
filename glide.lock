@@ -1,34 +1,10 @@
-hash: f4239a6fb593d10c6a58faecf170be2168ea7d0884d6c6823b1b9b3efa156113
-updated: 2016-02-18T22:46:02.154250682Z
+hash: 819f2c05823c24ce9d87e2beb40880659bfd7c944d7c35939d4851a0435c4c5a
+updated: 2016-03-03T00:14:27.72805884Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
-- name: github.com/aws/aws-sdk-go
-  version: 87b1e60a50b09e4812dee560b33a238f67305804
-  subpackages:
-  - aws
-  - aws/session
-  - service/s3
-  - aws/awserr
-  - aws/credentials
-  - aws/awsutil
-  - aws/client
-  - aws/client/metadata
-  - aws/request
-  - private/protocol/restxml
-  - private/signer/v4
-  - private/waiter
-  - aws/corehandlers
-  - aws/defaults
-  - private/endpoints
-  - private/protocol/query
-  - private/protocol/rest
-  - private/protocol/xml/xmlutil
-  - aws/credentials/ec2rolecreds
-  - aws/ec2metadata
-  - private/protocol/query/queryutil
 - name: github.com/beorn7/perks
   version: b965b613227fddccbfffe13eae360ed3fa822f8d
   subpackages:
@@ -66,10 +42,11 @@ imports:
   - system
 - name: github.com/emicklei/go-restful
   version: 1f9a0ee00ff93717a275e15b30cf7df356255877
+  subpackages:
+  - swagger
+  - log
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
-- name: github.com/go-ini/ini
-  version: 193d1ecb466bf97aae8b454a5cfc192941c64809
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
@@ -100,11 +77,9 @@ imports:
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/gorilla/context
-  version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
+  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 - name: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
-- name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
@@ -120,6 +95,8 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/minio/minio-go
+  version: 1fe1145a231e36743b79939742debafaed1cd5d0
 - name: github.com/pborman/uuid
   version: c55201b036063326c5b1b89ccfe45a184973d073
 - name: github.com/prometheus/client_golang
@@ -150,14 +127,14 @@ imports:
 - name: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - name: k8s.io/kubernetes
-  version: 4309194eda6bfd4db0cc28f46cacabe1719979d7
+  version: 596055084fbaef446983b14097f832f60ae57634
   subpackages:
   - pkg/client/unversioned
   - pkg/api
-  - pkg/api/errors
-  - pkg/util/wait
   - pkg/fields
   - pkg/labels
+  - pkg/api/errors
+  - pkg/util/wait
   - pkg/api/install
   - pkg/api/latest
   - pkg/api/meta
@@ -178,9 +155,9 @@ imports:
   - pkg/conversion
   - pkg/types
   - pkg/util/rand
-  - pkg/util/errors
   - pkg/util/fielderrors
   - pkg/util/validation
+  - pkg/util/errors
   - pkg/api/registered
   - pkg/api/util
   - pkg/api/v1

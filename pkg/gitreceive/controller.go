@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/gitreceive/git"
+	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/pkg/log"
 )
 
@@ -147,4 +149,29 @@ func receive(conf *Config, builderKey, gitSha string) error {
 		return newUnexpectedControllerStatusCode(urlStr, 201, resp.StatusCode)
 	}
 	return nil
+}
+
+func createBuildHook(
+	slugBuilderInfo *storage.SlugBuilderInfo,
+	gitSha *git.SHA,
+	username,
+	appName string,
+	procType pkg.ProcessType,
+	usingDockerfile bool,
+) *pkg.BuildHook {
+	ret := &pkg.BuildHook{
+		Sha:         gitSha.Short(),
+		ReceiveUser: username,
+		ReceiveRepo: appName,
+		Image:       appName,
+		Procfile:    procType,
+	}
+	if !usingDockerfile {
+		ret.Dockerfile = ""
+		// need this to tell the controller what URL to give the slug runner
+		ret.Image = slugBuilderInfo.AbsoluteSlugURL()
+	} else {
+		ret.Dockerfile = "true"
+	}
+	return ret
 }

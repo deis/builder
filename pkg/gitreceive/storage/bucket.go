@@ -1,37 +1,28 @@
 package storage
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/s3"
+	s3 "github.com/minio/minio-go"
 )
 
 const (
 	bucketAlreadyExistsCode = "BucketAlreadyExists"
+	nonExistentBucketCode   = "NoSuchBucket"
 )
 
 var (
 	// ACLPublicRead default ACL for objects in the S3 API compatible storage
-	ACLPublicRead = aws.String("public-read")
+	ACLPublicRead = s3.BucketACL("public-read")
 )
 
 // CreateBucket creates a new bucket in the S3 API compatible storage or
 // return an error in case the bucket already exists
-func CreateBucket(svc *s3.S3, bucketName string) error {
-	_, err := svc.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucketName),
-		ACL:    ACLPublicRead,
-	})
-
-	if err != nil {
-		if awsErr, ok := err.(awserr.Error); ok {
-			if awsErr.Code() == bucketAlreadyExistsCode {
-				return nil
-			}
+func CreateBucket(creator BucketCreator, bucketName string) error {
+	if err := creator.MakeBucket(bucketName, ACLPublicRead, ""); err != nil {
+		minioErr := s3.ToErrorResponse(err)
+		if minioErr.Code == bucketAlreadyExistsCode {
+			return nil
 		}
-
 		return err
 	}
-
 	return nil
 }

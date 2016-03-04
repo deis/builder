@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
 	"github.com/deis/builder/pkg/gitreceive/storage"
@@ -21,7 +20,6 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
-	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 // repoCmd returns exec.Command(first, others...) with its current working directory repoDir
@@ -42,7 +40,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
+func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -121,7 +119,7 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, fs sys.FS, 
 		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
 	}
 
-	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint, conf.Bucket, slugBuilderInfo.TarKey())
+	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint.FullURL(), conf.Bucket, slugBuilderInfo.TarKey())
 	if err := storage.UploadObject(s3Client, conf.Bucket, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
 		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, conf.Bucket, slugBuilderInfo.TarKey(), err)
 	}
@@ -193,11 +191,20 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, fs sys.FS, 
 	}
 	log.Debug("size of streamed logs %v", size)
 
+	log.Debug(
+		"Waiting for the %s/%s pod to end. Checking every %s for %s",
+		newPod.Namespace,
+		newPod.Name,
+		conf.BuilderPodTickDuration(),
+		conf.BuilderPodWaitDuration(),
+	)
 	// check the state and exit code of the build pod.
 	// if the code is not 0 return error
 	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
 	}
+	log.Debug("Done")
+	log.Debug("Checking for builder pod exit code")
 	buildPod, err := kubeClient.Pods(newPod.Namespace).Get(newPod.Name)
 	if err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
@@ -209,37 +216,30 @@ func build(conf *Config, s3Client *s3.S3, kubeClient *client.Client, fs sys.FS, 
 			return fmt.Errorf("Build pod exited with code %d, stopping build.", state.ExitCode)
 		}
 	}
+	log.Debug("Done")
 
+	log.Debug(
+		"Polling the S3 server every %s for %s for the resultant slug at %s/%s",
+		conf.ObjectStorageTickDuration(),
+		conf.ObjectStorageWaitDuration(),
+		conf.Bucket,
+		slugBuilderInfo.AbsoluteSlugObjectKey(),
+	)
 	// poll the s3 server to ensure the slug exists
-	err = wait.PollImmediate(conf.ObjectStorageTickDuration(), conf.ObjectStorageWaitDuration(), func() (bool, error) {
-		exists, err := storage.ObjectExists(s3Client, conf.Bucket, slugBuilderInfo.PushKey())
-		if err != nil {
-			return false, fmt.Errorf("Checking if object %s/%s exists (%s)", conf.Bucket, slugBuilderInfo.PushKey(), err)
-		}
-		return exists, nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("Timed out waiting for object in storage. Aborting build...")
+	if err := storage.WaitForObject(
+		s3Client,
+		conf.Bucket,
+		slugBuilderInfo.AbsoluteSlugObjectKey(),
+		conf.ObjectStorageTickDuration(),
+		conf.ObjectStorageWaitDuration(),
+	); err != nil {
+		return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
 	}
 	log.Info("Build complete.")
 	log.Info("Launching app.")
 	log.Info("Launching...")
 
-	buildHook := &pkg.BuildHook{
-		Sha:         gitSha.Short(),
-		ReceiveUser: conf.Username,
-		ReceiveRepo: appName,
-		Image:       appName,
-		Procfile:    procType,
-	}
-	if !usingDockerfile {
-		buildHook.Dockerfile = ""
-		// need this to tell the controller what URL to give the slug runner
-		buildHook.Image = slugBuilderInfo.PushURL() + "/slug.tgz"
-	} else {
-		buildHook.Dockerfile = "true"
-	}
+	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, procType, usingDockerfile)
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)

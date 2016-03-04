@@ -11,13 +11,13 @@ import:
 - package: github.com/Masterminds/cookoo
   version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
-  - /log
-  - /safely
-  - /fmt
+  - log
+  - safely
+  - fmt
 - package: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
-  - /ssh
+  - ssh
 - package: gopkg.in/yaml.v2
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - package: github.com/pborman/uuid
@@ -28,13 +28,8 @@ import:
   - log
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
-- package: github.com/aws/aws-sdk-go
-  version: 87b1e60a50b09e4812dee560b33a238f67305804
-  subpackages:
-  - aws
-  - aws/session
-  - service/s3
 - package: k8s.io/kubernetes
   version: ~1.1
 - package: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
+- package: github.com/minio/minio-go
