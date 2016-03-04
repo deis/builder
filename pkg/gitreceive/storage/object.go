@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	s3 "github.com/minio/minio-go"
@@ -71,4 +72,17 @@ func WaitForObject(statter ObjectStatter, bucketName, objKey string, tick, timeo
 			return fmt.Errorf("Object %s/%s didn't exist after %s", bucketName, objKey, timeout)
 		}
 	}
+}
+
+func DownloadObject(getter ObjectGetter, bucketName, objKey string) ([]byte, error) {
+	reader, err := getter.GetObject(bucketName, objKey)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return data, err
 }

@@ -104,3 +104,18 @@ func TestWaitForObjectExists(t *testing.T) {
 	// it should make 1 call immediately, then immediateley succeed
 	assert.Equal(t, len(statter.Calls), 1, "number of calls to the statter")
 }
+
+func TestDownloadObjectSuccess(t *testing.T) {
+	obj := &FakeObject{Data: "web: example-go"}
+	getter := &FakeObjectGetter{
+		Fn: func(string, string) (Object, error) {
+			return obj, nil
+		},
+	}
+	data, err := DownloadObject(getter, bucketName, objKey)
+	assert.NoErr(t, err)
+	assert.Equal(t, string(data), "web: example-go", "data")
+	assert.Equal(t, len(getter.Calls), 1, "number of calls to GetObject")
+	assert.Equal(t, getter.Calls[0].BucketName, bucketName, "the bucket name")
+	assert.Equal(t, getter.Calls[0].ObjectKey, objKey, "the object key")
+}

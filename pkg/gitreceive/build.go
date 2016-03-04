@@ -99,17 +99,6 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	bType := getBuildTypeForDir(tmpDir)
 	usingDockerfile := bType == buildTypeDockerfile
 
-	procType := pkg.ProcessType{}
-	if bType == buildTypeProcfile {
-		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", tmpDir))
-		if err != nil {
-			return fmt.Errorf("reading %s/Procfile", tmpDir)
-		}
-		if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
-			return fmt.Errorf("procfile %s/ProcFile is malformed (%s)", tmpDir, err)
-		}
-	}
-
 	if err := storage.CreateBucket(s3Client, conf.Bucket); err != nil {
 		log.Warn("create bucket error: %+v", err)
 	}
@@ -237,6 +226,15 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 			return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
 		}
 	}
+
+	procType := pkg.ProcessType{}
+	if bType == buildTypeProcfile {
+		getter := &storage.RealObjectGetter{Client: s3Client.Client}
+		if procType, err = getProcFile(getter, tmpDir, conf.Bucket, slugBuilderInfo.AbsoluteProcfileKey()); err != nil {
+			return err
+		}
+	}
+
 	log.Info("Build complete.")
 	log.Info("Launching app.")
 	log.Info("Launching...")
@@ -273,4 +271,27 @@ func prettyPrintJSON(data interface{}) (string, error) {
 		return "", err
 	}
 	return string(formatted.Bytes()), nil
+}
+
+func getProcFile(getter storage.ObjectGetter, dirName, bucketName, procfileKey string) (pkg.ProcessType, error) {
+	procType := pkg.ProcessType{}
+	if _, err := os.Stat(fmt.Sprintf("%s/Procfile", dirName)); err == nil {
+		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", dirName))
+		if err != nil {
+			return nil, fmt.Errorf("error in reading %s/Procfile (%s)", dirName, err)
+		}
+		if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
+			return nil, fmt.Errorf("procfile %s/ProcFile is malformed (%s)", dirName, err)
+		}
+		return procType, nil
+	}
+	log.Debug("Procfile not present. Getting it from the buildpack")
+	rawProcFile, err := storage.DownloadObject(getter, bucketName, procfileKey)
+	if err != nil {
+		return nil, fmt.Errorf("error in reading %s/%s (%s)", bucketName, procfileKey, err)
+	}
+	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
+		return nil, fmt.Errorf("procfile %s/%s is malformed (%s)", bucketName, procfileKey, err)
+	}
+	return procType, nil
 }
