@@ -2,11 +2,11 @@ package storage
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/deis/builder/pkg/sys"
 )
 
 const (
@@ -24,9 +24,9 @@ var (
 // if a key exists but not a secret, or vice-versa, returns an error.
 // if both don't exist returns emptyAuth.
 // otherwise returns a valid auth
-func getAuth() (*credentials.Credentials, error) {
-	accessKeyIDBytes, accessKeyErr := ioutil.ReadFile(accessKeyIDFile)
-	accessSecretKeyBytes, accessSecretKeyErr := ioutil.ReadFile(accessSecretKeyFile)
+func getAuth(fs sys.FS) (*credentials.Credentials, error) {
+	accessKeyIDBytes, accessKeyErr := fs.ReadFile(accessKeyIDFile)
+	accessSecretKeyBytes, accessSecretKeyErr := fs.ReadFile(accessSecretKeyFile)
 	if accessKeyErr == os.ErrNotExist && accessSecretKeyErr == os.ErrNotExist {
 		return emptyAuth, nil
 	}
@@ -43,8 +43,8 @@ func getAuth() (*credentials.Credentials, error) {
 }
 
 // CredsOK checks if the required credentials to make a request exist
-func CredsOK() bool {
-	cred, err := getAuth()
+func CredsOK(fs sys.FS) bool {
+	cred, err := getAuth(fs)
 	if err != nil {
 		return false
 	}

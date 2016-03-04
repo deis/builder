@@ -14,6 +14,7 @@ import (
 	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
+	"github.com/deis/builder/pkg/sys"
 	pkglog "github.com/deis/pkg/log"
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -48,10 +49,12 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
+				env := sys.RealEnv()
+				fs := sys.RealFS()
 				pushLock := sshd.NewInMemoryRepositoryLock()
 				circ := sshd.NewCircuit()
 
-				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion)
+				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion, fs, env)
 				if err != nil {
 					log.Printf("Error getting s3 client (%s)", err)
 					os.Exit(1)
@@ -106,8 +109,10 @@ func main() {
 					os.Exit(1)
 				}
 				cnf.CheckDurations()
+				fs := sys.RealFS()
+				env := sys.RealEnv()
 
-				if err := gitreceive.Run(cnf); err != nil {
+				if err := gitreceive.Run(cnf, fs, env); err != nil {
 					log.Printf("Error running git receive hook [%s]", err)
 					os.Exit(1)
 				}

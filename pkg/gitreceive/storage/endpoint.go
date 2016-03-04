@@ -2,7 +2,8 @@ package storage
 
 import (
 	"fmt"
-	"os"
+
+	"github.com/deis/builder/pkg/sys"
 )
 
 const (
@@ -20,10 +21,10 @@ var (
 	)
 )
 
-func getEndpoint() (string, error) {
-	mHost := os.Getenv(minioHostEnvVar)
-	mPort := os.Getenv(minioPortEnvVar)
-	S3EP := os.Getenv(outsideStorageEndpoint)
+func getEndpoint(env sys.Env) (string, error) {
+	mHost := env.Get(minioHostEnvVar)
+	mPort := env.Get(minioPortEnvVar)
+	S3EP := env.Get(outsideStorageEndpoint)
 	if S3EP != "" {
 		return S3EP, nil
 	} else if mHost != "" && mPort != "" {
