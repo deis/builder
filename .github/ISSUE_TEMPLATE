@@ -6,18 +6,9 @@ Please provide a summary of this issue.
 
 If you're reporting a bug, please provide a detailed description of the problem.
 
-## If You Are Submitting a Feature Request
+### Replication Stps
 
-If you're submitting a feature request, please provide as much details on what you'd like to see and 1 or more use cases. The more detail we have, the more quickly and efficiently we can discuss, decide and implement the feature.
-If this is a bug: provide a description of the problem
-
-## Everything Else
-
-If you're not submitting a bug or feature request, we still want to hear from you! Please feel free to write us and we'd love to have a conversation. As always, constructive conversation and details, where appropriate, are appreciated.
-
-# For Bugs: Replication Steps
-
-If you're submitting a bug, please provide a detailed list of steps to reproduce it.
+Please provide a detailed list of steps to reproduce it.
 
 1. Create a Deis Cluster
 2. Register an app
@@ -28,6 +19,14 @@ Also, please provide a description of the desired result after the tester comple
 1. The app called "abcd" should be deployed
 2. `kubectl get pod --namespace=abcd` should show 2 pods running
 3. etc...
+
+## If You Are Submitting a Feature Request
+
+If you're submitting a feature request, please provide as much detail on what you'd like to see and 1 or more use cases. The more detail we have, the more quickly and efficiently we can discuss, decide and implement the feature.
+
+## Everything Else
+
+If you're not submitting a bug or feature request, we still want to hear from you! Please feel free to write us and we'd love to have a conversation. As always, constructive conversation and details, where appropriate, are appreciated.
 
 # Related Issues
 
