@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/arschles/assert"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/deis/builder/pkg/sys"
 )
 
@@ -12,7 +11,7 @@ func TestGetAuthEmptyAuth(t *testing.T) {
 	fs := sys.NewFakeFS()
 	creds, err := getAuth(fs)
 	assert.NoErr(t, err)
-	assert.Equal(t, creds, credentials.AnonymousCredentials, "returned credentials")
+	assert.Equal(t, *creds, emptyCreds, "returned credentials")
 }
 
 func TestGetAuthMissingSecret(t *testing.T) {
