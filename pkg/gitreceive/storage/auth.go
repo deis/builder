@@ -32,7 +32,7 @@ func (c *creds) isZero() bool {
 // if a key exists but not a secret, or vice-versa, returns an error.
 // if both don't exist returns emptyAuth.
 // otherwise returns a valid auth
-func getAuth(fs sys.FS) (*credentials.Credentials, error) {
+func getAuth(fs sys.FS) (*creds, error) {
 	accessKeyIDBytes, accessKeyErr := fs.ReadFile(accessKeyIDFile)
 	accessSecretKeyBytes, accessSecretKeyErr := fs.ReadFile(accessSecretKeyFile)
 	if accessKeyErr == os.ErrNotExist && accessSecretKeyErr == os.ErrNotExist {
@@ -52,7 +52,7 @@ func getAuth(fs sys.FS) (*credentials.Credentials, error) {
 
 // CredsOK checks if the required credentials to make a request exist
 func CredsOK(fs sys.FS) bool {
-	cred, err := getAuth(fs)
+	creds, err := getAuth(fs)
 	if err != nil {
 		return false
 	}

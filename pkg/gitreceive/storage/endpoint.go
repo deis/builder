@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/deis/builder/pkg/sys"
