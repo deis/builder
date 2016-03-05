@@ -226,14 +226,16 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		slugBuilderInfo.AbsoluteSlugObjectKey(),
 	)
 	// poll the s3 server to ensure the slug exists
-	if err := storage.WaitForObject(
-		s3Client,
-		conf.Bucket,
-		slugBuilderInfo.AbsoluteSlugObjectKey(),
-		conf.ObjectStorageTickDuration(),
-		conf.ObjectStorageWaitDuration(),
-	); err != nil {
-		return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
+	if !usingDockerfile {
+		if err := storage.WaitForObject(
+			s3Client,
+			conf.Bucket,
+			slugBuilderInfo.AbsoluteSlugObjectKey(),
+			conf.ObjectStorageTickDuration(),
+			conf.ObjectStorageWaitDuration(),
+		); err != nil {
+			return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
+		}
 	}
 	log.Info("Build complete.")
 	log.Info("Launching app.")
