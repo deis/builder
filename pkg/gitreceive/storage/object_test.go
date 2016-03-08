@@ -81,6 +81,8 @@ func TestUploadObjectFailure(t *testing.T) {
 }
 
 func TestWaitForObjectMissing(t *testing.T) {
+	// Skipped for now. See https://github.com/deis/builder/issues/238
+	t.SkipNow()
 	statter := &FakeObjectStatter{
 		Fn: func(string, string) (s3.ObjectInfo, error) {
 			return s3.ObjectInfo{}, s3.ErrorResponse{Code: noSuchKeyCode}
