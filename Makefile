@@ -49,7 +49,6 @@ test:
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
-	perl -pi -e "s|image: [a-z0-9.:]+\/deis\/bp${SHORT_NAME}:[0-9a-z-.]+|image: ${IMAGE}|g" ${RC}
 
 # Push to a registry that Kubernetes can access.
 docker-push:
