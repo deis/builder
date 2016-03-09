@@ -31,6 +31,8 @@ type Config struct {
 	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
 	Bucket                        string `envconfig:"BUCKET" default:"git"`
+	SlugBuilderImage              string `envconfig:"SLUGBUILDER_IMAGE_NAME" default:"quay.io/deisci/slugbuilder:v2-beta"`
+	DockerBuilderImage            string `envconfig:"DOCKERBUILDER_IMAGE_NAME" default:"quay.io/deisci/dockerbuilder:v2-beta"`
 }
 
 func (c Config) App() string {
