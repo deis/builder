@@ -18,7 +18,6 @@ import (
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
 	"github.com/deis/builder/pkg/controller"
-	"github.com/deis/builder/pkg/git"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -32,6 +31,8 @@ const (
 
 	multiplePush string = "Another git push is ongoing"
 )
+
+type GitReceiveFunc func(string, string, string, string, *controller.UserInfo, ssh.Channel) error
 
 // Serve starts a native SSH server.
 //
@@ -55,6 +56,7 @@ func Serve(
 	router *cookoo.Router,
 	serverCircuit *Circuit,
 	gitHomeDir string,
+	gitRecv GitReceiveFunc,
 	concurrentPushLock RepositoryLock,
 	c cookoo.Context) cookoo.Interrupt {
 
@@ -73,6 +75,7 @@ func Serve(
 	}
 
 	srv := &server{
+		gitRecv:  gitRecv,
 		c:        c,
 		gitHome:  gitHomeDir,
 		pushLock: concurrentPushLock,
@@ -90,6 +93,7 @@ func Serve(
 
 // server is the struct that encapsulates the SSH server.
 type server struct {
+	gitRecv  GitReceiveFunc
 	c        cookoo.Context
 	gitHome  string
 	pushLock RepositoryLock
@@ -262,7 +266,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					sendExitStatus(1, channel)
 					return fmt.Errorf(str)
 				}
-				err := git.Receive(repoName, operation, s.gitHome, sshConn, userInfo, channel)
+				err := s.gitRecv(repoName, operation, s.gitHome, sshConn, userInfo, channel)
 				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
 					// TODO: this is an important error case that needs to be covered

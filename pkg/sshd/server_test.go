@@ -322,16 +322,13 @@ func mockAuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interr
 	return perm, nil
 }
 
-func mockDummyReceive(sleepDur time.Duration) func(cookoo.Context, *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	return func(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-		channel := p.Get("channel", nil).(ssh.Channel)
-		req := p.Get("request", nil).(*ssh.Request)
+func mockDummyReceive(sleepDur time.Duration) GitReceiveFunc {
+	return GitReceiveFunc(func(a, b, c, d string, uinfo *controller.UserInfo, channel ssh.Channel) error {
 		time.Sleep(sleepDur)
 		channel.Write([]byte("OK"))
 		sendExitStatus(0, channel)
-		req.Reply(true, nil)
 		return nil, nil
-	}
+	})
 }
 
 func gitPktLineStr(str string) (string, error) {
