@@ -246,10 +246,21 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				cxt.Put("request", req)
 				cxt.Put("operation", parts[0])
 				cxt.Put("repository", parts[1])
+				authN := cxt.Get("route.sshd.pubkeyAuth", "pubkeyAuth").(string)
+				if err := router.HandleRequest(authN, cxt, true); err != nil {
+					str := fmt.Sprintf("Unable to authenticate the user (%s)", err)
+					log.Errf(s.c, str)
+					req.Reply(false, nil)
+					sendExitStatus(1, channel)
+					return err
+				}
 				userInfo, ok := cxt.Get("userinfo", nil).(*controller.UserInfo)
 				if !ok {
-					log.Errf(s.c, "unable to find the userinfo needed to run the git receive")
-					// sendExitStatus(status uint32, channel ssh.Channel)
+					str := fmt.Sprintf("unable to find the userinfo needed to run the git receive")
+					log.Errf(s.c, str)
+					req.Reply(false, nil)
+					sendExitStatus(1, channel)
+					return fmt.Errorf(str)
 				}
 				err := git.Receive(repoName, operation, s.gitHome, sshConn, userInfo, channel)
 				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
