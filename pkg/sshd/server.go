@@ -17,6 +17,8 @@ import (
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
+	"github.com/deis/builder/pkg/controller"
+	"github.com/deis/builder/pkg/git"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -225,6 +227,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					break
 				}
 
+				operation := parts[0]
 				repoName := parts[1]
 				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
@@ -243,8 +246,12 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				cxt.Put("request", req)
 				cxt.Put("operation", parts[0])
 				cxt.Put("repository", parts[1])
-				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
-				err := router.HandleRequest(sshGitReceive, cxt, true)
+				userInfo, ok := cxt.Get("userinfo", nil).(*controller.UserInfo)
+				if !ok {
+					log.Errf(s.c, "unable to find the userinfo needed to run the git receive")
+					// sendExitStatus(status uint32, channel ssh.Channel)
+				}
+				err := git.Receive(repoName, operation, s.gitHome, sshConn, userInfo, channel)
 				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
 					// TODO: this is an important error case that needs to be covered

@@ -3,7 +3,6 @@ package pkg
 import (
 	"github.com/Masterminds/cookoo"
 	"github.com/deis/builder/pkg/env"
-	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/sshd"
 )
 
@@ -82,28 +81,6 @@ func routes(reg *cookoo.Registry) {
 					{Name: "metadata", From: "cxt:metadata"},
 					{Name: "key", From: "cxt:key"},
 					{Name: "repoName", From: "cxt:repository"},
-				},
-			},
-		},
-	})
-
-	// This proxies a client session into a git receive.
-	//
-	// Called by the sshd.Server
-	reg.AddRoute(cookoo.Route{
-		Name: "sshGitReceive",
-		Help: "Handle a git receive over an SSH connection.",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "receive",
-				Fn:   git.Receive,
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-					{Name: "operation", From: "cxt:operation"},
-					{Name: "repoName", From: "cxt:repository"},
-					{Name: "permissions", From: "cxt:authN"},
-					{Name: "userinfo", From: "cxt:userinfo"},
 				},
 			},
 		},
