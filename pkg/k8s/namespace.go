@@ -15,10 +15,8 @@ import (
 //	nsl = kubeClient.Namespaces()
 type NamespaceLister interface {
 	List(labels.Selector, fields.Selector) (*api.NamespaceList, error)
-
 }
 
-
-type NamespaceWatcher interface{
+type NamespaceWatcher interface {
 	Watch(label labels.Selector, field fields.Selector, resourceVersion string) (watch.Interface, error)
 }
