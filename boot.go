@@ -74,7 +74,7 @@ func main() {
 				log.Printf("Starting deleted app cleaner")
 				cleanerErrCh := make(chan error)
 				go func() {
-					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces()); err != nil {
+					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), fs); err != nil {
 						cleanerErrCh <- err
 					}
 				}()
