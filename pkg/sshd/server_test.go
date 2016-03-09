@@ -250,21 +250,6 @@ func runServer(
 	cxt.Put("cookoo.Router", router)
 
 	reg.AddRoute(cookoo.Route{
-		Name: "sshPing",
-		Help: "Handles an ssh exec ping.",
-		Does: cookoo.Tasks{
-			cookoo.Cmd{
-				Name: "ping",
-				Fn:   Ping,
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-				},
-			},
-		},
-	})
-
-	reg.AddRoute(cookoo.Route{
 		Name: "pubkeyAuth",
 		Does: []cookoo.Task{
 			cookoo.Cmd{

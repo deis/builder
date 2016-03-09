@@ -9,6 +9,7 @@ package sshd
 
 import (
 	"fmt"
+	pkglog "github.com/deis/pkg/log"
 	"io"
 	"net"
 	"strings"
@@ -210,14 +211,11 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 			// Only allow commands that we know about.
 			switch parts[0] {
 			case "ping":
-				cxt.Put("channel", channel)
-				cxt.Put("request", req)
-				sshPing := cxt.Get("route.sshd.sshPing", "sshPing").(string)
-				err := router.HandleRequest(sshPing, cxt, true)
-				if err != nil {
-					log.Warnf(s.c, "Error pinging: %s", err)
+				if err := Ping(channel, req); err != nil {
+					pkglog.Warn("Error pinging: %s", err)
+					return err
 				}
-				return err
+				return nil
 			case "git-receive-pack", "git-upload-pack":
 				if len(parts) < 2 {
 					log.Warn(s.c, "Expected two-part command.\n")
@@ -314,16 +312,15 @@ func cleanExec(pay []byte) string {
 // 	- channel (ssh.Channel): The channel to respond on.
 // 	- request (*ssh.Request): The request.
 //
-func Ping(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	channel := p.Get("channel", nil).(ssh.Channel)
-	req := p.Get("request", nil).(*ssh.Request)
-	log.Info(c, "PING\n")
+func Ping(channel ssh.Channel, req *ssh.Request) error {
+	pkglog.Info("PING")
 	if _, err := channel.Write([]byte("pong")); err != nil {
-		log.Errf(c, "Failed to write to channel: %s", err)
+		pkglog.Err("Failed to write to channel: %s", err)
+		return err
 	}
 	sendExitStatus(0, channel)
 	req.Reply(true, nil)
-	return nil, nil
+	return nil
 }
 
 // gitPktLine writes a line following the pkt-line git protocol. See https://github.com/git/git/blob/master/Documentation/technical/protocol-common.txt for the protocol and https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt for its usage.
