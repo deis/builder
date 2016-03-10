@@ -11,6 +11,7 @@ type BucketCreator interface {
 	MakeBucket(bucketName string, acl s3.BucketACL, location string) error
 }
 
+// FakeMakeBucketCall represents a single call to MakeBucket on a FakeBucketCreator
 type FakeMakeBucketCall struct {
 	BucketName string
 	ACL        s3.BucketACL
@@ -23,7 +24,7 @@ type FakeBucketCreator struct {
 	Calls []FakeMakeBucketCall
 }
 
-// PutObject is the interface definition
+// MakeBucket is the interface definition for BucketCreator
 func (f *FakeBucketCreator) MakeBucket(name string, acl s3.BucketACL, location string) error {
 	f.Calls = append(f.Calls, FakeMakeBucketCall{BucketName: name, ACL: acl, Location: location})
 	return f.Fn(name, acl, location)
@@ -34,6 +35,7 @@ type ObjectStatter interface {
 	StatObject(bucketName, objectKey string) (s3.ObjectInfo, error)
 }
 
+// FakeStatObjectCall represents a single call to StatObject on the FakeObjectStatter
 type FakeStatObjectCall struct {
 	BucketName string
 	ObjectKey  string
@@ -45,7 +47,7 @@ type FakeObjectStatter struct {
 	Calls []FakeStatObjectCall
 }
 
-// PutObject is the interface definition
+// StatObject is the interface definition
 func (f *FakeObjectStatter) StatObject(bucketName, objectKey string) (s3.ObjectInfo, error) {
 	f.Calls = append(f.Calls, FakeStatObjectCall{BucketName: bucketName, ObjectKey: objectKey})
 	return f.Fn(bucketName, objectKey)
@@ -56,6 +58,7 @@ type ObjectPutter interface {
 	PutObject(bucketName, objectKey string, reader io.Reader, contentType string) (int64, error)
 }
 
+// FakePutObjectCall represents a single call to PutObject on a FakeObjectPutter
 type FakePutObjectCall struct {
 	BucketName  string
 	ObjectKey   string
@@ -80,7 +83,7 @@ func (f *FakeObjectPutter) PutObject(bucketName, objectKey string, reader io.Rea
 	return f.Fn(bucketName, objectKey, reader, contentType)
 }
 
-// The s3.Object already satisfies this interface. As long as it has some or all of the functions as s3.Object, it satisfies it. We're making it have all of the functions in this case. You can create a fake object that also has all of these functions.
+// Object is a *(github.com/minio/minio-go).Object compatible interface. Currently, ObjectGetter returns these so that FakeObjectGetters can return mock implementations
 type Object interface {
 	// This is called an interface composition - it automatically gives your interface the function in io.Reader (https://godoc.org/io#Reader) and the function in io.Closer (https://godoc.org/io#Closer)
 	io.ReadCloser
@@ -92,7 +95,7 @@ type Object interface {
 	Stat() (s3.ObjectInfo, error)
 }
 
-// The minio client doesn't already satisfy this interface, because the GetObject func (https://godoc.org/github.com/minio/minio-go#Client.GetObject) doesn't return an Object. Instead, it returns a *s3.Object. We'll create an adapter below
+// ObjectGetter is the interface to get an object from object storage. The minio client doesn't already satisfy this interface, because the GetObject func (https://godoc.org/github.com/minio/minio-go#Client.GetObject) doesn't return an Object. Instead, it returns a *s3.Object. Use the RealObjectGetter below to use the minio client
 type ObjectGetter interface {
 	// GetObject is *almost* the same function as the GetObject func in the minio client, but it returns Object instead of *s3.Object
 	GetObject(string, string) (Object, error)
@@ -103,6 +106,7 @@ type RealObjectGetter struct {
 	Client *s3.Client
 }
 
+// GetObject is the interface implementation for ObjectGetter
 func (r *RealObjectGetter) GetObject(bucket, objKey string) (Object, error) {
 	obj, err := r.Client.GetObject(bucket, objKey)
 	if err != nil {
@@ -113,6 +117,7 @@ func (r *RealObjectGetter) GetObject(bucket, objKey string) (Object, error) {
 	return obj, nil
 }
 
+// FakeGetObjectCall represents a single call a single call to GetObject on a FakeObjectGetter
 type FakeGetObjectCall struct {
 	BucketName string
 	ObjectKey  string

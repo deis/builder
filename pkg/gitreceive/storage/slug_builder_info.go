@@ -32,12 +32,25 @@ func NewSlugBuilderInfo(s3Endpoint *Endpoint, bucket, appName, slugName string, 
 	}
 }
 
-func (s SlugBuilderInfo) PushKey() string               { return s.pushKey }
-func (s SlugBuilderInfo) PushURL() string               { return s.pushURL }
-func (s SlugBuilderInfo) TarKey() string                { return s.tarKey }
-func (s SlugBuilderInfo) TarURL() string                { return s.tarURL }
+// PushKey returns the object storage key that the slug builder will store the slug in. The returned value only contains the path to the folder, not including the final filename.
+func (s SlugBuilderInfo) PushKey() string { return s.pushKey }
+
+// PushURL returns the complete object storage URL that the slug builder will store the slug in. The returned value only contains the URL to the folder, not including the final filename.
+func (s SlugBuilderInfo) PushURL() string { return s.pushURL }
+
+// TarKey returns the object storage key from which the slug builder will download for the tarball (from which it uses to build the slug). The returned value only contains the path to the folder, not including the final filename.
+func (s SlugBuilderInfo) TarKey() string { return s.tarKey }
+
+// TarURL returns the complete object storage URL that the slug builder will download the tarball from. The returned value only contains the URL to the folder, not including the final filename.
+func (s SlugBuilderInfo) TarURL() string { return s.tarURL }
+
+// AbsoluteSlugObjectKey returns the PushKey plus the final filename of the slug
 func (s SlugBuilderInfo) AbsoluteSlugObjectKey() string { return s.PushKey() + "/" + slugTGZName }
-func (s SlugBuilderInfo) AbsoluteProcfileKey() string   { return s.PushKey() + "/Procfile" }
+
+// AbsoluteProcfileKey returns the PushKey plus the standard procfile name
+func (s SlugBuilderInfo) AbsoluteProcfileKey() string { return s.PushKey() + "/Procfile" }
+
+// AbsoluteSlugURL returns the PushURL plus the final filename of the slug
 func (s SlugBuilderInfo) AbsoluteSlugURL() string {
 	return s.PushURL() + "/" + slugTGZName
 }

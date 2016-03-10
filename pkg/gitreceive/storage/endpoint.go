@@ -44,9 +44,8 @@ type Endpoint struct {
 func (e *Endpoint) FullURL() string {
 	if e.Secure {
 		return fmt.Sprintf("https://%s", e.URLStr)
-	} else {
-		return fmt.Sprintf("http://%s", e.URLStr)
 	}
+	return fmt.Sprintf("http://%s", e.URLStr)
 }
 
 func getEndpoint(env sys.Env) (*Endpoint, error) {

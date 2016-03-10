@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	testErr = errors.New("test error")
+	errTest = errors.New("test error")
 )
 
 func TestHealthZCircuitOpen(t *testing.T) {
@@ -31,7 +31,7 @@ func TestHealthZCircuitOpen(t *testing.T) {
 
 func TestHealthZBucketListErr(t *testing.T) {
 	nsLister := emptyNamespaceLister{}
-	bLister := errBucketLister{err: testErr}
+	bLister := errBucketLister{err: errTest}
 	c := sshd.NewCircuit()
 	c.Close()
 	h := healthZHandler(nsLister, bLister, c)
@@ -45,7 +45,7 @@ func TestHealthZBucketListErr(t *testing.T) {
 }
 
 func TestHealthZNamespaceListErr(t *testing.T) {
-	nsLister := errNamespaceLister{err: testErr}
+	nsLister := errNamespaceLister{err: errTest}
 	bLister := emptyBucketLister{}
 	c := sshd.NewCircuit()
 	c.Close()

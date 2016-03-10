@@ -13,6 +13,7 @@ type Config struct {
 	CleanerPollSleepDurationSec int    `envconfig:"CLEANER_POLL_SLEEP_DURATION_SEC" default:"1"`
 }
 
+// CleanerPollSleepDuration returns c.CleanerPollSleepDurationSec as a time.Duration
 func (c Config) CleanerPollSleepDuration() time.Duration {
 	return time.Duration(c.CleanerPollSleepDurationSec) * time.Second
 }

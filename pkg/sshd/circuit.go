@@ -26,8 +26,8 @@ func (c CircuitState) String() string {
 	}
 }
 
-func (s CircuitState) toUint32() uint32 {
-	return uint32(s)
+func (c CircuitState) toUint32() uint32 {
+	return uint32(c)
 }
 
 // Circuit is a concurrency-safe data structure that can take one of two states at any point in time:

@@ -23,6 +23,7 @@ func readLine(line string) (string, string, string, error) {
 	return spl[0], spl[1], spl[2], nil
 }
 
+// Run runs the git-receive hook
 func Run(conf *Config, fs sys.FS, env sys.Env) error {
 	log.Debug("Running git hook")
 

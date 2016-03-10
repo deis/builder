@@ -10,6 +10,7 @@ const (
 	objectStorageTick = 500
 )
 
+// Config is the envconfig (http://github.com/kelseyhightower/envconfig) compatible struct for the builder's git-receive hook
 type Config struct {
 	// k8s service discovery env vars
 	ControllerHost string `envconfig:"DEIS_CONTROLLER_SERVICE_HOST" required:"true"`
@@ -35,6 +36,7 @@ type Config struct {
 	DockerBuilderImage            string `envconfig:"DOCKERBUILDER_IMAGE_NAME" default:"quay.io/deisci/dockerbuilder:v2-beta"`
 }
 
+// App returns the application name represented by c. The app name is the same as c.Repository with the last '.' and beyond stripped off
 func (c Config) App() string {
 	li := strings.LastIndex(c.Repository, ".")
 	if li == -1 {

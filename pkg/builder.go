@@ -19,7 +19,7 @@ const (
 	StatusLocalError
 )
 
-// Run starts the Builder service.
+// RunBuilder starts the Builder service.
 //
 // The Builder service is responsible for setting up the local container
 // environment and then listening for new builds. The main listening service

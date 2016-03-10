@@ -38,14 +38,17 @@ func (f FakeFileNotFound) Error() string {
 	return fmt.Sprintf("Fake file %s not found", f.Filename)
 }
 
+// FakeFS is an in-memory FS implementation
 type FakeFS struct {
 	Files map[string][]byte
 }
 
+// NewFakeFS returns a FakeFS with no files
 func NewFakeFS() *FakeFS {
 	return &FakeFS{Files: make(map[string][]byte)}
 }
 
+// ReadFile is the FS interface implementation. Returns FakeFileNotFound if the file was not found in the in-memory 'filesystem' of f
 func (f *FakeFS) ReadFile(name string) ([]byte, error) {
 	b, ok := f.Files[name]
 	if !ok {

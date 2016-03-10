@@ -5,8 +5,10 @@ import (
 	s3 "github.com/minio/minio-go"
 )
 
+// Client is the S3 client combined with the S3 endpoint
 type Client struct {
 	*s3.Client
+	// Endpoint is the the endpoint information for the location that the S3 client will access
 	Endpoint *Endpoint
 }
 
