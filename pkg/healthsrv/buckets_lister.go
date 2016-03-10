@@ -7,8 +7,8 @@ import (
 // BucketLister is a *(github.com/minio/minio-go).Client compatible interface that provides just
 // the ListBuckets cross-section of functionality. It can also be implemented for unit tests.
 type BucketLister interface {
-	// ListBuckets lists all the buckets in the object storage system.
-	ListBuckets() ([]s3.BucketInfo, error)
+	// ListBuckets lists all the buckets in the object storage system
+	CheckConnectionStatus() (bool, error)
 }
 
 type emptyBucketLister struct{}
@@ -31,8 +31,8 @@ func (e errBucketLister) ListBuckets() ([]s3.BucketInfo, error) {
 // On success, it passes the bucket output on succCh, and on failure, it passes the error on errCh.
 // At most one of {succCh, errCh} will be sent on. If stopCh is closed, no pending or future sends
 // will occur.
-func listBuckets(bl BucketLister, succCh chan<- []s3.BucketInfo, errCh chan<- error, stopCh <-chan struct{}) {
-	lbOut, err := bl.ListBuckets()
+func listBuckets(bl BucketLister, succCh chan<- bool, errCh chan<- error, stopCh <-chan struct{}) {
+	lbOut, err := bl.CheckConnectionStatus()
 	if err != nil {
 		select {
 		case errCh <- err:

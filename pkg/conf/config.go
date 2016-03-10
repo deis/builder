@@ -8,8 +8,11 @@ import (
 )
 
 const (
-	builderKeyLocation = "/var/run/secrets/api/auth/builder-key"
+	builderKeyLocation  = "/var/run/secrets/api/auth/builder-key"
+	storageCredLocation = "/var/run/secrets/deis/builder/creds/"
 )
+
+type Parameters map[string]string
 
 // EnvConfig is a convenience function to process the envconfig (
 // https://github.com/kelseyhightower/envconfig) based configuration environment variables into
@@ -34,4 +37,25 @@ func GetBuilderKey() (string, error) {
 	}
 	builderKey := string(builderKeyBytes)
 	return builderKey, nil
+}
+
+func GetStorageParams() (Parameters, error) {
+	params := make(map[string]string)
+	files, err := ioutil.ReadDir(storageCredLocation)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		data, err := ioutil.ReadFile(storageCredLocation + file.Name())
+		if err != nil {
+			return nil, err
+		}
+		if file.Name() == "key.json" {
+			params["keyfile"] = storageCredLocation + file.Name()
+		} else {
+			params[file.Name()] = string(data)
+		}
+	}
+	return params, nil
 }

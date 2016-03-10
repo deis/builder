@@ -18,7 +18,7 @@ const (
 	tarURLKey        = "TAR_URL"
 	putURLKey        = "put_url"
 	debugKey         = "DEBUG"
-	minioUser        = "minio-user"
+	minioUser        = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
 	dockerSocketPath = "/var/run/docker.sock"
 )
@@ -63,14 +63,15 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[stri
 	return &pod
 }
 
-func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, putURL, buildpackURL, slugBuilderImage string) *api.Pod {
+func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarKey, putURL, buildpackURL, slugBuilderImage, storageType string) *api.Pod {
 	pod := buildPod(debug, withAuth, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName
 	pod.Spec.Containers[0].Image = slugBuilderImage
 
-	addEnvToPod(pod, tarURLKey, tarURL)
+	addEnvToPod(pod, tarURLKey, tarKey)
 	addEnvToPod(pod, putURLKey, putURL)
+	addEnvToPod(pod, "BUILDER_STORAGE", storageType)
 
 	if buildpackURL != "" {
 		addEnvToPod(pod, "BUILDPACK_URL", buildpackURL)
@@ -112,7 +113,7 @@ func buildPod(debug, withAuth bool, name, namespace string, env map[string]inter
 		pod.Spec.Containers[0].VolumeMounts = []api.VolumeMount{
 			api.VolumeMount{
 				Name:      minioUser,
-				MountPath: "/var/run/secrets/object/store",
+				MountPath: "/var/run/secrets/deis/objectstore/creds",
 				ReadOnly:  true,
 			},
 		}

@@ -11,6 +11,7 @@ type Config struct {
 	HealthSrvPort               int    `envconfig:"HEALTH_SERVER_PORT" default:"8092"`
 	HealthSrvTestStorageRegion  string `envconfig:"STORAGE_REGION" default:"us-east-1"`
 	CleanerPollSleepDurationSec int    `envconfig:"CLEANER_POLL_SLEEP_DURATION_SEC" default:"1"`
+	StorageType                 string `envconfig:"BUILDER_STORAGE" default:"minio"`
 }
 
 // CleanerPollSleepDuration returns c.CleanerPollSleepDurationSec as a time.Duration.
