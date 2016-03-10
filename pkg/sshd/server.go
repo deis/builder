@@ -32,6 +32,7 @@ const (
 	multiplePush string = "Another git push is ongoing"
 )
 
+// GitReceiveFunc is the type of the (github.com/deis/builder/pkg/gitreceive).Recieve func. This type is passed to Serve so that unit tests can mock it
 type GitReceiveFunc func(string, string, string, string, *controller.UserInfo, ssh.Channel) error
 
 // Serve starts a native SSH server.
