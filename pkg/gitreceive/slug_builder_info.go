@@ -2,6 +2,8 @@ package gitreceive
 
 import (
 	"fmt"
+
+	"github.com/deis/builder/pkg/git"
 )
 
 const (
