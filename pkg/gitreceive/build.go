@@ -29,7 +29,8 @@ func repoCmd(repoDir, first string, others ...string) *exec.Cmd {
 	return cmd
 }
 
-// run prints the command it will execute to the debug log, then runs it and returns the result of run
+// run prints the command it will execute to the debug log, then runs it and returns the result
+// of run
 func run(cmd *exec.Cmd) error {
 	cmdStr := strings.Join(cmd.Args, " ")
 	if cmd.Dir != "" {

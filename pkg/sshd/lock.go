@@ -7,20 +7,20 @@ import (
 )
 
 // RepositoryLock interface that allows the creation of a lock associated
-// with a repository name to avoid simultaneous git operations
+// with a repository name to avoid simultaneous git operations.
 type RepositoryLock interface {
 	// Lock acquires a lock for a repository. In the case the repository is already locked
 	// it waits until a timeout to get the lock. If it was not possible to get the
-	// lock after the timeout an error is returned
+	// lock after the timeout an error is returned.
 	Lock(repoName string, timeout time.Duration) error
 	// Unlock releases the lock for a repository or returns an error if the specified
 	// name doesn't exist. In the case the repository is already locked it waits until
 	// a timeout to get the lock. If it was not possible to get the lock after the timeout
-	// an error is returned
+	// an error is returned.
 	Unlock(repoName string, timeout time.Duration) error
 }
 
-// NewInMemoryRepositoryLock returns a new instance of a RepositoryLock
+// NewInMemoryRepositoryLock returns a new instance of a RepositoryLock.
 func NewInMemoryRepositoryLock() RepositoryLock {
 	return &inMemoryRepoLock{
 		mutex:   &sync.RWMutex{},
@@ -34,7 +34,7 @@ type inMemoryRepoLock struct {
 }
 
 // Lock aquires a lock associated with the specified name.
-// This implementation do not uses the timeout
+// This implementation ignores the timeout.
 func (rl *inMemoryRepoLock) Lock(repoName string, timeout time.Duration) error {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
@@ -48,9 +48,8 @@ func (rl *inMemoryRepoLock) Lock(repoName string, timeout time.Duration) error {
 	return fmt.Errorf("repository %q already locked", repoName)
 }
 
-// Unlock releases the lock for a repository or returns
-// an error if the specified name doesn't exist.
-// This implementation do not uses the timeout
+// Unlock releases the lock for a repository or returns an error if the specified name doesn't
+// exist. This implementation ignores the timeout.
 func (rl *inMemoryRepoLock) Unlock(repoName string, timeout time.Duration) error {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()

@@ -16,7 +16,8 @@ const (
 	octetStream = "application/octet-stream"
 )
 
-// ObjectExists determines whether the object in ${bucketName}/${objKey} exists, as reported by statter. Returns the following:
+// ObjectExists determines whether the object in ${bucketName}/${objKey} exists, as reported by
+// statter. Returns the following:
 //
 // - false, nil if statter succeeded and reported the object doesn't exist
 // - false, err with the appropriate error if the statter failed
@@ -39,7 +40,8 @@ func UploadObject(putter ObjectPutter, bucketName, objKey string, reader io.Read
 	return err
 }
 
-// WaitForObject checks statter for the object at ${bucketName}/${objKey} right away, then at every tick, then once when the timeout is up.
+// WaitForObject checks statter for the object at ${bucketName}/${objKey} right away, then at
+// every tick, then once when the timeout is up.
 // Returns nil if it finds the object before or at timeout. Otherwise returns a non-nil error
 func WaitForObject(statter ObjectStatter, bucketName, objKey string, tick, timeout time.Duration) error {
 	noExist := errors.New("object doesn't exist")
@@ -75,7 +77,9 @@ func WaitForObject(statter ObjectStatter, bucketName, objKey string, tick, timeo
 	}
 }
 
-// DownloadObject uses the given getter to download the contents the object at ${bucketName}/${objKey} and returns the object's contents in the given byte slice. Returns nil and the appropriate error if there were problems with the download
+// DownloadObject uses the given getter to download the contents the object at
+// ${bucketName}/${objKey} and returns the object's contents in the given byte slice.
+// Returns nil and the appropriate error if there were problems with the download
 func DownloadObject(getter ObjectGetter, bucketName, objKey string) ([]byte, error) {
 	reader, err := getter.GetObject(bucketName, objKey)
 	if err != nil {

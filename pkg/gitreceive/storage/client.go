@@ -24,7 +24,8 @@ func GetClient(regionStr string, fs sys.FS, env sys.Env) (*Client, error) {
 		return nil, err
 	}
 
-	// the New function call guesses which signature version to use. Currently, it correctly guesses V2 for GCS and V4 for both AWS S3 and Minio
+	// the New function call guesses which signature version to use. Currently, it correctly guesses
+	// V2 for GCS and V4 for both AWS S3 and Minio
 	s3Client, err := s3.New(endpoint.URLStr, auth.accessKeyID, auth.accessKeySecret, !endpoint.Secure)
 	if err != nil {
 		return nil, err

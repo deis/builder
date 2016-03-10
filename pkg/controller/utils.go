@@ -18,7 +18,8 @@ const (
 	portEnvName = "DEIS_CONTROLLER_SERVICE_PORT"
 )
 
-// UserInfo represent the required information from a user to make a push and interact with the controller
+// UserInfo represents the required information from a user to make a push and interact with the
+// controller
 type UserInfo struct {
 	Username    string
 	Key         string

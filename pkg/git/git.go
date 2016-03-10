@@ -22,7 +22,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// prereceiveHookTplStr is the template for a pre-receive hook. The following template variables are passed into it:
+// prereceiveHookTplStr is the template for a pre-receive hook. The following template variables
+// are passed into it:
 //
 // 	.GitHome: the path to Git's home directory.
 const preReceiveHookTplStr = `#!/bin/bash
