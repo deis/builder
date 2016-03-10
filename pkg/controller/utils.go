@@ -62,7 +62,7 @@ func fingerprint(key ssh.PublicKey) string {
 	return string(fp)
 }
 
-// UserInfoFromKey makes a request to the controller to get the user info from they given key
+// UserInfoFromKey makes a request to the controller to get the user info from they given key.
 func UserInfoFromKey(key ssh.PublicKey) (*UserInfo, error) {
 	fp := fingerprint(key)
 	url, err := controllerURLStr("v2", "hooks", "key", fp)

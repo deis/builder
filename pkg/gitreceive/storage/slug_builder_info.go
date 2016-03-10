@@ -11,7 +11,7 @@ const (
 )
 
 // SlugBuilderInfo contains all of the object storage related information needed to pass to a
-// slug builder
+// slug builder.
 type SlugBuilderInfo struct {
 	pushKey string
 	pushURL string
@@ -19,7 +19,7 @@ type SlugBuilderInfo struct {
 	tarURL  string
 }
 
-// NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data
+// NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data.
 func NewSlugBuilderInfo(s3Endpoint *Endpoint, bucket, appName, slugName string, gitSha *git.SHA) *SlugBuilderInfo {
 	tarKey := fmt.Sprintf("home/%s/tar", slugName)
 	// this is where the controller tells slugrunner to download the slug from, so we have to
@@ -51,13 +51,13 @@ func (s SlugBuilderInfo) TarKey() string { return s.tarKey }
 // from. The returned value only contains the URL to the folder, not including the final filename.
 func (s SlugBuilderInfo) TarURL() string { return s.tarURL }
 
-// AbsoluteSlugObjectKey returns the PushKey plus the final filename of the slug
+// AbsoluteSlugObjectKey returns the PushKey plus the final filename of the slug.
 func (s SlugBuilderInfo) AbsoluteSlugObjectKey() string { return s.PushKey() + "/" + slugTGZName }
 
-// AbsoluteProcfileKey returns the PushKey plus the standard procfile name
+// AbsoluteProcfileKey returns the PushKey plus the standard procfile name.
 func (s SlugBuilderInfo) AbsoluteProcfileKey() string { return s.PushKey() + "/Procfile" }
 
-// AbsoluteSlugURL returns the PushURL plus the final filename of the slug
+// AbsoluteSlugURL returns the PushURL plus the final filename of the slug.
 func (s SlugBuilderInfo) AbsoluteSlugURL() string {
 	return s.PushURL() + "/" + slugTGZName
 }

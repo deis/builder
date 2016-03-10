@@ -9,7 +9,7 @@ import (
 // FS is the interface to a file system.
 type FS interface {
 	// ReadAll gets the contents of filename, or an error if the file didn't exist or there was an
-	// error reading it
+	// error reading it.
 	ReadFile(filename string) ([]byte, error)
 
 	// RemoveAll removes all of the files under the directory at name. It behaves similarly to the

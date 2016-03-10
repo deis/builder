@@ -5,13 +5,13 @@ import (
 	"sync/atomic"
 )
 
-// CircuitState represents the state of a Circuit
+// CircuitState represents the state of a Circuit.
 type CircuitState uint32
 
 const (
-	// OpenState indicates that the circuit is in the open state, and thus non-functional
+	// OpenState indicates that the circuit is in the open state, and thus non-functional.
 	OpenState CircuitState = 0
-	// ClosedState indicates that the circuit is in the closed state, and thus functional
+	// ClosedState indicates that the circuit is in the closed state, and thus functional.
 	ClosedState CircuitState = 1
 )
 
@@ -42,7 +42,7 @@ type Circuit struct {
 	bit uint32
 }
 
-// NewCircuit creates a new circuit, in the open (non-functional) state
+// NewCircuit creates a new circuit, in the open (non-functional) state.
 func NewCircuit() *Circuit {
 	return &Circuit{bit: OpenState.toUint32()}
 }

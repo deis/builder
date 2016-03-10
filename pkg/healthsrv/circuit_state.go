@@ -17,7 +17,7 @@ func circuitState(circ *sshd.Circuit, succCh chan<- struct{}, errCh chan<- error
 	// There's a race between the boolean eval and the HTTP error returned
 	// (the circuit could close between the two). This function should be polled to avoid that
 	// problem. If it's being used in a k8s probe, then you're fine because k8s will repeat the
-	// health probe and effectively re-evaluate the boolean
+	// health probe and effectively re-evaluate the boolean.
 	if circ.State() != sshd.ClosedState {
 		select {
 		case errCh <- fmt.Errorf("SSH Server is not yet started"):

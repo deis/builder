@@ -10,12 +10,12 @@ const (
 )
 
 var (
-	// ACLPublicRead default ACL for objects in the S3 API compatible storage
+	// ACLPublicRead default ACL for objects in the S3 API compatible storage.
 	ACLPublicRead = s3.BucketACL("public-read")
 )
 
-// CreateBucket creates a new bucket in the S3 API compatible storage or
-// return an error in case the bucket already exists
+// CreateBucket creates a new bucket in the S3 API compatible storage. If the bucket was
+// successfully created or already exists, returns nil. Otherwise returns an appropriate error.
 func CreateBucket(creator BucketCreator, bucketName string) error {
 	if err := creator.MakeBucket(bucketName, ACLPublicRead, ""); err != nil {
 		minioErr := s3.ToErrorResponse(err)

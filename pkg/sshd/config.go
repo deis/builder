@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// Config represents the required SSH server configuration
+// Config represents the required SSH server configuration.
 type Config struct {
 	SSHHostIP                   string `envconfig:"SSH_HOST_IP" default:"0.0.0.0" required:"true"`
 	SSHHostPort                 int    `envconfig:"SSH_HOST_PORT" default:"2223" required:"true"`
@@ -13,7 +13,7 @@ type Config struct {
 	CleanerPollSleepDurationSec int    `envconfig:"CLEANER_POLL_SLEEP_DURATION_SEC" default:"1"`
 }
 
-// CleanerPollSleepDuration returns c.CleanerPollSleepDurationSec as a time.Duration
+// CleanerPollSleepDuration returns c.CleanerPollSleepDurationSec as a time.Duration.
 func (c Config) CleanerPollSleepDuration() time.Duration {
 	return time.Duration(c.CleanerPollSleepDurationSec) * time.Second
 }

@@ -280,12 +280,12 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 	return nil
 }
 
-// ExecCmd is an SSH exec request
+// ExecCmd is an SSH exec request.
 type ExecCmd struct {
 	Value string
 }
 
-// EnvVar is an SSH env request
+// EnvVar is an SSH env request.
 type EnvVar struct {
 	Name  string
 	Value string

@@ -6,7 +6,7 @@ import (
 
 // Env is an interface to a set of environment variables.
 type Env interface {
-	// Get gets the environment variable of the given name
+	// Get gets the environment variable of the given name.
 	Get(name string) string
 }
 
@@ -21,7 +21,7 @@ func RealEnv() Env {
 	return realEnv{}
 }
 
-// FakeEnv is an Env implementation that stores the environment in a map,
+// FakeEnv is an Env implementation that stores the environment in a map.
 type FakeEnv struct {
 	// Envs is the map from which Get calls will look to retrieve environment variables.
 	Envs map[string]string

@@ -1,5 +1,5 @@
 // Package cleaner is a background process that compares the kubernetes namespace list with the
-// folders in the local git home directory, deleting what's not in the namespace list
+// folders in the local git home directory, deleting what's not in the namespace list.
 package cleaner
 
 import (
