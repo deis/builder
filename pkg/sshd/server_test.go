@@ -279,26 +279,9 @@ func runServer(
 		},
 	})
 
-	reg.AddRoute(cookoo.Route{
-		Name: "sshGitReceive",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "receive",
-				Fn:   mockDummyReceive(handlerSleepDur),
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-					{Name: "operation", From: "cxt:operation"},
-					{Name: "repoName", From: "cxt:repository"},
-					{Name: "permissions", From: "cxt:authN"},
-					{Name: "userinfo", From: "cxt:userinfo"},
-				},
-			},
-		},
-	})
-
 	go func() {
-		if err := Serve(reg, router, c, gitHome, pushLock, cxt); err != nil {
+		gitRecvFunc := mockDummyReceive(handlerSleepDur)
+		if err := Serve(reg, router, c, gitHome, gitRecvFunc, pushLock, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()
@@ -327,7 +310,7 @@ func mockDummyReceive(sleepDur time.Duration) GitReceiveFunc {
 		time.Sleep(sleepDur)
 		channel.Write([]byte("OK"))
 		sendExitStatus(0, channel)
-		return nil, nil
+		return nil
 	})
 }
 
