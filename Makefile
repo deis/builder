@@ -1,5 +1,7 @@
 SHORT_NAME ?= builder
 
+include versioning.mk
+
 # Enable vendor/ directory support.
 export GO15VENDOREXPERIMENT=1
 
@@ -12,20 +14,13 @@ DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
-VERSION ?= git-$(shell git rev-parse --short HEAD)
 BINARY_DEST_DIR := rootfs/usr/bin
 # Common flags passed into Go's linker.
 LDFLAGS := "-s -X main.version=${VERSION}"
-IMAGE_PREFIX ?= deis
 # Docker Root FS
 BINDIR := ./rootfs
 
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
-
-# Kubernetes-specific information for RC, Service, and Image.
-RC := manifests/deis-${SHORT_NAME}-rc.yaml
-SVC := manifests/deis-${SHORT_NAME}-service.yaml
-IMAGE := ${DEIS_REGISTRY}${IMAGE_PREFIX}/${SHORT_NAME}:${VERSION}
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -49,26 +44,11 @@ test:
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
+	docker tag -f ${IMAGE} ${MUTABLE_IMAGE}
 
 # Push to a registry that Kubernetes can access.
 docker-push:
 	docker push ${IMAGE}
-
-# Deploy is a Kubernetes-oriented target
-deploy: kube-service kube-rc
-
-# Some things, like services, have to be deployed before pods. This is an
-# example target. Others could perhaps include kube-secret, kube-volume, etc.
-kube-service:
-	kubectl create -f ${SVC}
-
-# When possible, we deploy with RCs.
-kube-rc:
-	kubectl create -f ${RC}
-
-kube-clean:
-	kubectl delete rc deis-${SHORT_NAME}
-	kubectl delete svc deis-${SHORT_NAME}
 
 .PHONY: all build docker-compile kube-up kube-down deploy
 
