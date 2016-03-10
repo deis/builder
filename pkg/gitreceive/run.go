@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
 

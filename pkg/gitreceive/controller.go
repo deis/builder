@@ -10,7 +10,6 @@ import (
 
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
-	"github.com/deis/builder/pkg/gitreceive/storage"
 	"github.com/deis/pkg/log"
 )
 
@@ -152,7 +151,7 @@ func receive(conf *Config, builderKey, gitSha string) error {
 }
 
 func createBuildHook(
-	slugBuilderInfo *storage.SlugBuilderInfo,
+	slugBuilderInfo *SlugBuilderInfo,
 	gitSha *git.SHA,
 	username,
 	appName string,

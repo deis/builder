@@ -1,9 +1,10 @@
-package storage
+package gitreceive
 
 import (
 	"fmt"
 
 	"github.com/deis/builder/pkg/gitreceive/git"
+	"github.com/deis/builder/pkg/storage"
 )
 
 const (
@@ -19,8 +20,8 @@ type SlugBuilderInfo struct {
 	tarURL  string
 }
 
-// NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data.
-func NewSlugBuilderInfo(s3Endpoint *Endpoint, bucket, appName, slugName string, gitSha *git.SHA) *SlugBuilderInfo {
+// NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data
+func NewSlugBuilderInfo(s3Endpoint *storage.Endpoint, bucket, appName, slugName string, gitSha *git.SHA) *SlugBuilderInfo {
 	tarKey := fmt.Sprintf("home/%s/tar", slugName)
 	// this is where the controller tells slugrunner to download the slug from, so we have to
 	// tell slugbuilder to upload it to here

@@ -1,21 +1,15 @@
-package storage
+package gitreceive
 
 import (
 	"testing"
 
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/gitreceive/git"
-)
-
-const (
-	rawSha   = "c3b4e4ba8b7267226ff02ad07a3a2cca9c9237de"
-	appName  = "myapp"
-	slugName = "myslug"
-	bucket   = "git"
+	"github.com/deis/builder/pkg/storage"
 )
 
 var (
-	s3Endpoint = &Endpoint{URLStr: "10.1.2.3:9090", Secure: false}
+	s3Endpoint = &storage.Endpoint{URLStr: "10.1.2.3:9090", Secure: false}
 )
 
 func TestS3Endpoint(t *testing.T) {
