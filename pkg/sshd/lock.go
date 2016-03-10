@@ -9,7 +9,7 @@ import (
 // RepositoryLock interface that allows the creation of a lock associated
 // with a repository name to avoid simultaneous git operations
 type RepositoryLock interface {
-	// Lock aquires a lock for a repository. In the case the repository is already locked
+	// Lock acquires a lock for a repository. In the case the repository is already locked
 	// it waits until a timeout to get the lock. If it was not possible to get the
 	// lock after the timeout an error is returned
 	Lock(repoName string, timeout time.Duration) error
