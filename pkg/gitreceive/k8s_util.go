@@ -12,10 +12,8 @@ import (
 )
 
 const (
-	slugBuilderName    = "deis-slugbuilder"
-	slugBuilderImage   = "quay.io/deisci/slugbuilder:v2-beta"
-	dockerBuilderName  = "deis-dockerbuilder"
-	dockerBuilderImage = "quay.io/deisci/dockerbuilder:v2-beta"
+	slugBuilderName   = "deis-slugbuilder"
+	dockerBuilderName = "deis-dockerbuilder"
 
 	tarURLKey        = "TAR_URL"
 	putURLKey        = "put_url"
@@ -35,7 +33,7 @@ func slugBuilderPodName(appName, shortSha string) string {
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, imageName, region string) *api.Pod {
+func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, imageName, region, dockerBuilderImage string) *api.Pod {
 	pod := buildPod(debug, withAuth, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
@@ -65,7 +63,7 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[stri
 	return &pod
 }
 
-func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, putURL, buildpackURL string) *api.Pod {
+func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, putURL, buildpackURL, slugBuilderImage string) *api.Pod {
 	pod := buildPod(debug, withAuth, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName

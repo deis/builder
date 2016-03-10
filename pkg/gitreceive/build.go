@@ -128,6 +128,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 			slugBuilderInfo.TarURL(),
 			slugName,
 			conf.StorageRegion,
+			conf.DockerBuilderImage,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -140,6 +141,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 			slugBuilderInfo.TarURL(),
 			slugBuilderInfo.PushURL(),
 			buildPackURL,
+			conf.SlugBuilderImage,
 		)
 	}
 
