@@ -91,7 +91,11 @@ func TestWaitForObjectMissing(t *testing.T) {
 	err := WaitForObject(statter, bucketName, objKey, 1*time.Millisecond, 2*time.Millisecond)
 	assert.True(t, err != nil, "no error received when there should have been")
 	// it should make 1 call immediately, then calls at 1ms and 2ms
-	assert.True(t, len(statter.Calls) >= 3, "the statter wasn't called at least once")
+	assert.True(
+		t,
+		len(statter.Calls) >= 1,
+		"the statter was not called, but should have been called at least once",
+	)
 }
 
 func TestWaitForObjectExists(t *testing.T) {
