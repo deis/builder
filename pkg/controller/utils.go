@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	hostEnvName = "DEIS_WORKFLOW_SERVICE_HOST"
-	portEnvName = "DEIS_WORKFLOW_SERVICE_PORT"
+	hostEnvName = "DEIS_CONTROLLER_SERVICE_HOST"
+	portEnvName = "DEIS_CONTROLLER_SERVICE_PORT"
 )
 
-// UserInfo represent the required information from a user to make a push and interact with deis/workflow
+// UserInfo represent the required information from a user to make a push and interact with the controller
 type UserInfo struct {
 	Username    string
 	Key         string

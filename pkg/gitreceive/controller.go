@@ -33,7 +33,7 @@ func (u unexpectedControllerStatusCode) Error() string {
 }
 
 func controllerURLStr(conf *Config, additionalPath ...string) string {
-	return fmt.Sprintf("http://%s:%s/%s", conf.WorkflowHost, conf.WorkflowPort, strings.Join(additionalPath, "/"))
+	return fmt.Sprintf("http://%s:%s/%s", conf.ControllerHost, conf.ControllerPort, strings.Join(additionalPath, "/"))
 }
 
 func setReqHeaders(builderKey string, req *http.Request) {
@@ -61,7 +61,7 @@ func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Conf
 
 	setReqHeaders(builderKey, req)
 
-	log.Debug("Workflow request POST /v2/hooks/config\n%s", string(data))
+	log.Debug("Controller request POST /v2/hooks/config\n%s", string(data))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 	}
 
 	url := controllerURLStr(conf, "v2", "hooks", "build")
-	log.Debug("Workflow request POST /v2/hooks/build\n%s", postBody)
+	log.Debug("Controller request POST /v2/hooks/build\n%s", postBody)
 	req, err := http.NewRequest("POST", url, strings.NewReader(postBody))
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func receive(conf *Config, builderKey, gitSha string) error {
 		return err
 	}
 
-	log.Debug("Workflow request /v2/hooks/push (body elided)")
+	log.Debug("Controller request /v2/hooks/push (body elided)")
 	req, err := http.NewRequest("POST", urlStr, &body)
 	if err != nil {
 		return err

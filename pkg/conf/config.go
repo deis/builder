@@ -18,7 +18,7 @@ func EnvConfig(appName string, conf interface{}) error {
 	return nil
 }
 
-// GetBuilderKey returns the key to be used as token to interact with deis-workflow
+// GetBuilderKey returns the key to be used as token to interact with deis-controller
 func GetBuilderKey() (string, error) {
 	builderKeyBytes, err := ioutil.ReadFile(builderKeyLocation)
 	if err != nil {

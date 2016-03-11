@@ -52,7 +52,7 @@ Once this is done, SSH into a Kubernetes minion, and run the following:
 ```
 $ curl -sSL http://deis.io/deis-cli/install.sh | sh
 $ sudo mv deis /bin
-$ kubectl get service deis-workflow
+$ kubectl get service deis-controller
 $ deis register 10.247.59.157 # or the appropriate CLUSTER_IP
 $ ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 $ eval $(ssh-agent) && ssh-add ~/.ssh/id_rsa
