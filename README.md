@@ -54,7 +54,7 @@ Note that you will not be able to build or push Docker images using this method 
 
 The Deis project requires that as much code as possible is unit tested, but the core contributors also recognize that some code must be tested at a higher level (functional or integration tests, for example).
 
-The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly dogfood the platform. Since this particular component is at the center of much of the Deis platform, we find it especially important to dogfood it.
+The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly [dogfood](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) the platform. Since this particular component is at the center of much of the Deis platform, we find it especially important to dogfood it.
 
 ## Running End-to-End Tests
 
