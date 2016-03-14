@@ -35,15 +35,15 @@ The Deis project welcomes contributions from all developers. The high level proc
 
 The preferred environment for development uses [the `go-dev` Docker image](https://github.com/deis/docker-go-dev). The tools described in this section to build, test, package and release each version of Deis.
 
-To use it yourself, we require that you have [make](https://www.gnu.org/software/make/) installed and Docker installed and running on your local development machine to use this method of development.
+To use it yourself, you must have [make](https://www.gnu.org/software/make/) installed and Docker installed and running on your local development machine.
 
 If you don't have Docker installed, please go to https://www.docker.com/ to install it.
 
-After you have those dependencies, you can build and unit-test your code with `make build` and `make test`, respectively.
+After you have those dependencies, build your code with `make build` and execute unit tests with `make test`.
 
 ## Native Go Development Environment
 
-Although we prefer the Docker based development environment, you can also use the standard `go` toolchain to build and test. To do so, you'll [glide](https://github.com/Masterminds/glide) 0.9 or above and [Go 1.6](http://golang.org) or above.
+You can also use the standard `go` toolchain to build and test if you prefer. To do so, you'll need [glide](https://github.com/Masterminds/glide) 0.9 or above and [Go 1.6](http://golang.org) or above installed.
 
 After you have those dependencies, you can build and unit-test your code with `go build` and `go test $(glide nv)`, respectively.
 
@@ -51,7 +51,9 @@ Note that you will not be able to build or push Docker images using this method 
 
 # Testing
 
-We require that as much code as possible is unit tested, but also recognize that some code must be tested at a higher level (functional or integration tests, for example). In order to set up and run such tests, we've built [end-to-end tests](https://github.com/deis/workflow-e2e) and also periodically dogfood our product. Since this component is at the center of much of the Deis platform, we find it especially important to dogfood it.
+The Deis project requires that as much code as possible is unit tested, but the core contributors also recognize that some code must be tested at a higher level (functional or integration tests, for example).
+
+The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly dogfood the platfomr. Since this particular component is at the center of much of the Deis platform, we find it especially important to dogfood it.
 
 ## Running End to End Tests
 
