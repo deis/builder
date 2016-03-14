@@ -14,7 +14,7 @@ This Deis component is currently in beta status, and we welcome your input! If y
 
 The builder is primarily a git server that responds to `git push`es from clients. When it receives a push, it takes the below high level steps in order.
 
-1. Accepts the code and writes it to the local file system
+1. Executes the `git-receive-pack` or `git-upload-pack` hooks (as appropriate)
 2. Calls `git archive` to produce a tarball (i.e. a `.tar.gz` file) on the local file system
 3. Saves the tarball to centralized object storage according to the following rules:
   - If the `DEIS_MINIO_SERVICE_HOST` and `DEIS_MINIO_SERVICE_PORT` environment variables exist, saves to the [S3 API](http://docs.aws.amazon.com/AmazonS3/latest/API/APIRest.html) compatible server at `http://$DEIS_MINIO_SERVICE_HOST:$DEIS_MINIO_SERVICE_HOST`
