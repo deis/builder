@@ -2,13 +2,13 @@
 
 [![Build Status](https://travis-ci.org/deis/builder.svg?branch=master)](https://travis-ci.org/deis/builder) [![Go Report Card](http://goreportcard.com/badge/deis/builder)](http://goreportcard.com/report/deis/builder) [![Docker Repository on Quay](https://quay.io/repository/deisci/builder/status "Docker Repository on Quay")](https://quay.io/repository/deisci/builder)
 
-Deis (pronounced DAY-iss) is an open source PaaS that makes it easy to deploy and manage applications on your own servers. Deis builds on [Kubernetes](http://kubernetes.io/) to provide a lightweight, easy and secure way to deploy your code to production.
+Deis (pronounced DAY-iss) is an open source PaaS that makes it easy to deploy and manage applications on your own servers. Deis builds on [Kubernetes][k8s-home] to provide a lightweight, easy and secure way to deploy your code to production.
 
 For more information on the Deis workflow, please visit the main project page at https://github.com/deis/workflow.
 
 ## Beta Status
 
-This Deis component is currently in beta status, and we welcome your input! If you have feedback, please [submit an issue](https://github.com/deis/builder/issues). If you'd like to participate in development, please read the "Development" section below and [submit a pull request](https://github.com/deis/builder/pulls).
+This Deis component is currently in beta status, and we welcome your input! If you have feedback, please [submit an issue][issues]. If you'd like to participate in development, please read the "Development" section below and [submit a pull request][prs].
 
 # About
 
@@ -17,8 +17,8 @@ The builder is primarily a git server that responds to `git push`es from clients
 1. Executes the `git-receive-pack` or `git-upload-pack` hooks (as appropriate)
 2. Calls `git archive` to produce a tarball (i.e. a `.tar.gz` file) on the local file system
 3. Saves the tarball to centralized object storage according to the following rules:
-	- If the `DEIS_OUTSIDE_STORAGE` environment variable exists, saves to the [S3 API](http://docs.aws.amazon.com/AmazonS3/latest/API/APIRest.html) compatible server at `https://$DEIS_OUTSIDE_STORAGE`
-  - Otherwise, if the `DEIS_MINIO_SERVICE_HOST` and `DEIS_MINIO_SERVICE_PORT` environment variables exist (these are standard [Kubernetes service discovery environment variables](http://kubernetes.io/docs/user-guide/services/#environment-variables)), saves to the [S3 API](http://docs.aws.amazon.com/AmazonS3/latest/API/APIRest.html) compatible server at `http://$DEIS_MINIO_SERVICE_HOST:$DEIS_MINIO_SERVICE_HOST`
+	- If the `DEIS_OUTSIDE_STORAGE` environment variable exists, saves to the [S3 API][s3-api-ref] compatible server at `https://$DEIS_OUTSIDE_STORAGE`
+  - Otherwise, if the `DEIS_MINIO_SERVICE_HOST` and `DEIS_MINIO_SERVICE_PORT` environment variables exist (these are standard [Kubernetes service discovery environment variables](http://kubernetes.io/docs/user-guide/services/#environment-variables)), saves to the [S3 API][s3-api-ref] compatible server at `http://$DEIS_MINIO_SERVICE_HOST:$DEIS_MINIO_SERVICE_HOST`
 4. Starts a new [Kubernetes Pod](http://kubernetes.io/docs/user-guide/pods/) to build the code, according to the following rules:
   - If a `Dockerfile` is present in the codebase, starts a [`dockerbuilder`](https://github.com/deis/dockerbuilder) pod, configured to download the code to build from the URL computed in the previous step.
   - Otherwise, starts a [`slugbuilder`](https://github.com/deis/slugbuilder) pod, configured to download the code to build from the URL computed in the previous step.
@@ -29,8 +29,8 @@ The Deis project welcomes contributions from all developers. The high level proc
 
 * Fork this repository
 * Make your changes
-* [Submit a pull request](https://github.com/deis/builder/pulls) (PR) to this repository with your changes, and unit tests whenever possible.
-	* If your PR fixes any [issues](https://github.com/deis/builder/issues), make sure you write `Fixes #1234` in your PR description (where `#1234` is the number of the issue you're closing)
+* [Submit a pull request][prs] (PR) to this repository with your changes, and unit tests whenever possible.
+	* If your PR fixes any [issues][issues], make sure you write `Fixes #1234` in your PR description (where `#1234` is the number of the issue you're closing)
 * The Deis core contributors will review your code. After each of them sign off on your code, they'll label your PR with `LGTM1` and `LGTM2` (respectively). Once that happens, you may merge.
 
 ## Docker Based Development Environment
@@ -74,4 +74,8 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 
+[s3-api-ref]: http://docs.aws.amazon.com/AmazonS3/latest/API/APIRest.html
 [install-k8s]: http://kubernetes.io/gettingstarted/
+[k8s-home]: http://kubernetes.io
+[issues]: https://github.com/deis/builder/issues
+[prs]: https://github.com/deis/builder/pulls
