@@ -1,35 +1,62 @@
 package: github.com/deis/builder
-ignore:
-- appengine
-- appengine/memcache
-- appengine/datastore
-- appengine/user
 import:
-- package: github.com/kelseyhightower/envconfig
-- package: github.com/gorilla/mux
-  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - package: github.com/Masterminds/cookoo
-  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
   subpackages:
   - log
   - safely
-  - fmt
+- package: github.com/aws/aws-sdk-go
+  version: 1.1.10
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+  - aws/session
+  - service/s3
+- package: github.com/codegangsta/cli
+- package: github.com/deis/pkg
+  subpackages:
+  - log
+  - time
+- package: github.com/kelseyhightower/envconfig
+- package: github.com/minio/minio-go
+- package: github.com/pborman/uuid
 - package: golang.org/x/crypto
-  version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
   - ssh
-- package: gopkg.in/yaml.v2
-  version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
-- package: github.com/pborman/uuid
-- package: github.com/deis/pkg
-  version: b8679a4d7fe2fe0393c66c620eff7df86c9f7982
+- package: golang.org/x/net
+  version: e7da8edaa52631091740908acaf2c2d4c9b3ce90
   subpackages:
-  - time
-  - log
-- package: github.com/codegangsta/cli
-  version: a65b733b303f0055f8d324d805f393cd3e7a7904
+  - context
+- package: golang.org/x/oauth2
+  version: 045497edb6234273d67dbc25da3f2ddbc4c4cacf
+  subpackages:
+  - google
+  - jwt
+- package: google.golang.org/api
+  version: e6294e63a06b2be522ff3d328d8cacded0b1bd31
+  subpackages:
+  - storage/v1
+- package: google.golang.org/cloud
+  version: e7549b8fad79f1f0b4cb2977d9acc45232a71894
+  subpackages:
+  - storage
+- package: gopkg.in/yaml.v2
 - package: k8s.io/kubernetes
-  version: ~1.1
-- package: github.com/arschles/assert
-  version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
-- package: github.com/minio/minio-go
+  subpackages:
+  - pkg/api
+  - pkg/api/errors
+  - pkg/client/unversioned
+  - pkg/fields
+  - pkg/labels
+  - pkg/util/wait
+  - pkg/watch
+- package: github.com/docker/docker
+  version: v1.9.0
+  subpackages:
+  - pkg/units
+- package: google.golang.org/grpc
+  version: 986912c9070a060e59e0f28ac7c87f89f72b9388
+  subpackages:
+  - credentials/oauth

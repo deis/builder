@@ -1,10 +1,33 @@
-hash: 819f2c05823c24ce9d87e2beb40880659bfd7c944d7c35939d4851a0435c4c5a
-updated: 2016-03-03T00:14:27.72805884Z
+hash: 793e70f28d52bbf3a0e67765bee092600f6fc2c1d64f4da42259c4ffefa5140e
+updated: 2016-03-14T16:34:33.655267173-06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
-- name: github.com/arschles/assert
-  version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
+- name: github.com/aws/aws-sdk-go
+  version: 4151ef572710e04d25d9385114b33847ba6a923a
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+  - aws/session
+  - service/s3
+  - aws/client
+  - aws/client/metadata
+  - aws/request
+  - aws/corehandlers
+  - aws/defaults
+  - private/endpoints
+  - aws/awsutil
+  - private/protocol
+  - private/protocol/restxml
+  - private/signer/v4
+  - private/waiter
+  - private/protocol/query
+  - private/protocol/rest
+  - private/protocol/xml/xmlutil
+  - private/protocol/query/queryutil
 - name: github.com/beorn7/perks
   version: b965b613227fddccbfffe13eae360ed3fa822f8d
   subpackages:
@@ -12,27 +35,22 @@ imports:
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/codegangsta/cli
-  version: a65b733b303f0055f8d324d805f393cd3e7a7904
+  version: aca5b047ed14d17224157c3434ea93bf6cdaadee
 - name: github.com/davecgh/go-spew
   version: 3e6e67c4dcea3ac2f25fd4731abc0e1deaf36216
   subpackages:
   - spew
 - name: github.com/deis/pkg
-  version: b8679a4d7fe2fe0393c66c620eff7df86c9f7982
+  version: 7f41ea6de942139d5de67f4d4cb2cccced991f6f
   subpackages:
-  - time
   - log
+  - time
   - prettyprint
 - name: github.com/docker/docker
-  version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
+  version: 76d6bc9a9f1690e16f3721ba165364688b626de2
   subpackages:
-  - pkg/jsonmessage
-  - pkg/mount
-  - pkg/parsers
-  - pkg/symlink
-  - pkg/term
-  - pkg/timeutils
   - pkg/units
+  - pkg/mount
 - name: github.com/docker/libcontainer
   version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
   subpackages:
@@ -47,6 +65,8 @@ imports:
   - log
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
@@ -76,27 +96,24 @@ imports:
   - version
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
-- name: github.com/gorilla/context
-  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
-- name: github.com/gorilla/mux
-  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
+- name: github.com/jmespath/go-jmespath
+  version: 3433f3ea46d9f8019119e7dd41274e112a2359a9
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
-  version: 12c18e8343f6eb5fc3a9d5c8dc353e42e6bb40b9
+  version: dd8b03cb32326184ec2606104cd442e34bd272fd
 - name: github.com/Masterminds/cookoo
-  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
+  version: 78aa11ce75e257c51be7ea945edb84cf19c4a6de
   subpackages:
   - log
   - safely
-  - fmt
   - io
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
 - name: github.com/minio/minio-go
-  version: 1fe1145a231e36743b79939742debafaed1cd5d0
+  version: 4fd28416facdd352b3768635f6d4251cca1445bb
 - name: github.com/pborman/uuid
   version: c55201b036063326c5b1b89ccfe45a184973d073
 - name: github.com/prometheus/client_golang
@@ -117,24 +134,76 @@ imports:
 - name: github.com/spf13/pflag
   version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
 - name: golang.org/x/crypto
-  version: f7445b17d61953e333441674c2d11e91ae4559d3
+  version: c84e1f8e3a7e322d497cd16c0e8a13c7e127baf3
   subpackages:
   - ssh
 - name: golang.org/x/net
-  version: c2528b2dd8352441850638a8bb678c2ad056fd3e
+  version: e7da8edaa52631091740908acaf2c2d4c9b3ce90
   subpackages:
   - context
+  - context/ctxhttp
+  - http2
+  - trace
+  - http2/hpack
+  - internal/timeseries
+- name: golang.org/x/oauth2
+  version: 045497edb6234273d67dbc25da3f2ddbc4c4cacf
+  subpackages:
+  - google
+  - jwt
+  - internal
+  - jws
+- name: google.golang.org/api
+  version: e6294e63a06b2be522ff3d328d8cacded0b1bd31
+  subpackages:
+  - storage/v1
+  - gensupport
+  - googleapi
+  - googleapi/internal/uritemplates
+- name: google.golang.org/appengine
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
+  subpackages:
+  - urlfetch
+  - internal
+  - internal/urlfetch
+  - internal/app_identity
+  - internal/modules
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/remote_api
+- name: google.golang.org/cloud
+  version: e7549b8fad79f1f0b4cb2977d9acc45232a71894
+  subpackages:
+  - storage
+  - compute/metadata
+  - internal
+  - internal/opts
+  - internal/transport
+- name: google.golang.org/grpc
+  version: 986912c9070a060e59e0f28ac7c87f89f72b9388
+  subpackages:
+  - credentials/oauth
+  - codes
+  - credentials
+  - grpclog
+  - internal
+  - metadata
+  - naming
+  - transport
+  - peer
 - name: gopkg.in/yaml.v2
-  version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
+  version: a83829b6f1293c91addabc89d0571c246397bbf4
 - name: k8s.io/kubernetes
   version: 596055084fbaef446983b14097f832f60ae57634
   subpackages:
-  - pkg/client/unversioned
   - pkg/api
+  - pkg/api/errors
+  - pkg/client/unversioned
   - pkg/fields
   - pkg/labels
-  - pkg/api/errors
   - pkg/util/wait
+  - pkg/watch
   - pkg/api/install
   - pkg/api/latest
   - pkg/api/meta
@@ -148,16 +217,15 @@ imports:
   - pkg/util
   - pkg/util/sets
   - pkg/version
-  - pkg/watch
   - pkg/watch/json
   - pkg/api/resource
   - pkg/auth/user
   - pkg/conversion
   - pkg/types
   - pkg/util/rand
+  - pkg/util/errors
   - pkg/util/fielderrors
   - pkg/util/validation
-  - pkg/util/errors
   - pkg/api/registered
   - pkg/api/util
   - pkg/api/v1
