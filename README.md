@@ -56,9 +56,9 @@ The Deis project requires that as much code as possible is unit tested, but the 
 
 The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly dogfood the platfomr. Since this particular component is at the center of much of the Deis platform, we find it especially important to dogfood it.
 
-## Running End to End Tests
+## Running End-to-End Tests
 
-Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.md) on the end to end tests reposotory for instructions on how to set up your testing environment and run the tests.
+Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.md) on the end-to-end tests reposotory for instructions on how to set up your testing environment and run the tests.
 
 ## Dogfooding
 
