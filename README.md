@@ -23,7 +23,7 @@ The builder is primarily a git server that responds to `git push`es from clients
 
 # Development
 
-As mentioned above, we welcome contributions from all developers. The high level process for development matches many other open source projects. See below for an outline.
+The Deis project welcomes contributions from all developers. The high level process for development matches many other open source projects. See below for an outline.
 
 * Fork this repository
 * Make your changes
