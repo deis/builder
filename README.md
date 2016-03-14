@@ -33,7 +33,7 @@ The Deis project welcomes contributions from all developers. The high level proc
 
 ## Docker Based Development Environment
 
-Our preferred method of day-to-day development is using [our `go-dev` Docker image](https://github.com/deis/docker-go-dev). We use the tools described in this section to build, test, package and release each version of Deis.
+The preferred environment for development uses [the `go-dev` Docker image](https://github.com/deis/docker-go-dev). The tools described in this section to build, test, package and release each version of Deis.
 
 To use it yourself, we require that you have [make](https://www.gnu.org/software/make/) installed and Docker installed and running on your local development machine to use this method of development.
 
