@@ -14,7 +14,9 @@ func (e errWGTimedOut) Error() string {
 	return fmt.Sprintf("WaitGroup wait timed out after %s", e.to)
 }
 
-// waitWithTimeout waits for wg.Done() until timeout expires. returns errWGTimedOut if timeout expired before wg.Done() returned, otherwise returns nil. this func is naturally leaky if wg.Done() never returns
+// waitWithTimeout waits for wg.Done() until timeout expires. returns errWGTimedOut if timeout
+// expired before wg.Done() returned, otherwise returns nil. this func is naturally leaky if
+// wg.Done() never returns. It should not be used in production code.
 func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) error {
 	ch := make(chan struct{})
 	go func() {

@@ -18,7 +18,8 @@ const (
 	portEnvName = "DEIS_CONTROLLER_SERVICE_PORT"
 )
 
-// UserInfo represent the required information from a user to make a push and interact with the controller
+// UserInfo represents the required information from a user to make a push and interact with the
+// controller
 type UserInfo struct {
 	Username    string
 	Key         string
@@ -61,7 +62,7 @@ func fingerprint(key ssh.PublicKey) string {
 	return string(fp)
 }
 
-// UserInfoFromKey makes a request to the controller to get the user info from they given key
+// UserInfoFromKey makes a request to the controller to get the user info from they given key.
 func UserInfoFromKey(key ssh.PublicKey) (*UserInfo, error) {
 	fp := fingerprint(key)
 	url, err := controllerURLStr("v2", "hooks", "key", fp)

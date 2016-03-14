@@ -248,7 +248,8 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
 					// TODO: this is an important error case that needs to be covered
-					// Probably the best solution is to change the lock into a lease so that even on unlock failures, RepositoryLock will eventually yield
+					// Probably the best solution is to change the lock into a lease so that even on unlock
+					// failures, RepositoryLock will eventually yield
 				}
 				var xs uint32
 				if err != nil {
@@ -279,12 +280,12 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 	return nil
 }
 
-// ExecCmd is an SSH exec request
+// ExecCmd is an SSH exec request.
 type ExecCmd struct {
 	Value string
 }
 
-// EnvVar is an SSH env request
+// EnvVar is an SSH env request.
 type EnvVar struct {
 	Name  string
 	Value string

@@ -32,21 +32,20 @@ func stripScheme(str string) string {
 	return str
 }
 
-// Endpoint represents all the details about a storage endpoint
+// Endpoint represents all the details about a storage endpoint.
 type Endpoint struct {
-	// URLStr is the url string, stripped of its scheme
+	// URLStr is the url string, stripped of its scheme.
 	URLStr string
-	// Secure determines if TLS should be used (e.g. a "https://" scheme)
+	// Secure determines if TLS should be used (e.g. a "https://" scheme).
 	Secure bool
 }
 
-// FullURL returns the full URL string of an endpoint, including its URL scheme, based on e.Secure
+// FullURL returns the full URL string of an endpoint, including its URL scheme, based on e.Secure.
 func (e *Endpoint) FullURL() string {
 	if e.Secure {
 		return fmt.Sprintf("https://%s", e.URLStr)
-	} else {
-		return fmt.Sprintf("http://%s", e.URLStr)
 	}
+	return fmt.Sprintf("http://%s", e.URLStr)
 }
 
 func getEndpoint(env sys.Env) (*Endpoint, error) {

@@ -1,6 +1,7 @@
 // Package pkg provides common libraries for the Deis builder.
 //
-// The Deis builder is responsible for packaging Docker images for consumers.
+// The Deis builder is responsible for building slugs and docker images for use in the Deis
+// on the Deis PaaS platform.
 package pkg
 
 import (
@@ -19,7 +20,7 @@ const (
 	StatusLocalError
 )
 
-// Run starts the Builder service.
+// RunBuilder starts the Builder service.
 //
 // The Builder service is responsible for setting up the local container
 // environment and then listening for new builds. The main listening service

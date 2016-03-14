@@ -10,6 +10,8 @@ const (
 	objectStorageTick = 500
 )
 
+// Config is the envconfig (http://github.com/kelseyhightower/envconfig) compatible struct for the
+// builder's git-receive hook.
 type Config struct {
 	// k8s service discovery env vars
 	ControllerHost string `envconfig:"DEIS_CONTROLLER_SERVICE_HOST" required:"true"`
@@ -35,6 +37,8 @@ type Config struct {
 	DockerBuilderImage            string `envconfig:"DOCKERBUILDER_IMAGE_NAME" default:"quay.io/deisci/dockerbuilder:v2-beta"`
 }
 
+// App returns the application name represented by c. The app name is the same as c.Repository
+// with the last '.' and beyond stripped off.
 func (c Config) App() string {
 	li := strings.LastIndex(c.Repository, ".")
 	if li == -1 {
@@ -44,31 +48,31 @@ func (c Config) App() string {
 }
 
 // BuilderPodTickDuration returns the size of the interval used to check for
-// the end of the execution of a Pod building an application
+// the end of the execution of a Pod building an application.
 func (c Config) BuilderPodTickDuration() time.Duration {
 	return time.Duration(time.Duration(c.BuilderPodTickDurationMSec) * time.Millisecond)
 }
 
 // BuilderPodWaitDuration returns the maximum time to wait for the end
-// of the execution of a Pod building an application
+// of the execution of a Pod building an application.
 func (c Config) BuilderPodWaitDuration() time.Duration {
 	return time.Duration(time.Duration(c.BuilderPodWaitDurationMSec) * time.Millisecond)
 }
 
 // ObjectStorageTickDuration returns the size of the interval used to check for
-// the end of an operation that involves the object storage
+// the end of an operation that involves the object storage.
 func (c Config) ObjectStorageTickDuration() time.Duration {
 	return time.Duration(time.Duration(c.ObjectStorageTickDurationMSec) * time.Millisecond)
 }
 
 // ObjectStorageWaitDuration returns the maximum time to wait for the end of an
-// operation that involves the object storage
+// operation that involves the object storage.
 func (c Config) ObjectStorageWaitDuration() time.Duration {
 	return time.Duration(time.Duration(c.ObjectStorageWaitDurationMSec) * time.Millisecond)
 }
 
 // CheckDurations checks if ticks for builder and object storage are not bigger
-// than the maximum duration. In case of this it will set the tick to the default
+// than the maximum duration. In case of this it will set the tick to the default.
 func (c *Config) CheckDurations() {
 	if c.BuilderPodTickDurationMSec >= c.BuilderPodWaitDurationMSec {
 		c.BuilderPodTickDurationMSec = builderPodTick

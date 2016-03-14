@@ -23,6 +23,8 @@ func readLine(line string) (string, string, string, error) {
 	return spl[0], spl[1], spl[2], nil
 }
 
+// Run runs the git-receive hook. This func is effectively the main for the git-receive hook,
+// although it is called from the main in boot.go.
 func Run(conf *Config, fs sys.FS, env sys.Env) error {
 	log.Debug("Running git hook")
 
