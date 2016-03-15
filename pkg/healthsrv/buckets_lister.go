@@ -1,5 +1,6 @@
 package healthsrv
 
+<<<<<<< a4e52011cd181ce189cb2b6d24a3c3a03275015b
 import (
 	s3 "github.com/minio/minio-go"
 )
@@ -13,16 +14,16 @@ type BucketLister interface {
 
 type emptyBucketLister struct{}
 
-func (e emptyBucketLister) ListBuckets() ([]s3.BucketInfo, error) {
-	return nil, nil
+func (e emptyBucketLister) ListBuckets() (bool, error) {
+	return true, nil
 }
 
 type errBucketLister struct {
 	err error
 }
 
-func (e errBucketLister) ListBuckets() ([]s3.BucketInfo, error) {
-	return nil, e.err
+func (e errBucketLister) ListBuckets() (bool, error) {
+	return true, e.err
 }
 
 // listBuckets calls bl.ListBuckets(...) and sends the results back on the various given channels.

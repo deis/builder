@@ -23,11 +23,7 @@ const (
 func ObjectExists(storageDriver storagedriver.StorageDriver, objKey string) (bool, error) {
 	_, err := storageDriver.Stat(objKey)
 	if err != nil {
-		minioErr := s3.ToErrorResponse(err)
-		if minioErr.Code == noSuchKeyCode {
-			return false, nil
-		}
-		return false, err
+		return false, nil
 	}
 	return true, nil
 }

@@ -20,7 +20,6 @@ import:
   - log
   - time
 - package: github.com/kelseyhightower/envconfig
-- package: github.com/minio/minio-go
 - package: github.com/pborman/uuid
 - package: golang.org/x/crypto
   subpackages:

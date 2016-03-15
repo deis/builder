@@ -1,5 +1,5 @@
-hash: 793e70f28d52bbf3a0e67765bee092600f6fc2c1d64f4da42259c4ffefa5140e
-updated: 2016-03-14T16:34:33.655267173-06:00
+hash: 1e4045a4893e73354cf4b08486d662ff7f55e89823052f7ddba25f68029b6a9a
+updated: 2016-03-14T18:33:23.158216621-06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -141,9 +141,9 @@ imports:
   version: e7da8edaa52631091740908acaf2c2d4c9b3ce90
   subpackages:
   - context
-  - context/ctxhttp
   - http2
   - trace
+  - context/ctxhttp
   - http2/hpack
   - internal/timeseries
 - name: golang.org/x/oauth2
@@ -157,9 +157,9 @@ imports:
   version: e6294e63a06b2be522ff3d328d8cacded0b1bd31
   subpackages:
   - storage/v1
-  - gensupport
   - googleapi
   - googleapi/internal/uritemplates
+  - gensupport
 - name: google.golang.org/appengine
   version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
