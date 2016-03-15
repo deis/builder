@@ -59,3 +59,7 @@ import:
   version: 986912c9070a060e59e0f28ac7c87f89f72b9388
   subpackages:
   - credentials/oauth
+- package: github.com/Azure/azure-sdk-for-go
+  version: 95361a2573b1fa92a00c5fc2707a80308483c6f9
+  subpackages:
+  - storage

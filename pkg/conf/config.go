@@ -9,7 +9,7 @@ import (
 
 const (
 	builderKeyLocation  = "/var/run/secrets/api/auth/builder-key"
-	storageCredLocation = "/var/run/secrets/deis/builder/creds/"
+	storageCredLocation = "/var/run/secrets/deis/objectstore/creds/"
 )
 
 type Parameters map[string]string

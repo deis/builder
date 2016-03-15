@@ -1,6 +1,9 @@
 package driver
 
-import "fmt"
+import (
+	"fmt"
+	"io"
+)
 
 // StorageDriver defines methods that a Storage Driver must implement for a
 // filesystem-like key/value object storage.
@@ -24,6 +27,25 @@ type StorageDriver interface {
 	// Stat retrieves the FileInfo for the given path, including the current
 	// size in bytes and the creation time.
 	Stat(path string) (FileInfo, error)
+}
+
+// FileWriter provides an abstraction for an opened writable file-like object in
+// the storage backend. The FileWriter must flush all content written to it on
+// the call to Close, but is only required to make its content readable on a
+// call to Commit.
+type FileWriter interface {
+	io.WriteCloser
+
+	// Size returns the number of bytes written to this FileWriter.
+	Size() int64
+
+	// Cancel removes any written content from this FileWriter.
+	Cancel() error
+
+	// Commit flushes all content written to this FileWriter and makes it
+	// available for future calls to StorageDriver.GetContent and
+	// StorageDriver.Reader.
+	Commit() error
 }
 
 // ErrUnsupportedMethod may be returned in the case where a StorageDriver implementation does not support an optional method.

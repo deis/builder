@@ -13,6 +13,7 @@ import (
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
+	_ "github.com/deis/builder/pkg/storage/driver/azure"
 	"github.com/deis/builder/pkg/storage/driver/factory"
 	"github.com/deis/builder/pkg/sys"
 	pkglog "github.com/deis/pkg/log"
