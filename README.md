@@ -4,7 +4,7 @@
 
 Deis (pronounced DAY-iss) is an open source PaaS that makes it easy to deploy and manage applications on your own servers. Deis builds on [Kubernetes][k8s-home] to provide a lightweight, easy and secure way to deploy your code to production.
 
-For more information about the Deis workflow, please visit the main project page at https://github.com/deis/workflow.
+For more information about Deis Workflow, please visit the main project page at https://github.com/deis/workflow.
 
 ## Beta Status
 
