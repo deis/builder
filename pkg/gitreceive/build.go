@@ -16,9 +16,9 @@ import (
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
+	"github.com/docker/distribution/context"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
 	"gopkg.in/yaml.v2"
-
-	storagedriver "github.com/deis/builder/pkg/storage/driver"
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -108,11 +108,9 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 
 	//log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint.FullURL(), conf.Bucket, slugBuilderInfo.TarKey())
 
-	if err := storageDriver.PutContent(slugBuilderInfo.TarKey(), appTgzdata); err != nil {
+	if err := storageDriver.PutContent(context.Background(), slugBuilderInfo.TarKey(), appTgzdata); err != nil {
 		return fmt.Errorf("uploading %s to %s (%v)", absAppTgz, slugBuilderInfo.TarKey(), err)
 	}
-
-	creds := true
 
 	var pod *api.Pod
 	var buildPodName string
@@ -120,20 +118,18 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
 		pod = dockerBuilderPod(
 			conf.Debug,
-			creds,
 			buildPodName,
 			conf.PodNamespace,
 			appConf.Values,
 			slugBuilderInfo.TarKey(),
 			slugName,
-			conf.StorageRegion,
 			conf.DockerBuilderImage,
+			conf.StorageType,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
 		pod = slugbuilderPod(
 			conf.Debug,
-			creds,
 			buildPodName,
 			conf.PodNamespace,
 			appConf.Values,
@@ -285,7 +281,7 @@ func getProcFile(storageDriver storagedriver.StorageDriver, dirName, procfileKey
 		return procType, nil
 	}
 	log.Debug("Procfile not present. Getting it from the buildpack")
-	rawProcFile, err := storageDriver.GetContent(procfileKey)
+	rawProcFile, err := storageDriver.GetContent(context.Background(), procfileKey)
 	if err != nil {
 		return nil, fmt.Errorf("error in reading %s (%s)", procfileKey, err)
 	}

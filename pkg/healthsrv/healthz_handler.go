@@ -23,7 +23,7 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 		go circuitState(serverCircuit, serverStateCh, serverStateErrCh, stopCh)
 		numChecks++
 
-		listBucketsCh := make(chan bool)
+		listBucketsCh := make(chan []string)
 		listBucketsErrCh := make(chan error)
 		go listBuckets(bLister, listBucketsCh, listBucketsErrCh, stopCh)
 		numChecks++

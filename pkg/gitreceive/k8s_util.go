@@ -15,10 +15,10 @@ const (
 	slugBuilderName   = "deis-slugbuilder"
 	dockerBuilderName = "deis-dockerbuilder"
 
-	tarURLKey        = "TAR_URL"
-	putURLKey        = "put_url"
+	tarPath          = "TAR_PATH"
+	putPath          = "PUT_PATH"
 	debugKey         = "DEBUG"
-	minioUser        = "objectstorage-keyfile"
+	objectStore      = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
 	dockerSocketPath = "/var/run/docker.sock"
 )
@@ -33,18 +33,15 @@ func slugBuilderPodName(appName, shortSha string) string {
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarURL, imageName, region, dockerBuilderImage string) *api.Pod {
-	pod := buildPod(debug, withAuth, name, namespace, env)
+func dockerBuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, imageName, dockerBuilderImage, storageType string) *api.Pod {
+	pod := buildPod(debug, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
 	pod.Spec.Containers[0].Image = dockerBuilderImage
 
-	addEnvToPod(pod, "ACCESS_KEY_FILE", "/var/run/secrets/object/store/access_key")
-	addEnvToPod(pod, "ACCESS_SECRET_FILE", "/var/run/secrets/object/store/access_secret")
-
-	addEnvToPod(pod, tarURLKey, tarURL)
+	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
-	addEnvToPod(pod, "REGION", region)
+	addEnvToPod(pod, "BUILDER_STORAGE", storageType)
 
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
 		Name:      dockerSocketName,
@@ -63,14 +60,14 @@ func dockerBuilderPod(debug, withAuth bool, name, namespace string, env map[stri
 	return &pod
 }
 
-func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string]interface{}, tarKey, putURL, buildpackURL, slugBuilderImage, storageType string) *api.Pod {
-	pod := buildPod(debug, withAuth, name, namespace, env)
+func slugbuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, putKey, buildpackURL, slugBuilderImage, storageType string) *api.Pod {
+	pod := buildPod(debug, name, namespace, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName
 	pod.Spec.Containers[0].Image = slugBuilderImage
 
-	addEnvToPod(pod, tarURLKey, tarKey)
-	addEnvToPod(pod, putURLKey, putURL)
+	addEnvToPod(pod, tarPath, tarKey)
+	addEnvToPod(pod, putPath, putKey)
 	addEnvToPod(pod, "BUILDER_STORAGE", storageType)
 
 	if buildpackURL != "" {
@@ -80,7 +77,7 @@ func slugbuilderPod(debug, withAuth bool, name, namespace string, env map[string
 	return &pod
 }
 
-func buildPod(debug, withAuth bool, name, namespace string, env map[string]interface{}) api.Pod {
+func buildPod(debug bool, name, namespace string, env map[string]interface{}) api.Pod {
 	pod := api.Pod{
 		Spec: api.PodSpec{
 			RestartPolicy: api.RestartPolicyNever,
@@ -100,23 +97,21 @@ func buildPod(debug, withAuth bool, name, namespace string, env map[string]inter
 		},
 	}
 
-	if withAuth {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, api.Volume{
-			Name: minioUser,
-			VolumeSource: api.VolumeSource{
-				Secret: &api.SecretVolumeSource{
-					SecretName: minioUser,
-				},
+	pod.Spec.Volumes = append(pod.Spec.Volumes, api.Volume{
+		Name: objectStore,
+		VolumeSource: api.VolumeSource{
+			Secret: &api.SecretVolumeSource{
+				SecretName: objectStore,
 			},
-		})
+		},
+	})
 
-		pod.Spec.Containers[0].VolumeMounts = []api.VolumeMount{
-			api.VolumeMount{
-				Name:      minioUser,
-				MountPath: "/var/run/secrets/deis/objectstore/creds",
-				ReadOnly:  true,
-			},
-		}
+	pod.Spec.Containers[0].VolumeMounts = []api.VolumeMount{
+		api.VolumeMount{
+			Name:      objectStore,
+			MountPath: "/var/run/secrets/deis/objectstore/creds",
+			ReadOnly:  true,
+		},
 	}
 
 	if len(pod.Spec.Containers) > 0 {

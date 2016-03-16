@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	builderconf "github.com/deis/builder/pkg/conf"
-	storagedriver "github.com/deis/builder/pkg/storage/driver"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
 
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )

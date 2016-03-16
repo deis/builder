@@ -13,10 +13,13 @@ import (
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
-	_ "github.com/deis/builder/pkg/storage/driver/azure"
-	"github.com/deis/builder/pkg/storage/driver/factory"
 	"github.com/deis/builder/pkg/sys"
 	pkglog "github.com/deis/pkg/log"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
+	_ "github.com/docker/distribution/registry/storage/driver/azure"
+	"github.com/docker/distribution/registry/storage/driver/factory"
+	_ "github.com/docker/distribution/registry/storage/driver/gcs"
+	_ "github.com/docker/distribution/registry/storage/driver/s3-aws"
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
@@ -60,7 +63,12 @@ func main() {
 					log.Printf("Error getting storage parameters (%s)", err)
 					os.Exit(1)
 				}
-				storageDriver, err := factory.Create(cnf.StorageType, storageParams)
+				var storageDriver storagedriver.StorageDriver
+				if cnf.StorageType == "minio" {
+					storageDriver, err = factory.Create("s3", storageParams)
+				} else {
+					storageDriver, err = factory.Create(cnf.StorageType, storageParams)
+				}
 				if err != nil {
 					log.Printf("Error creating storage driver (%s)", err)
 					os.Exit(1)
@@ -123,7 +131,12 @@ func main() {
 					log.Printf("Error getting storage parameters (%s)", err)
 					os.Exit(1)
 				}
-				storageDriver, err := factory.Create(cnf.StorageType, storageParams)
+				var storageDriver storagedriver.StorageDriver
+				if cnf.StorageType == "minio" {
+					storageDriver, err = factory.Create("s3", storageParams)
+				} else {
+					storageDriver, err = factory.Create(cnf.StorageType, storageParams)
+				}
 				if err != nil {
 					log.Printf("Error creating storage driver (%s)", err)
 					os.Exit(1)

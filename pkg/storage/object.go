@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	storagedriver "github.com/deis/builder/pkg/storage/driver"
+	"github.com/docker/distribution/context"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
 )
 
 const (
@@ -20,10 +21,15 @@ const (
 // - false, nil if statter succeeded and reported the object doesn't exist
 // - false, err with the appropriate error if the statter failed
 // - true, nil if the statter succeeded and reported the object exists
-func ObjectExists(storageDriver storagedriver.StorageDriver, objKey string) (bool, error) {
-	_, err := storageDriver.Stat(objKey)
+func ObjectExists(statter ObjectStatter, objKey string) (bool, error) {
+	_, err := statter.Stat(context.Background(), objKey)
 	if err != nil {
-		return false, nil
+		switch err := err.(type) {
+		case storagedriver.PathNotFoundError:
+			return false, nil
+		default:
+			return false, err
+		}
 	}
 	return true, nil
 }
@@ -31,10 +37,10 @@ func ObjectExists(storageDriver storagedriver.StorageDriver, objKey string) (boo
 // WaitForObject checks statter for the object at ${bucketName}/${objKey} right away, then at
 // every tick, then once when the timeout is up.
 // Returns nil if it finds the object before or at timeout. Otherwise returns a non-nil error.
-func WaitForObject(storageDriver storagedriver.StorageDriver, objKey string, tick, timeout time.Duration) error {
+func WaitForObject(statter ObjectStatter, objKey string, tick, timeout time.Duration) error {
 	noExist := errors.New("object doesn't exist")
 	checker := func() error {
-		exists, err := ObjectExists(storageDriver, objKey)
+		exists, err := ObjectExists(statter, objKey)
 		if err != nil {
 			return err
 		} else if exists {

@@ -15,7 +15,7 @@ const (
 	minioPortEnvVar     = "DEIS_MINIO_SERVICE_PORT"
 )
 
-type Parameters map[string]string
+type Parameters map[string]interface{}
 
 // EnvConfig is a convenience function to process the envconfig (
 // https://github.com/kelseyhightower/envconfig) based configuration environment variables into
@@ -43,7 +43,7 @@ func GetBuilderKey() (string, error) {
 }
 
 func GetStorageParams(env sys.Env) (Parameters, error) {
-	params := make(map[string]string)
+	params := make(map[string]interface{})
 	files, err := ioutil.ReadDir(storageCredLocation)
 	if err != nil {
 		return nil, err
@@ -60,13 +60,15 @@ func GetStorageParams(env sys.Env) (Parameters, error) {
 			params[file.Name()] = string(data)
 		}
 	}
+	params["bucket"] = params["builder-bucket"]
+	params["container"] = params["builder-container"]
 	if env.Get("BUILDER_STORAGE") == "minio" {
 		mHost := env.Get(minioHostEnvVar)
 		mPort := env.Get(minioPortEnvVar)
 		params["regionendpoint"] = fmt.Sprintf("http://%s:%s", mHost, mPort)
 		params["secure"] = "false"
 		params["region"] = "us-east-1"
-		params["builder-bucket"] = "git"
+		params["bucket"] = "git"
 	}
 
 	return params, nil
