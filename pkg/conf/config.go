@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/deis/builder/pkg/sys"
 	"github.com/kelseyhightower/envconfig"
 )
 
 const (
 	builderKeyLocation  = "/var/run/secrets/api/auth/builder-key"
 	storageCredLocation = "/var/run/secrets/deis/objectstore/creds/"
+	minioHostEnvVar     = "DEIS_MINIO_SERVICE_HOST"
+	minioPortEnvVar     = "DEIS_MINIO_SERVICE_PORT"
 )
 
 type Parameters map[string]string
@@ -39,7 +42,7 @@ func GetBuilderKey() (string, error) {
 	return builderKey, nil
 }
 
-func GetStorageParams() (Parameters, error) {
+func GetStorageParams(env sys.Env) (Parameters, error) {
 	params := make(map[string]string)
 	files, err := ioutil.ReadDir(storageCredLocation)
 	if err != nil {
@@ -57,5 +60,14 @@ func GetStorageParams() (Parameters, error) {
 			params[file.Name()] = string(data)
 		}
 	}
+	if env.Get("BUILDER_STORAGE") == "minio" {
+		mHost := env.Get(minioHostEnvVar)
+		mPort := env.Get(minioPortEnvVar)
+		params["regionendpoint"] = fmt.Sprintf("http://%s:%s", mHost, mPort)
+		params["secure"] = "false"
+		params["region"] = "us-east-1"
+		params["builder-bucket"] = "git"
+	}
+
 	return params, nil
 }

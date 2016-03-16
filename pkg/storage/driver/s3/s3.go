@@ -38,15 +38,16 @@ var validRegions = map[string]struct{}{}
 
 //DriverParameters A struct that encapsulates all of the driver parameters after all values have been set
 type DriverParameters struct {
-	AccessKey     string
-	SecretKey     string
-	Bucket        string
-	Region        string
-	Encrypt       bool
-	Secure        bool
-	ChunkSize     int64
-	RootDirectory string
-	StorageClass  string
+	AccessKey      string
+	SecretKey      string
+	Bucket         string
+	RegionEndpoint string
+	Region         string
+	Encrypt        bool
+	Secure         bool
+	ChunkSize      int64
+	RootDirectory  string
+	StorageClass   string
 }
 
 func init() {
@@ -66,6 +67,7 @@ func init() {
 	}
 
 	factory.Register(driverName, &s3DriverFactory{})
+	factory.Register("minio", &s3DriverFactory{})
 }
 
 // s3DriverFactory implements the factory.StorageDriverFactory interface
@@ -133,6 +135,11 @@ func FromParameters(parameters map[string]string) (*Driver, error) {
 		return nil, fmt.Errorf("No bucket parameter provided")
 	}
 
+	regionEndpoint, ok := parameters["regionendpoint"]
+	if !ok || regionEndpoint == "" {
+		regionEndpoint = ""
+	}
+
 	encryptBool := false
 	encrypt, ok := parameters["encrypt"]
 	if ok {
@@ -184,9 +191,10 @@ func FromParameters(parameters map[string]string) (*Driver, error) {
 	}
 
 	params := DriverParameters{
-		fmt.Sprint(accessKey),
-		fmt.Sprint(secretKey),
-		fmt.Sprint(bucket),
+		accessKey,
+		secretKey,
+		bucket,
+		regionEndpoint,
 		region,
 		encryptBool,
 		secureBool,
@@ -202,25 +210,39 @@ func FromParameters(parameters map[string]string) (*Driver, error) {
 // bucketName
 func New(params DriverParameters) (*Driver, error) {
 	awsConfig := aws.NewConfig()
-	creds := credentials.NewChainCredentials([]credentials.Provider{
-		&credentials.StaticProvider{
-			Value: credentials.Value{
-				AccessKeyID:     params.AccessKey,
-				SecretAccessKey: params.SecretKey,
+	var creds *credentials.Credentials
+	if params.RegionEndpoint == "" {
+		creds = credentials.NewChainCredentials([]credentials.Provider{
+			&credentials.StaticProvider{
+				Value: credentials.Value{
+					AccessKeyID:     params.AccessKey,
+					SecretAccessKey: params.SecretKey,
+				},
 			},
-		},
-		&credentials.EnvProvider{},
-		&credentials.SharedCredentialsProvider{},
-		&ec2rolecreds.EC2RoleProvider{Client: ec2metadata.New(session.New())},
-	})
+			&credentials.EnvProvider{},
+			&credentials.SharedCredentialsProvider{},
+			&ec2rolecreds.EC2RoleProvider{Client: ec2metadata.New(session.New())},
+		})
+
+	} else {
+		creds = credentials.NewChainCredentials([]credentials.Provider{
+			&credentials.StaticProvider{
+				Value: credentials.Value{
+					AccessKeyID:     params.AccessKey,
+					SecretAccessKey: params.SecretKey,
+				},
+			},
+			&credentials.EnvProvider{},
+		})
+		awsConfig.WithS3ForcePathStyle(true)
+		awsConfig.WithEndpoint(params.RegionEndpoint)
+	}
 
 	awsConfig.WithCredentials(creds)
 	awsConfig.WithRegion(params.Region)
 	awsConfig.WithDisableSSL(!params.Secure)
-	// awsConfig.WithMaxRetries(10)
 
 	s3obj := s3.New(session.New(awsConfig))
-
 	_, err := s3obj.CreateBucket(&s3.CreateBucketInput{
 		Bucket: &params.Bucket,
 	})

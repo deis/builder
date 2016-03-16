@@ -1,6 +1,6 @@
 package gitreceive
 
-import (
+/*import (
 	"testing"
 
 	"github.com/arschles/assert"
@@ -65,4 +65,4 @@ func TestAbsoluteSlugURL(t *testing.T) {
 	assert.NoErr(t, err)
 	sbi := NewSlugBuilderInfo(s3Endpoint, bucket, appName, slugName, sha)
 	assert.Equal(t, sbi.AbsoluteSlugURL(), sbi.PushURL()+"/"+slugTGZName, "absolute slug URL")
-}
+}*/

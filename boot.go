@@ -50,11 +50,12 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
-
+				fs := sys.RealFS()
+				env := sys.RealEnv()
 				pushLock := sshd.NewInMemoryRepositoryLock()
 				circ := sshd.NewCircuit()
 
-				storageParams, err := conf.GetStorageParams()
+				storageParams, err := conf.GetStorageParams(env)
 				if err != nil {
 					log.Printf("Error getting storage parameters (%s)", err)
 					os.Exit(1)
@@ -117,7 +118,7 @@ func main() {
 				cnf.CheckDurations()
 				fs := sys.RealFS()
 				env := sys.RealEnv()
-				storageParams, err := conf.GetStorageParams()
+				storageParams, err := conf.GetStorageParams(env)
 				if err != nil {
 					log.Printf("Error getting storage parameters (%s)", err)
 					os.Exit(1)

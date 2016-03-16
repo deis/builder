@@ -1,6 +1,6 @@
 package storage
 
-import (
+/*import (
 	"errors"
 	"io"
 	"strings"
@@ -122,4 +122,4 @@ func TestDownloadObjectSuccess(t *testing.T) {
 	assert.Equal(t, len(getter.Calls), 1, "number of calls to GetObject")
 	assert.Equal(t, getter.Calls[0].BucketName, bucketName, "the bucket name")
 	assert.Equal(t, getter.Calls[0].ObjectKey, objKey, "the object key")
-}
+}*/

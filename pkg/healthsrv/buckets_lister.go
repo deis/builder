@@ -1,10 +1,5 @@
 package healthsrv
 
-<<<<<<< a4e52011cd181ce189cb2b6d24a3c3a03275015b
-import (
-	s3 "github.com/minio/minio-go"
-)
-
 // BucketLister is a *(github.com/minio/minio-go).Client compatible interface that provides just
 // the ListBuckets cross-section of functionality. It can also be implemented for unit tests.
 type BucketLister interface {

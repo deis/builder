@@ -112,7 +112,7 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 		return fmt.Errorf("uploading %s to %s (%v)", absAppTgz, slugBuilderInfo.TarKey(), err)
 	}
 
-	creds := storage.CredsOK(fs)
+	creds := true
 
 	var pod *api.Pod
 	var buildPodName string
