@@ -21,6 +21,8 @@ const (
 	objectStore      = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
 	dockerSocketPath = "/var/run/docker.sock"
+	builderStorage   = "BUILDER_STORAGE"
+	objectStorePath  = "/var/run/secrets/deis/objectstore/creds"
 )
 
 func dockerBuilderPodName(appName, shortSha string) string {
@@ -41,7 +43,7 @@ func dockerBuilderPod(debug bool, name, namespace string, env map[string]interfa
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
-	addEnvToPod(pod, "BUILDER_STORAGE", storageType)
+	addEnvToPod(pod, builderStorage, storageType)
 
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
 		Name:      dockerSocketName,
@@ -68,7 +70,7 @@ func slugbuilderPod(debug bool, name, namespace string, env map[string]interface
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
-	addEnvToPod(pod, "BUILDER_STORAGE", storageType)
+	addEnvToPod(pod, builderStorage, storageType)
 
 	if buildpackURL != "" {
 		addEnvToPod(pod, "BUILDPACK_URL", buildpackURL)
@@ -109,7 +111,7 @@ func buildPod(debug bool, name, namespace string, env map[string]interface{}) ap
 	pod.Spec.Containers[0].VolumeMounts = []api.VolumeMount{
 		api.VolumeMount{
 			Name:      objectStore,
-			MountPath: "/var/run/secrets/deis/objectstore/creds",
+			MountPath: objectStorePath,
 			ReadOnly:  true,
 		},
 	}

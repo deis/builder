@@ -1,9 +1,11 @@
 package healthsrv
 
-import "github.com/docker/distribution/context"
+import (
+	"github.com/docker/distribution/context"
+)
 
-// BucketLister is a *(github.com/minio/minio-go).Client compatible interface that provides just
-// the ListBuckets cross-section of functionality. It can also be implemented for unit tests.
+// BucketLister is a *(github.com/docker/distribution/registry/storage/driver).StorageDriver compatible interface that provides just
+// the List cross-section of functionality. It can also be implemented for unit tests.
 type BucketLister interface {
 	// List returns a list of the objects that are direct descendants of the given path.
 	List(ctx context.Context, opath string) ([]string, error)
@@ -11,7 +13,7 @@ type BucketLister interface {
 
 type emptyBucketLister struct{}
 
-func (e emptyBucketLister) ListBuckets(ctx context.Context, opath string) ([]string, error) {
+func (e emptyBucketLister) List(ctx context.Context, opath string) ([]string, error) {
 	return nil, nil
 }
 
@@ -19,7 +21,7 @@ type errBucketLister struct {
 	err error
 }
 
-func (e errBucketLister) ListBuckets(ctx context.Context, opath string) ([]string, error) {
+func (e errBucketLister) List(ctx context.Context, opath string) ([]string, error) {
 	return nil, e.err
 }
 

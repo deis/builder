@@ -5,7 +5,6 @@ import (
 
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/gitreceive/git"
-	"github.com/deis/builder/pkg/storage"
 )
 
 func TestPushKey(t *testing.T) {
@@ -25,7 +24,8 @@ func TestTarKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error building git sha (%s)", err)
 	}
-	sbi := NewSlugBuilderInfo(appName + ":git-" + sha.Short())
+	slugName := appName + ":git-" + sha.Short()
+	sbi := NewSlugBuilderInfo(slugName)
 	expectedTarKey := "home/" + slugName + "/tar"
 	if sbi.TarKey() != expectedTarKey {
 		t.Errorf("tar key %s didn't match expected %s", sbi.TarKey(), expectedTarKey)

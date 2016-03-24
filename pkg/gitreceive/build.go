@@ -64,7 +64,7 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(slugName)
+	slugBuilderInfo := NewSlugBuilderInfo(slugName)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -106,7 +106,7 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 		return fmt.Errorf("error while reading file %s: (%s)", appTgz, err)
 	}
 
-	//log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint.FullURL(), conf.Bucket, slugBuilderInfo.TarKey())
+	log.Debug("Uploading tar to %s", slugBuilderInfo.TarKey())
 
 	if err := storageDriver.PutContent(context.Background(), slugBuilderInfo.TarKey(), appTgzdata); err != nil {
 		return fmt.Errorf("uploading %s to %s (%v)", absAppTgz, slugBuilderInfo.TarKey(), err)
@@ -268,7 +268,7 @@ func prettyPrintJSON(data interface{}) (string, error) {
 	return string(formatted.Bytes()), nil
 }
 
-func getProcFile(storageDriver storagedriver.StorageDriver, dirName, procfileKey string) (pkg.ProcessType, error) {
+func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string) (pkg.ProcessType, error) {
 	procType := pkg.ProcessType{}
 	if _, err := os.Stat(fmt.Sprintf("%s/Procfile", dirName)); err == nil {
 		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", dirName))
@@ -281,7 +281,7 @@ func getProcFile(storageDriver storagedriver.StorageDriver, dirName, procfileKey
 		return procType, nil
 	}
 	log.Debug("Procfile not present. Getting it from the buildpack")
-	rawProcFile, err := storageDriver.GetContent(context.Background(), procfileKey)
+	rawProcFile, err := getter.GetContent(context.Background(), procfileKey)
 	if err != nil {
 		return nil, fmt.Errorf("error in reading %s (%s)", procfileKey, err)
 	}

@@ -1,5 +1,5 @@
-hash: 9a0385d006350ab054af5064d2ef5ec6ac5aa5bb9a3d7328d2473e8d24012713
-updated: 2016-03-16T22:41:08.640702618-06:00
+hash: 28588ab7ed3ab5c729ab93c672124f10b14abb064d0579a885d12dece5476d44
+updated: 2016-03-25T13:36:22.639496896-06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -58,16 +58,16 @@ imports:
   - log
   - prettyprint
 - name: github.com/docker/distribution
-  version: bac2cc5cc3489f6e9872cf524848d3bcb8ecaf80
-  repo: https://github.com/kmala/distribution
+  version: 193356763efd27a744a0e776d3ce812a74c20673
+  repo: https://github.com/deis/distribution
   vcs: git
   subpackages:
+  - registry/storage/driver
   - registry/storage/driver/azure
   - registry/storage/driver/factory
   - registry/storage/driver/gcs
   - registry/storage/driver/s3-aws
   - context
-  - registry/storage/driver
   - registry/storage/driver/base
   - registry/client/transport
   - uuid

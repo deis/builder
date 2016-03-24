@@ -33,5 +33,5 @@ import:
 - package: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
 - package: github.com/docker/distribution
-  repo: https://github.com/kmala/distribution
+  repo: https://github.com/deis/distribution
   vcs: git

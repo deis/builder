@@ -24,26 +24,25 @@ func TestSlugBuilderPodName(t *testing.T) {
 
 type slugBuildCase struct {
 	debug            bool
-	withAuth         bool
 	name             string
 	namespace        string
 	env              map[string]interface{}
-	tarURL           string
-	putURL           string
+	tarKey           string
+	putKey           string
 	buildPack        string
 	slugBuilderImage string
+	storageType      string
 }
 
 type dockerBuildCase struct {
 	debug              bool
-	withAuth           bool
 	name               string
 	namespace          string
 	env                map[string]interface{}
-	tarURL             string
+	tarKey             string
 	imgName            string
-	region             string
 	dockerBuilderImage string
+	storageType        string
 }
 
 func TestBuildPod(t *testing.T) {
@@ -55,18 +54,18 @@ func TestBuildPod(t *testing.T) {
 	var pod *api.Pod
 
 	slugBuilds := []slugBuildCase{
-		{true, true, "test", "default", emptyEnv, "tar", "put-url", "", ""},
-		{true, false, "test", "default", emptyEnv, "tar", "put-url", "", ""},
-		{true, true, "test", "default", env, "tar", "put-url", "", ""},
-		{true, false, "test", "default", env, "tar", "put-url", "", ""},
-		{true, true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", ""},
-		{true, false, "test", "default", emptyEnv, "tar", "put-url", "buildpack", ""},
-		{true, true, "test", "default", env, "tar", "put-url", "buildpack", ""},
-		{true, false, "test", "default", env, "tar", "put-url", "buildpack", "customimage"},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", ""},
+		{true, "test", "default", env, "tar", "put-url", "", "", ""},
+		{true, "test", "default", env, "tar", "put-url", "", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "", ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", ""},
 	}
 
 	for _, build := range slugBuilds {
-		pod = slugbuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.putURL, build.buildPack, build.slugBuilderImage)
+		pod = slugbuilderPod(build.debug, build.name, build.namespace, build.env, build.tarKey, build.putKey, build.buildPack, build.slugBuilderImage, build.storageType)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -76,8 +75,8 @@ func TestBuildPod(t *testing.T) {
 			t.Errorf("expected %v but returned %v ", build.namespace, pod.ObjectMeta.Namespace)
 		}
 
-		checkForEnv(t, pod, "TAR_URL", build.tarURL)
-		checkForEnv(t, pod, "put_url", build.putURL)
+		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
+		checkForEnv(t, pod, "PUT_PATH", build.putKey)
 
 		if build.buildPack != "" {
 			checkForEnv(t, pod, "BUILDPACK_URL", build.buildPack)
@@ -91,18 +90,18 @@ func TestBuildPod(t *testing.T) {
 	}
 
 	dockerBuilds := []dockerBuildCase{
-		{true, true, "test", "default", emptyEnv, "tar", "", "us-east-1", ""},
-		{true, false, "test", "default", emptyEnv, "tar", "", "us-east-1", ""},
-		{true, true, "test", "default", env, "tar", "", "us-east-1", ""},
-		{true, false, "test", "default", env, "tar", "", "us-east-1", ""},
-		{true, true, "test", "default", emptyEnv, "tar", "img", "us-east-1", ""},
-		{true, false, "test", "default", emptyEnv, "tar", "img", "us-east-1", ""},
-		{true, true, "test", "default", env, "tar", "img", "us-east-1", ""},
-		{true, false, "test", "default", env, "tar", "img", "us-east-1", "customimage"},
+		{true, "test", "default", emptyEnv, "tar", "", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "", "", ""},
+		{true, "test", "default", env, "tar", "", "", ""},
+		{true, "test", "default", env, "tar", "", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "img", "", ""},
+		{true, "test", "default", emptyEnv, "tar", "img", "", ""},
+		{true, "test", "default", env, "tar", "img", "", ""},
+		{true, "test", "default", env, "tar", "img", "customimage", ""},
 	}
 
 	for _, build := range dockerBuilds {
-		pod = dockerBuilderPod(build.debug, build.withAuth, build.name, build.namespace, build.env, build.tarURL, build.imgName, build.region, build.dockerBuilderImage)
+		pod = dockerBuilderPod(build.debug, build.name, build.namespace, build.env, build.tarKey, build.imgName, build.dockerBuilderImage, build.storageType)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -110,10 +109,9 @@ func TestBuildPod(t *testing.T) {
 		if pod.ObjectMeta.Namespace != build.namespace {
 			t.Errorf("expected %v but returned %v ", build.namespace, pod.ObjectMeta.Namespace)
 		}
-		if !build.withAuth {
-			checkForEnv(t, pod, "TAR_URL", build.tarURL)
-			checkForEnv(t, pod, "IMG_NAME", build.imgName)
-		}
+
+		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
+		checkForEnv(t, pod, "IMG_NAME", build.imgName)
 		if build.dockerBuilderImage != "" {
 			if pod.Spec.Containers[0].Image != build.dockerBuilderImage {
 				t.Errorf("expected %v but returned %v ", build.dockerBuilderImage, pod.Spec.Containers[0].Image)

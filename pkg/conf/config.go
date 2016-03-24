@@ -13,6 +13,7 @@ const (
 	storageCredLocation = "/var/run/secrets/deis/objectstore/creds/"
 	minioHostEnvVar     = "DEIS_MINIO_SERVICE_HOST"
 	minioPortEnvVar     = "DEIS_MINIO_SERVICE_PORT"
+	gcsKey              = "key.json"
 )
 
 type Parameters map[string]interface{}
@@ -54,7 +55,8 @@ func GetStorageParams(env sys.Env) (Parameters, error) {
 		if err != nil {
 			return nil, err
 		}
-		if file.Name() == "key.json" {
+		//GCS expect the to have the location of the service account credential json file
+		if file.Name() == gcsKey {
 			params["keyfile"] = storageCredLocation + file.Name()
 		} else {
 			params[file.Name()] = string(data)
@@ -66,7 +68,7 @@ func GetStorageParams(env sys.Env) (Parameters, error) {
 		mHost := env.Get(minioHostEnvVar)
 		mPort := env.Get(minioPortEnvVar)
 		params["regionendpoint"] = fmt.Sprintf("http://%s:%s", mHost, mPort)
-		params["secure"] = "false"
+		params["secure"] = false
 		params["region"] = "us-east-1"
 		params["bucket"] = "git"
 	}
