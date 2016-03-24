@@ -82,6 +82,11 @@ func build(
 	if err != nil {
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			fmt.Errorf("unable to remove tmpdir %s (%s)", tmpDir, err)
+		}
+	}()
 
 	slugBuilderInfo := NewSlugBuilderInfo(slugName)
 
