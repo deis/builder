@@ -16,8 +16,8 @@ type Config struct {
 	// k8s service discovery env vars
 	ControllerHost string `envconfig:"DEIS_CONTROLLER_SERVICE_HOST" required:"true"`
 	ControllerPort string `envconfig:"DEIS_CONTROLLER_SERVICE_PORT" required:"true"`
-	RegistryHost string `envconfig:"DEIS_REGISTRY_SERVICE_HOST" required:"true"`
-	RegistryPort string `envconfig:"DEIS_REGISTRY_SERVICE_PORT" required:"true"`
+	RegistryHost   string `envconfig:"DEIS_REGISTRY_SERVICE_HOST" required:"true"`
+	RegistryPort   string `envconfig:"DEIS_REGISTRY_SERVICE_PORT" required:"true"`
 
 	GitHome                       string `envconfig:"GIT_HOME" required:"true"`
 	SSHConnection                 string `envconfig:"SSH_CONNECTION" required:"true"`
@@ -34,6 +34,8 @@ type Config struct {
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
 	SlugBuilderImage              string `envconfig:"SLUGBUILDER_IMAGE_NAME" default:"quay.io/deisci/slugbuilder:v2-beta"`
 	DockerBuilderImage            string `envconfig:"DOCKERBUILDER_IMAGE_NAME" default:"quay.io/deisci/dockerbuilder:v2-beta"`
+	SlugBuilderImagePullPolicy    string `envconfig:"SLUG_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
+	DockerBuilderImagePullPolicy  string `envconfig:"DOCKER_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
 	StorageType                   string `envconfig:"BUILDER_STORAGE" default:"minio"`
 }
 

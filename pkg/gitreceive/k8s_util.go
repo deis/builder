@@ -35,8 +35,19 @@ func slugBuilderPodName(appName, shortSha string) string {
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func dockerBuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, imageName, dockerBuilderImage, storageType string) *api.Pod {
-	pod := buildPod(debug, name, namespace, env)
+func dockerBuilderPod(
+	debug bool,
+	name,
+	namespace string,
+	env map[string]interface{},
+	tarKey,
+	imageName,
+	storageType,
+	dockerBuilderImage,
+	dockerBuilderImagePullPolicy string,
+) *api.Pod {
+
+	pod := buildPod(debug, name, namespace, dockerBuilderImagePullPolicy, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
 	pod.Spec.Containers[0].Image = dockerBuilderImage
@@ -62,8 +73,20 @@ func dockerBuilderPod(debug bool, name, namespace string, env map[string]interfa
 	return &pod
 }
 
-func slugbuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, putKey, buildpackURL, slugBuilderImage, storageType string) *api.Pod {
-	pod := buildPod(debug, name, namespace, env)
+func slugbuilderPod(
+	debug bool,
+	name,
+	namespace string,
+	env map[string]interface{},
+	tarKey,
+	putKey,
+	buildpackURL,
+	storageType,
+	slugBuilderImage,
+	slugBuilderImagePullPolicy string,
+) *api.Pod {
+
+	pod := buildPod(debug, name, namespace, slugBuilderImagePullPolicy, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName
 	pod.Spec.Containers[0].Image = slugBuilderImage
@@ -79,7 +102,13 @@ func slugbuilderPod(debug bool, name, namespace string, env map[string]interface
 	return &pod
 }
 
-func buildPod(debug bool, name, namespace string, env map[string]interface{}) api.Pod {
+func buildPod(
+	debug bool,
+	name,
+	namespace,
+	imagePullPolicy string,
+	env map[string]interface{}) api.Pod {
+
 	pod := api.Pod{
 		Spec: api.PodSpec{
 			RestartPolicy: api.RestartPolicyNever,

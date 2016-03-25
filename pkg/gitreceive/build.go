@@ -42,7 +42,15 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
+func build(
+	conf *Config,
+	storageDriver storagedriver.StorageDriver,
+	kubeClient *client.Client,
+	fs sys.FS,
+	env sys.Env,
+	builderKey,
+	rawGitSha string) error {
+
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -123,8 +131,9 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 			appConf.Values,
 			slugBuilderInfo.TarKey(),
 			slugName,
-			conf.DockerBuilderImage,
 			conf.StorageType,
+			conf.DockerBuilderImage,
+			conf.DockerBuilderImagePullPolicy,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -136,8 +145,9 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 			slugBuilderInfo.TarKey(),
 			slugBuilderInfo.PushKey(),
 			buildPackURL,
-			conf.SlugBuilderImage,
 			conf.StorageType,
+			conf.SlugBuilderImage,
+			conf.SlugBuilderImagePullPolicy,
 		)
 	}
 
