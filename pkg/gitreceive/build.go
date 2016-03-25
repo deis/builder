@@ -13,7 +13,7 @@ import (
 
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
-	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
 	"gopkg.in/yaml.v2"
@@ -63,7 +63,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := storage.NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
+	slugBuilderInfo := NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)

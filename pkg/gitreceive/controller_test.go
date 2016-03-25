@@ -6,7 +6,7 @@ import (
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/gitreceive/git"
-	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/storage"
 )
 
 const (
@@ -22,7 +22,7 @@ func TestCreateBuildHook(t *testing.T) {
 	sha, err := git.NewSha(rawSha)
 	assert.NoErr(t, err)
 	endpoint := &storage.Endpoint{URLStr: "s3.amazonaws.com", Secure: false}
-	slugBuilderInfo := storage.NewSlugBuilderInfo(endpoint, bucket, appName, slugName, sha)
+	slugBuilderInfo := NewSlugBuilderInfo(endpoint, bucket, appName, slugName, sha)
 	hookUsingDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, procType, true)
 	assert.Equal(t, hookUsingDockerfile.Sha, sha.Short(), "git sha")
 	assert.Equal(t, hookUsingDockerfile.ReceiveUser, username, "username")

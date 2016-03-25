@@ -11,7 +11,7 @@ import (
 
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg"
-	"github.com/deis/builder/pkg/gitreceive/storage"
+	"github.com/deis/builder/pkg/storage"
 )
 
 const (
