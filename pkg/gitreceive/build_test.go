@@ -7,11 +7,11 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/storage"
+	"github.com/docker/distribution/context"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -33,8 +33,8 @@ func TestGetProcFileFromRepoSuccess(t *testing.T) {
 			t.Fatalf("failed to remove Procfile from %s (%s)", tmpDir, err)
 		}
 	}()
-	getter := &storage.RealObjectGetter{}
-	procType, err := getProcFile(getter, tmpDir, bucketName, objKey)
+	getter := &storage.FakeObjectGetter{}
+	procType, err := getProcFile(getter, tmpDir, objKey)
 	actualData := pkg.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
@@ -55,22 +55,21 @@ func TestGetProcFileFromRepoFailure(t *testing.T) {
 			t.Fatalf("failed to remove Procfile from %s (%s)", tmpDir, err)
 		}
 	}()
-	getter := &storage.RealObjectGetter{}
-	_, err = getProcFile(getter, tmpDir, bucketName, objKey)
+	getter := &storage.FakeObjectGetter{}
+	_, err = getProcFile(getter, tmpDir, objKey)
 
 	assert.True(t, err != nil, "no error received when there should have been")
 }
 
 func TestGetProcFileFromServerSuccess(t *testing.T) {
 	data := []byte("web: example-go")
-	obj := &storage.FakeObject{Data: string(data)}
 	getter := &storage.FakeObjectGetter{
-		Fn: func(string, string) (storage.Object, error) {
-			return obj, nil
+		Fn: func(context.Context, string) ([]byte, error) {
+			return data, nil
 		},
 	}
 
-	procType, err := getProcFile(getter, "", bucketName, objKey)
+	procType, err := getProcFile(getter, "", objKey)
 	actualData := pkg.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
@@ -78,16 +77,14 @@ func TestGetProcFileFromServerSuccess(t *testing.T) {
 }
 
 func TestGetProcFileFromServerFailure(t *testing.T) {
-	data := []byte("web: example-go")
-	obj := &storage.FakeObject{Data: string(data)}
 	expectedErr := errors.New("test error")
 	getter := &storage.FakeObjectGetter{
-		Fn: func(string, string) (storage.Object, error) {
-			return obj, expectedErr
+		Fn: func(context.Context, string) ([]byte, error) {
+			return []byte("web: example-go"), expectedErr
 		},
 	}
 
-	_, err := getProcFile(getter, "", bucketName, objKey)
-	assert.Err(t, err, fmt.Errorf("error in reading %s/%s (%s)", bucketName, objKey, expectedErr))
+	_, err := getProcFile(getter, "", objKey)
+	assert.Err(t, err, fmt.Errorf("error in reading %s (%s)", objKey, expectedErr))
 	assert.True(t, err != nil, "no error received when there should have been")
 }

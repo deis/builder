@@ -13,9 +13,13 @@ import (
 	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/healthsrv"
 	"github.com/deis/builder/pkg/sshd"
-	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	pkglog "github.com/deis/pkg/log"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
+	_ "github.com/docker/distribution/registry/storage/driver/azure"
+	"github.com/docker/distribution/registry/storage/driver/factory"
+	_ "github.com/docker/distribution/registry/storage/driver/gcs"
+	_ "github.com/docker/distribution/registry/storage/driver/s3-aws"
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
@@ -49,16 +53,27 @@ func main() {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
-				env := sys.RealEnv()
 				fs := sys.RealFS()
+				env := sys.RealEnv()
 				pushLock := sshd.NewInMemoryRepositoryLock()
 				circ := sshd.NewCircuit()
 
-				s3Client, err := storage.GetClient(cnf.HealthSrvTestStorageRegion, fs, env)
+				storageParams, err := conf.GetStorageParams(env)
 				if err != nil {
-					log.Printf("Error getting s3 client (%s)", err)
+					log.Printf("Error getting storage parameters (%s)", err)
 					os.Exit(1)
 				}
+				var storageDriver storagedriver.StorageDriver
+				if cnf.StorageType == "minio" {
+					storageDriver, err = factory.Create("s3", storageParams)
+				} else {
+					storageDriver, err = factory.Create(cnf.StorageType, storageParams)
+				}
+				if err != nil {
+					log.Printf("Error creating storage driver (%s)", err)
+					os.Exit(1)
+				}
+
 				kubeClient, err := kcl.NewInCluster()
 				if err != nil {
 					log.Printf("Error getting kubernetes client [%s]", err)
@@ -67,7 +82,7 @@ func main() {
 				log.Printf("Starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
-					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), s3Client, circ); err != nil {
+					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), storageDriver, circ); err != nil {
 						healthSrvCh <- err
 					}
 				}()
@@ -111,8 +126,23 @@ func main() {
 				cnf.CheckDurations()
 				fs := sys.RealFS()
 				env := sys.RealEnv()
+				storageParams, err := conf.GetStorageParams(env)
+				if err != nil {
+					log.Printf("Error getting storage parameters (%s)", err)
+					os.Exit(1)
+				}
+				var storageDriver storagedriver.StorageDriver
+				if cnf.StorageType == "minio" {
+					storageDriver, err = factory.Create("s3", storageParams)
+				} else {
+					storageDriver, err = factory.Create(cnf.StorageType, storageParams)
+				}
+				if err != nil {
+					log.Printf("Error creating storage driver (%s)", err)
+					os.Exit(1)
+				}
 
-				if err := gitreceive.Run(cnf, fs, env); err != nil {
+				if err := gitreceive.Run(cnf, fs, env, storageDriver); err != nil {
 					log.Printf("Error running git receive hook [%s]", err)
 					os.Exit(1)
 				}

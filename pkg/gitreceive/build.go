@@ -16,8 +16,9 @@ import (
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
+	"github.com/docker/distribution/context"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
 	"gopkg.in/yaml.v2"
-
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -41,7 +42,7 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
+func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -63,7 +64,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		return fmt.Errorf("unable to create tmpdir %s (%s)", buildDir, err)
 	}
 
-	slugBuilderInfo := NewSlugBuilderInfo(s3Client.Endpoint, conf.Bucket, appName, slugName, gitSha)
+	slugBuilderInfo := NewSlugBuilderInfo(slugName)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
@@ -100,21 +101,16 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	bType := getBuildTypeForDir(tmpDir)
 	usingDockerfile := bType == buildTypeDockerfile
 
-	if err := storage.CreateBucket(s3Client, conf.Bucket); err != nil {
-		log.Warn("create bucket error: %+v", err)
-	}
-
-	appTgzReader, err := os.Open(absAppTgz)
+	appTgzdata, err := ioutil.ReadFile(absAppTgz)
 	if err != nil {
-		return fmt.Errorf("opening %s for read (%s)", appTgz, err)
+		return fmt.Errorf("error while reading file %s: (%s)", appTgz, err)
 	}
 
-	log.Debug("Uploading tar to %s/%s/%s", s3Client.Endpoint.FullURL(), conf.Bucket, slugBuilderInfo.TarKey())
-	if err := storage.UploadObject(s3Client, conf.Bucket, slugBuilderInfo.TarKey(), appTgzReader); err != nil {
-		return fmt.Errorf("uploading %s to %s/%s (%v)", absAppTgz, conf.Bucket, slugBuilderInfo.TarKey(), err)
-	}
+	log.Debug("Uploading tar to %s", slugBuilderInfo.TarKey())
 
-	creds := storage.CredsOK(fs)
+	if err := storageDriver.PutContent(context.Background(), slugBuilderInfo.TarKey(), appTgzdata); err != nil {
+		return fmt.Errorf("uploading %s to %s (%v)", absAppTgz, slugBuilderInfo.TarKey(), err)
+	}
 
 	var pod *api.Pod
 	var buildPodName string
@@ -122,27 +118,26 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
 		pod = dockerBuilderPod(
 			conf.Debug,
-			creds,
 			buildPodName,
 			conf.PodNamespace,
 			appConf.Values,
-			slugBuilderInfo.TarURL(),
+			slugBuilderInfo.TarKey(),
 			slugName,
-			conf.StorageRegion,
 			conf.DockerBuilderImage,
+			conf.StorageType,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
 		pod = slugbuilderPod(
 			conf.Debug,
-			creds,
 			buildPodName,
 			conf.PodNamespace,
 			appConf.Values,
-			slugBuilderInfo.TarURL(),
-			slugBuilderInfo.PushURL(),
+			slugBuilderInfo.TarKey(),
+			slugBuilderInfo.PushKey(),
 			buildPackURL,
 			conf.SlugBuilderImage,
+			conf.StorageType,
 		)
 	}
 
@@ -211,17 +206,15 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 	log.Debug("Done")
 
 	log.Debug(
-		"Polling the S3 server every %s for %s for the resultant slug at %s/%s",
+		"Polling the S3 server every %s for %s for the resultant slug at %s",
 		conf.ObjectStorageTickDuration(),
 		conf.ObjectStorageWaitDuration(),
-		conf.Bucket,
 		slugBuilderInfo.AbsoluteSlugObjectKey(),
 	)
 	// poll the s3 server to ensure the slug exists
 	if !usingDockerfile {
 		if err := storage.WaitForObject(
-			s3Client,
-			conf.Bucket,
+			storageDriver,
 			slugBuilderInfo.AbsoluteSlugObjectKey(),
 			conf.ObjectStorageTickDuration(),
 			conf.ObjectStorageWaitDuration(),
@@ -232,8 +225,7 @@ func build(conf *Config, s3Client *storage.Client, kubeClient *client.Client, fs
 
 	procType := pkg.ProcessType{}
 	if bType == buildTypeProcfile {
-		getter := &storage.RealObjectGetter{Client: s3Client.Client}
-		if procType, err = getProcFile(getter, tmpDir, conf.Bucket, slugBuilderInfo.AbsoluteProcfileKey()); err != nil {
+		if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey()); err != nil {
 			return err
 		}
 	}
@@ -276,7 +268,7 @@ func prettyPrintJSON(data interface{}) (string, error) {
 	return string(formatted.Bytes()), nil
 }
 
-func getProcFile(getter storage.ObjectGetter, dirName, bucketName, procfileKey string) (pkg.ProcessType, error) {
+func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string) (pkg.ProcessType, error) {
 	procType := pkg.ProcessType{}
 	if _, err := os.Stat(fmt.Sprintf("%s/Procfile", dirName)); err == nil {
 		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", dirName))
@@ -289,12 +281,12 @@ func getProcFile(getter storage.ObjectGetter, dirName, bucketName, procfileKey s
 		return procType, nil
 	}
 	log.Debug("Procfile not present. Getting it from the buildpack")
-	rawProcFile, err := storage.DownloadObject(getter, bucketName, procfileKey)
+	rawProcFile, err := getter.GetContent(context.Background(), procfileKey)
 	if err != nil {
-		return nil, fmt.Errorf("error in reading %s/%s (%s)", bucketName, procfileKey, err)
+		return nil, fmt.Errorf("error in reading %s (%s)", procfileKey, err)
 	}
 	if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
-		return nil, fmt.Errorf("procfile %s/%s is malformed (%s)", bucketName, procfileKey, err)
+		return nil, fmt.Errorf("procfile %s is malformed (%s)", procfileKey, err)
 	}
 	return procType, nil
 }

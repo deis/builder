@@ -6,11 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deis/builder/pkg/storage"
+	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
-
-	builderconf "github.com/deis/builder/pkg/conf"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
 
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -25,17 +24,12 @@ func readLine(line string) (string, string, string, error) {
 
 // Run runs the git-receive hook. This func is effectively the main for the git-receive hook,
 // although it is called from the main in boot.go.
-func Run(conf *Config, fs sys.FS, env sys.Env) error {
+func Run(conf *Config, fs sys.FS, env sys.Env, storageDriver storagedriver.StorageDriver) error {
 	log.Debug("Running git hook")
 
 	builderKey, err := builderconf.GetBuilderKey()
 	if err != nil {
 		return err
-	}
-
-	s3Client, err := storage.GetClient(conf.StorageRegion, fs, env)
-	if err != nil {
-		return fmt.Errorf("configuring S3 client (%s)", err)
 	}
 
 	kubeClient, err := client.NewInCluster()
@@ -59,7 +53,7 @@ func Run(conf *Config, fs sys.FS, env sys.Env) error {
 		}
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(conf, s3Client, kubeClient, fs, env, builderKey, newRev); err != nil {
+			if err := build(conf, storageDriver, kubeClient, fs, env, builderKey, newRev); err != nil {
 				return err
 			}
 		}

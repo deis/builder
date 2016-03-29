@@ -3,8 +3,7 @@ FROM alpine:3.3
 # specify the git user's home and name
 ENV GITHOME /home/git
 ENV GITUSER git
-# this is so the minio client (https://github.com/minio/mc) works properly
-ENV DOCKERIMAGE=1
+
 ENV DEIS_BUILDER_SERVER_SSH_HOST_IP=0.0.0.0
 ENV DEIS_BUILDER_SERVER_SSH_HOST_PORT=2223
 

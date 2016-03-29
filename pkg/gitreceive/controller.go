@@ -168,7 +168,7 @@ func createBuildHook(
 	if !usingDockerfile {
 		ret.Dockerfile = ""
 		// need this to tell the controller what URL to give the slug runner
-		ret.Image = slugBuilderInfo.AbsoluteSlugURL()
+		ret.Image = slugBuilderInfo.AbsoluteSlugObjectKey()
 	} else {
 		ret.Dockerfile = "true"
 	}

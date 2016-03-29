@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/deis/builder/pkg/sshd"
-	s3 "github.com/minio/minio-go"
 	"k8s.io/kubernetes/pkg/api"
 )
 
@@ -24,7 +23,7 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 		go circuitState(serverCircuit, serverStateCh, serverStateErrCh, stopCh)
 		numChecks++
 
-		listBucketsCh := make(chan []s3.BucketInfo)
+		listBucketsCh := make(chan []string)
 		listBucketsErrCh := make(chan error)
 		go listBuckets(bLister, listBucketsCh, listBucketsErrCh, stopCh)
 		numChecks++
