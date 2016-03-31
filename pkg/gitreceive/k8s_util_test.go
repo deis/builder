@@ -64,6 +64,8 @@ func TestBuildPod(t *testing.T) {
 		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range slugBuilds {
@@ -77,7 +79,7 @@ func TestBuildPod(t *testing.T) {
 			build.buildPack,
 			build.storageType,
 			build.slugBuilderImage,
-			string(build.slugBuilderImagePullPolicy),
+			build.slugBuilderImagePullPolicy,
 		)
 
 		if pod.ObjectMeta.Name != build.name {
@@ -116,6 +118,8 @@ func TestBuildPod(t *testing.T) {
 		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "img", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "img", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "img", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "tar", "img", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range dockerBuilds {
@@ -128,7 +132,7 @@ func TestBuildPod(t *testing.T) {
 			build.imgName,
 			build.storageType,
 			build.dockerBuilderImage,
-			string(build.dockerBuilderImagePullPolicy),
+			build.dockerBuilderImagePullPolicy,
 		)
 
 		if pod.ObjectMeta.Name != build.name {

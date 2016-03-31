@@ -43,14 +43,14 @@ func dockerBuilderPod(
 	tarKey,
 	imageName,
 	storageType,
-	dockerBuilderImage,
-	dockerBuilderImagePullPolicy string,
+	image string,
+	pullPolicy api.PullPolicy,
 ) *api.Pod {
 
-	pod := buildPod(debug, name, namespace, dockerBuilderImagePullPolicy, env)
+	pod := buildPod(debug, name, namespace, pullPolicy, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
-	pod.Spec.Containers[0].Image = dockerBuilderImage
+	pod.Spec.Containers[0].Image = image
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
@@ -82,14 +82,14 @@ func slugbuilderPod(
 	putKey,
 	buildpackURL,
 	storageType,
-	slugBuilderImage,
-	slugBuilderImagePullPolicy string,
+	image string,
+	pullPolicy api.PullPolicy,
 ) *api.Pod {
 
-	pod := buildPod(debug, name, namespace, slugBuilderImagePullPolicy, env)
+	pod := buildPod(debug, name, namespace, pullPolicy, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName
-	pod.Spec.Containers[0].Image = slugBuilderImage
+	pod.Spec.Containers[0].Image = image
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
@@ -105,8 +105,8 @@ func slugbuilderPod(
 func buildPod(
 	debug bool,
 	name,
-	namespace,
-	imagePullPolicy string,
+	namespace string,
+	pullPolicy api.PullPolicy,
 	env map[string]interface{}) api.Pod {
 
 	pod := api.Pod{
@@ -114,7 +114,7 @@ func buildPod(
 			RestartPolicy: api.RestartPolicyNever,
 			Containers: []api.Container{
 				api.Container{
-					ImagePullPolicy: api.PullAlways,
+					ImagePullPolicy: pullPolicy,
 				},
 			},
 			Volumes: []api.Volume{},

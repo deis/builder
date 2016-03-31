@@ -13,6 +13,7 @@ import (
 
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/git"
+	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
@@ -50,6 +51,16 @@ func build(
 	env sys.Env,
 	builderKey,
 	rawGitSha string) error {
+
+	dockerBuilderImagePullPolicy, err := k8s.PullPolicyFromString(conf.DockerBuilderImagePullPolicy)
+	if err != nil {
+		return err
+	}
+
+	slugBuilderImagePullPolicy, err := k8s.PullPolicyFromString(conf.SlugBuilderImagePullPolicy)
+	if err != nil {
+		return nil
+	}
 
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
@@ -133,7 +144,7 @@ func build(
 			slugName,
 			conf.StorageType,
 			conf.DockerBuilderImage,
-			conf.DockerBuilderImagePullPolicy,
+			dockerBuilderImagePullPolicy,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -147,7 +158,7 @@ func build(
 			buildPackURL,
 			conf.StorageType,
 			conf.SlugBuilderImage,
-			conf.SlugBuilderImagePullPolicy,
+			slugBuilderImagePullPolicy,
 		)
 	}
 
