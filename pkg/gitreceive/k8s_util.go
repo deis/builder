@@ -183,6 +183,9 @@ func waitForPodCondition(c *client.Client, ns, podName string, condition func(po
 		}
 
 		done, err := condition(pod)
+		if err != nil {
+			return false, err
+		}
 		if done {
 			return true, nil
 		}
