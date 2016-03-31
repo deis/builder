@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/deis/builder/pkg"
-	"github.com/deis/builder/pkg/gitreceive/git"
+	"github.com/deis/builder/pkg/git"
 	"github.com/deis/pkg/log"
 )
 
