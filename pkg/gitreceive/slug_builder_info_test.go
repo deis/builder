@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/arschles/assert"
-	"github.com/deis/builder/pkg/gitreceive/git"
+	"github.com/deis/builder/pkg/git"
 )
 
 func TestPushKey(t *testing.T) {
