@@ -42,7 +42,7 @@ build:
 test:
 	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
 
-docker-build:
+docker-build: build
 	docker build --rm -t ${IMAGE} rootfs
 	docker tag -f ${IMAGE} ${MUTABLE_IMAGE}
 
