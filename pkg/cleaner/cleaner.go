@@ -26,16 +26,21 @@ func Run(gitHome string, nsLister k8s.NamespaceWatcher, fs sys.FS) error {
 		log.Printf("unable to get watch events (%s)", err)
 	}
 	for {
-		event := <-watcher.ResultChan()
-		if event.Type == "DELETED" {
-			switch event.Object.(type) {
-			case (*api.Namespace):
-				namespace := event.Object.(*api.Namespace)
-				appToDelete := gitHome + "/" + namespace.ObjectMeta.Name + dotGitSuffix
-				if err := fs.RemoveAll(appToDelete); err != nil {
-					log.Printf("Cleaner error removing deleted app %s (%s)", appToDelete, err)
+		select {
+		case event, ok := <-watcher.ResultChan():
+			if !ok {
+				break
+			}
+			if event.Type == "DELETED" {
+				switch event.Object.(type) {
+				case (*api.Namespace):
+					namespace := event.Object.(*api.Namespace)
+					appToDelete := gitHome + "/" + namespace.ObjectMeta.Name + dotGitSuffix
+					if err := fs.RemoveAll(appToDelete); err != nil {
+						log.Printf("Cleaner error removing deleted app %s (%s)", appToDelete, err)
+					}
+				default:
 				}
-			default:
 			}
 		}
 	}
