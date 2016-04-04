@@ -35,11 +35,22 @@ func slugBuilderPodName(appName, shortSha string) string {
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
-func dockerBuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, imageName, dockerBuilderImage, storageType string) *api.Pod {
-	pod := buildPod(debug, name, namespace, env)
+func dockerBuilderPod(
+	debug bool,
+	name,
+	namespace string,
+	env map[string]interface{},
+	tarKey,
+	imageName,
+	storageType,
+	image string,
+	pullPolicy api.PullPolicy,
+) *api.Pod {
+
+	pod := buildPod(debug, name, namespace, pullPolicy, env)
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
-	pod.Spec.Containers[0].Image = dockerBuilderImage
+	pod.Spec.Containers[0].Image = image
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
@@ -62,11 +73,23 @@ func dockerBuilderPod(debug bool, name, namespace string, env map[string]interfa
 	return &pod
 }
 
-func slugbuilderPod(debug bool, name, namespace string, env map[string]interface{}, tarKey, putKey, buildpackURL, slugBuilderImage, storageType string) *api.Pod {
-	pod := buildPod(debug, name, namespace, env)
+func slugbuilderPod(
+	debug bool,
+	name,
+	namespace string,
+	env map[string]interface{},
+	tarKey,
+	putKey,
+	buildpackURL,
+	storageType,
+	image string,
+	pullPolicy api.PullPolicy,
+) *api.Pod {
+
+	pod := buildPod(debug, name, namespace, pullPolicy, env)
 
 	pod.Spec.Containers[0].Name = slugBuilderName
-	pod.Spec.Containers[0].Image = slugBuilderImage
+	pod.Spec.Containers[0].Image = image
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
@@ -79,13 +102,19 @@ func slugbuilderPod(debug bool, name, namespace string, env map[string]interface
 	return &pod
 }
 
-func buildPod(debug bool, name, namespace string, env map[string]interface{}) api.Pod {
+func buildPod(
+	debug bool,
+	name,
+	namespace string,
+	pullPolicy api.PullPolicy,
+	env map[string]interface{}) api.Pod {
+
 	pod := api.Pod{
 		Spec: api.PodSpec{
 			RestartPolicy: api.RestartPolicyNever,
 			Containers: []api.Container{
 				api.Container{
-					ImagePullPolicy: api.PullAlways,
+					ImagePullPolicy: pullPolicy,
 				},
 			},
 			Volumes: []api.Volume{},

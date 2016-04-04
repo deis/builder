@@ -23,26 +23,28 @@ func TestSlugBuilderPodName(t *testing.T) {
 }
 
 type slugBuildCase struct {
-	debug            bool
-	name             string
-	namespace        string
-	env              map[string]interface{}
-	tarKey           string
-	putKey           string
-	buildPack        string
-	slugBuilderImage string
-	storageType      string
+	debug                      bool
+	name                       string
+	namespace                  string
+	env                        map[string]interface{}
+	tarKey                     string
+	putKey                     string
+	buildPack                  string
+	slugBuilderImage           string
+	slugBuilderImagePullPolicy api.PullPolicy
+	storageType                string
 }
 
 type dockerBuildCase struct {
-	debug              bool
-	name               string
-	namespace          string
-	env                map[string]interface{}
-	tarKey             string
-	imgName            string
-	dockerBuilderImage string
-	storageType        string
+	debug                        bool
+	name                         string
+	namespace                    string
+	env                          map[string]interface{}
+	tarKey                       string
+	imgName                      string
+	dockerBuilderImage           string
+	dockerBuilderImagePullPolicy api.PullPolicy
+	storageType                  string
 }
 
 func TestBuildPod(t *testing.T) {
@@ -54,18 +56,31 @@ func TestBuildPod(t *testing.T) {
 	var pod *api.Pod
 
 	slugBuilds := []slugBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", ""},
-		{true, "test", "default", env, "tar", "put-url", "", "", ""},
-		{true, "test", "default", env, "tar", "put-url", "", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "", ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range slugBuilds {
-		pod = slugbuilderPod(build.debug, build.name, build.namespace, build.env, build.tarKey, build.putKey, build.buildPack, build.slugBuilderImage, build.storageType)
+		pod = slugbuilderPod(
+			build.debug,
+			build.name,
+			build.namespace,
+			build.env,
+			build.tarKey,
+			build.putKey,
+			build.buildPack,
+			build.storageType,
+			build.slugBuilderImage,
+			build.slugBuilderImagePullPolicy,
+		)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -87,21 +102,38 @@ func TestBuildPod(t *testing.T) {
 				t.Errorf("expected %v but returned %v ", build.slugBuilderImage, pod.Spec.Containers[0].Image)
 			}
 		}
+		if build.slugBuilderImagePullPolicy != "" {
+			if pod.Spec.Containers[0].ImagePullPolicy != build.slugBuilderImagePullPolicy {
+				t.Errorf("expected %v but returned %v", build.slugBuilderImagePullPolicy, pod.Spec.Containers[0].ImagePullPolicy)
+			}
+		}
 	}
 
 	dockerBuilds := []dockerBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "", "", ""},
-		{true, "test", "default", env, "tar", "", "", ""},
-		{true, "test", "default", env, "tar", "", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "img", "", ""},
-		{true, "test", "default", emptyEnv, "tar", "img", "", ""},
-		{true, "test", "default", env, "tar", "img", "", ""},
-		{true, "test", "default", env, "tar", "img", "customimage", ""},
+		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "img", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "img", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "tar", "img", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range dockerBuilds {
-		pod = dockerBuilderPod(build.debug, build.name, build.namespace, build.env, build.tarKey, build.imgName, build.dockerBuilderImage, build.storageType)
+		pod = dockerBuilderPod(
+			build.debug,
+			build.name,
+			build.namespace,
+			build.env,
+			build.tarKey,
+			build.imgName,
+			build.storageType,
+			build.dockerBuilderImage,
+			build.dockerBuilderImagePullPolicy,
+		)
 
 		if pod.ObjectMeta.Name != build.name {
 			t.Errorf("expected %v but returned %v ", build.name, pod.ObjectMeta.Name)
@@ -114,7 +146,14 @@ func TestBuildPod(t *testing.T) {
 		checkForEnv(t, pod, "IMG_NAME", build.imgName)
 		if build.dockerBuilderImage != "" {
 			if pod.Spec.Containers[0].Image != build.dockerBuilderImage {
-				t.Errorf("expected %v but returned %v ", build.dockerBuilderImage, pod.Spec.Containers[0].Image)
+				t.Errorf("expected %v but returned %v", build.dockerBuilderImage, pod.Spec.Containers[0].Image)
+			}
+		}
+		if build.dockerBuilderImagePullPolicy != "" {
+			if pod.Spec.Containers[0].ImagePullPolicy != "" {
+				if pod.Spec.Containers[0].ImagePullPolicy != build.dockerBuilderImagePullPolicy {
+					t.Errorf("expected %v but returned %v", build.dockerBuilderImagePullPolicy, pod.Spec.Containers[0].ImagePullPolicy)
+				}
 			}
 		}
 	}

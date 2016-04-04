@@ -13,6 +13,7 @@ import (
 
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/git"
+	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
 	"github.com/deis/pkg/log"
@@ -42,7 +43,25 @@ func run(cmd *exec.Cmd) error {
 	return cmd.Run()
 }
 
-func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *client.Client, fs sys.FS, env sys.Env, builderKey, rawGitSha string) error {
+func build(
+	conf *Config,
+	storageDriver storagedriver.StorageDriver,
+	kubeClient *client.Client,
+	fs sys.FS,
+	env sys.Env,
+	builderKey,
+	rawGitSha string) error {
+
+	dockerBuilderImagePullPolicy, err := k8s.PullPolicyFromString(conf.DockerBuilderImagePullPolicy)
+	if err != nil {
+		return err
+	}
+
+	slugBuilderImagePullPolicy, err := k8s.PullPolicyFromString(conf.SlugBuilderImagePullPolicy)
+	if err != nil {
+		return nil
+	}
+
 	repo := conf.Repository
 	gitSha, err := git.NewSha(rawGitSha)
 	if err != nil {
@@ -123,8 +142,9 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 			appConf.Values,
 			slugBuilderInfo.TarKey(),
 			slugName,
-			conf.DockerBuilderImage,
 			conf.StorageType,
+			conf.DockerBuilderImage,
+			dockerBuilderImagePullPolicy,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -136,8 +156,9 @@ func build(conf *Config, storageDriver storagedriver.StorageDriver, kubeClient *
 			slugBuilderInfo.TarKey(),
 			slugBuilderInfo.PushKey(),
 			buildPackURL,
-			conf.SlugBuilderImage,
 			conf.StorageType,
+			conf.SlugBuilderImage,
+			slugBuilderImagePullPolicy,
 		)
 	}
 
