@@ -31,16 +31,7 @@ strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
 
-GIT_HOME={{.GitHome}} \
-SSH_CONNECTION="$SSH_CONNECTION" \
-SSH_ORIGINAL_COMMAND="$SSH_ORIGINAL_COMMAND" \
-REPOSITORY="$RECEIVE_REPO" \
-USERNAME="$RECEIVE_USER" \
-FINGERPRINT="$RECEIVE_FINGERPRINT" \
-POD_NAMESPACE="$POD_NAMESPACE" \
-SLUG_BUILDER_IMAGE_PULL_POLICY="$SLUG_BUILDER_IMAGE_PULL_POLICY" \
-DOCKER_BUILDER_IMAGE_PULL_POLICY="$DOCKER_BUILDER_IMAGE_PULL_POLICY" \
-boot git-receive | strip_remote_prefix
+GIT_HOME={{.GitHome}} boot git-receive | strip_remote_prefix
 `
 
 var preReceiveHookTpl = template.Must(template.New("hooks").Parse(preReceiveHookTplStr))
