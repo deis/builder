@@ -226,24 +226,6 @@ func build(
 	}
 	log.Debug("Done")
 
-	log.Debug(
-		"Polling the S3 server every %s for %s for the resultant slug at %s",
-		conf.ObjectStorageTickDuration(),
-		conf.ObjectStorageWaitDuration(),
-		slugBuilderInfo.AbsoluteSlugObjectKey(),
-	)
-	// poll the s3 server to ensure the slug exists
-	if !usingDockerfile {
-		if err := storage.WaitForObject(
-			storageDriver,
-			slugBuilderInfo.AbsoluteSlugObjectKey(),
-			conf.ObjectStorageTickDuration(),
-			conf.ObjectStorageWaitDuration(),
-		); err != nil {
-			return fmt.Errorf("Timed out waiting for object in storage, aborting build (%s)", err)
-		}
-	}
-
 	procType := pkg.ProcessType{}
 	if bType == buildTypeProcfile {
 		if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey()); err != nil {
