@@ -16,12 +16,12 @@ If your change requires any additions or changes to the [end to end tests](https
 Ref deis/workflow-e2e#1234
 Ref deis/workflow-e2e#5678
 
-# Associated [Documentation](https://github.com/deis/docs-v2) PR(s)
+# Associated [Documentation](https://github.com/deis/workflow) PR(s)
 
-If your change requires any additions or changes to the [official documentation](https://github.com/deis/docs-v2), please submit them as 1 or more pull requests against that repo and refer to them here.
+If your change requires any additions or changes to the [official documentation](https://github.com/deis/workflow), please submit them as 1 or more pull requests against that repo and refer to them here.
 
-Ref deis/docs-v2#1234
-Ref deis/docs-v2#5678
+Ref deis/workflow#1234
+Ref deis/workflow#5678
 
 # Associated [Design Document](http://docs.deis.io/en/latest/contributing/design-documents)(s)
 
