@@ -171,7 +171,7 @@ func addEnvToPod(pod api.Pod, key, value string) {
 }
 
 // waitForPod waits for a pod in state running or failed
-func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Duration) error {
+func waitForPod(c *client.Client, ns, podName string, ticker, interval, timeout time.Duration) error {
 	condition := func(pod *api.Pod) (bool, error) {
 		if pod.Status.Phase == api.PodRunning {
 			return true, nil
@@ -182,7 +182,11 @@ func waitForPod(c *client.Client, ns, podName string, interval, timeout time.Dur
 		return false, nil
 	}
 
-	return waitForPodCondition(c, ns, podName, condition, interval, timeout)
+	quit := progress("...", ticker)
+	err := waitForPodCondition(c, ns, podName, condition, interval, timeout)
+	quit <- true
+	<-quit
+	return err
 }
 
 // waitForPodEnd waits for a pod in state succeeded or failed
@@ -221,4 +225,22 @@ func waitForPodCondition(c *client.Client, ns, podName string, condition func(po
 
 		return false, nil
 	})
+}
+
+func progress(msg string, interval time.Duration) chan bool {
+	tick := time.Tick(interval)
+	quit := make(chan bool)
+	go func() {
+		for {
+			select {
+			case <-quit:
+				close(quit)
+				return
+			case <-tick:
+				fmt.Println(msg)
+			default:
+			}
+		}
+	}()
+	return quit
 }

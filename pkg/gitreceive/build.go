@@ -178,7 +178,7 @@ func build(
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.SessionIdleInterval(), conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("watching events for builder pod startup (%s)", err)
 	}
 
@@ -234,11 +234,13 @@ func build(
 	}
 
 	log.Info("Build complete.")
-	log.Info("Launching app.")
-	log.Info("Launching...")
 
 	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, procType, usingDockerfile)
+	quit := progress("...", conf.SessionIdleInterval())
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
+	quit <- true
+	<-quit
+	log.Info("Launching App...")
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)
 	}
