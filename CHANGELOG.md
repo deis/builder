@@ -1,3 +1,21 @@
+### v2.0.0-beta1 -> v2.0.0-beta2
+
+#### Features
+
+ - [`f278e80`](https://github.com/deis/builder/commit/f278e80952d1b53a1edcad09667e11aca1db8ab3) progress: status to avoid losing session
+ - [`8df2568`](https://github.com/deis/builder/commit/8df2568ee73ad2773df986728f5e595e55b299cb) storage: remove polling for object in storage
+ - [`8ede6fd`](https://github.com/deis/builder/commit/8ede6fd09f7915029d1a412bbca7b28dd418c4d1) _scripts: add CHANGELOG.md and generator script
+ - [`e0d06f8`](https://github.com/deis/builder/commit/e0d06f80be09d294baccd7a312b77cc2fa2af3a6) storage: implement separate storage layer
+
+#### Fixes
+
+ - [`9d7f864`](https://github.com/deis/builder/commit/9d7f864b92aef98fffd373731f6467804a183f7f) pkg/git/git.go: fix blank image pull policy
+ - [`b2e80d4`](https://github.com/deis/builder/commit/b2e80d4bf234d2622b02085a602b93334229f972) git,gitreceive,sshd: make builder pod image pull policies configurable
+ - [`b0d8941`](https://github.com/deis/builder/commit/b0d89417dc2432c3fbf1ccd082a43527c2611d0a) cleaner: builder taking high CPU
+ - [`7df5844`](https://github.com/deis/builder/commit/7df58446337404e7050278359677a48d42b62b93) makefile: make the docker-build call the build
+ - [`29b827b`](https://github.com/deis/builder/commit/29b827ba6ef4e76f9d21e642f1fe5737f6b427e7) k8s_util.go: check pod condition error
+ - [`a1ccc09`](https://github.com/deis/builder/commit/a1ccc09fea62934c1e07998c044a2265cadba660) pkg/gitreceive/storage/object_test.go: adjust min number of calls to the statter
+
 ### 2.0.0-alpha -> v2.0.0-beta1
 
 #### Features
