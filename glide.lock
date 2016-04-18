@@ -1,5 +1,5 @@
-hash: 28588ab7ed3ab5c729ab93c672124f10b14abb064d0579a885d12dece5476d44
-updated: 2016-03-25T13:36:22.639496896-06:00
+hash: e4e94613a0041e98bda9501d42a1c620551794fd9e70759766149101a0dc701c
+updated: 2016-04-18T16:26:01.119187285-06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -52,7 +52,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/pkg
-  version: b8679a4d7fe2fe0393c66c620eff7df86c9f7982
+  version: 7f41ea6de942139d5de67f4d4cb2cccced991f6f
   subpackages:
   - time
   - log
