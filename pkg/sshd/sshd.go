@@ -3,7 +3,6 @@ package sshd
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 
 	"golang.org/x/crypto/ssh"
 
@@ -103,16 +102,4 @@ func Configure(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrup
 	}
 
 	return cfg, nil
-}
-
-// GenSSHKeys generates the default set of SSH host keys.
-func GenSSHKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	log.Debugf(c, "Generating ssh keys for sshd")
-	// Generate a new key
-	out, err := exec.Command("ssh-keygen", "-A").CombinedOutput()
-	if err != nil {
-		log.Infof(c, "ssh-keygen: %s", out)
-		return nil, err
-	}
-	return nil, nil
 }
