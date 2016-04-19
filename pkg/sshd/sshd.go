@@ -31,7 +31,7 @@ const (
 func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 	log.Debugf(c, "Parsing ssh host keys")
 	hostKeyTypes := p.Get("keytypes", []string{"rsa", "dsa", "ecdsa"}).([]string)
-	pathTpl := p.Get("path", "/etc/ssh/ssh_host_%s_key").(string)
+	pathTpl := p.Get("path", "/var/run/secrets/deis/builder/ssh/ssh-host-%s-key").(string)
 	hostKeys := make([]ssh.Signer, 0, len(hostKeyTypes))
 	for _, t := range hostKeyTypes {
 		path := fmt.Sprintf(pathTpl, t)
