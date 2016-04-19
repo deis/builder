@@ -22,7 +22,7 @@ import:
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - package: github.com/pborman/uuid
 - package: github.com/deis/pkg
-  version: b8679a4d7fe2fe0393c66c620eff7df86c9f7982
+  version: 7f41ea6de942139d5de67f4d4cb2cccced991f6f
   subpackages:
   - time
   - log
