@@ -45,17 +45,6 @@ func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Inte
 			}
 		}
 	}
-	if c.Get("enableV1", false).(bool) {
-		path := "/etc/ssh/ssh_host_key"
-		if key, err := ioutil.ReadFile(path); err != nil {
-			log.Errf(c, "Failed to read ssh_host_key")
-		} else if hk, err := ssh.ParsePrivateKey(key); err == nil {
-			log.Infof(c, "Parsed host key %s.", path)
-			hostKeys = append(hostKeys, hk)
-		} else {
-			log.Errf(c, "Failed to parse host key %s: %s", path, err)
-		}
-	}
 	return hostKeys, nil
 }
 
