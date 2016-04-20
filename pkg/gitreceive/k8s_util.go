@@ -170,10 +170,13 @@ func addEnvToPod(pod api.Pod, key, value string) {
 	}
 }
 
-// waitForPod waits for a pod in state running or failed
+// waitForPod waits for a pod in state running, succeeded or failed
 func waitForPod(c *client.Client, ns, podName string, ticker, interval, timeout time.Duration) error {
 	condition := func(pod *api.Pod) (bool, error) {
 		if pod.Status.Phase == api.PodRunning {
+			return true, nil
+		}
+		if pod.Status.Phase == api.PodSucceeded {
 			return true, nil
 		}
 		if pod.Status.Phase == api.PodFailed {
