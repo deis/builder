@@ -14,15 +14,3 @@ install:
   - make bootstrap
 script:
   - make test build docker-build
-deploy:
-  provider: script
-  script: _scripts/deploy.sh
-  on:
-    branch: master
-notifications:
-  webhooks:
-    urls:
-      - secure: "D4TNoFLjzF12r69qGt6Z5ioBF6vSm+xsh/a6LLsCDEr14Q9/xAt2VftAPMNWhcaKf94ArCZAJGRiVLcDSW9mo30sX7sZ+RrIOrd7poRijBkUiwBE22oNIEVe2q+KULXky40ZZU5mq+IXBafS08B7mJQ4K/rxY4qbO2PE/2Wb8wQgtlzcDZwAduiV+0wJwWwLNlVG9tYLwPahjOfGoy5B0mFLjPVzVwqJ2pxKQ/kAh9eYAdnfITYBUsVgCwuwUMmcib5f2S/8zFUncvzOInJ/eNAzHT/3UcVWRmrQlsc+lBbmQXs03vfesmxrT2wCe6fhEpizO5e+oiMV8yP5BxXcusHVtWMSWQMh06c51L+GkRAb7rmP1bsj838arNw1TS5BWFg3gSfqrX/ftgiheMUjmAUWPOa9dzcpc6asPFogECvx9soqu001rHMtwnDyth6ozoNJru/ufGR/3pXwORk+mlMU+MZ3dDq6btcrofMIuzw5127PbS4vLA2tBBg5ecbtzQptmACG+w/TktbAR8mDIg1O8HH/sEV74pEuZxLPkfiyp8Rno+jVcxmhhMq1klgQ4xaKfyIXQdhYLyfr6wsPfs1JCO7qe3l5+X61Kwlon+PXFDG961UJggb7oxtOPiR09HrhEEznf5M5RVvRQWa2X2Wlk6fzC3eEg2mxWczL6B0="
-    on_success: always
-    on_failure: never
-    on_start: never
