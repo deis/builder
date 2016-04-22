@@ -20,11 +20,7 @@ func routes(reg *cookoo.Registry) {
 		Help: "Boot the builder",
 		Does: []cookoo.Task{
 
-			// SSHD: Create and configure host keys.
-			cookoo.Cmd{
-				Name: "installSshHostKeys",
-				Fn:   sshd.GenSSHKeys,
-			},
+			// SSHD: Configure host keys.
 			cookoo.Cmd{
 				Name: sshd.HostKeys,
 				Fn:   sshd.ParseHostKeys,

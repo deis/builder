@@ -3,7 +3,6 @@ package sshd
 import (
 	"fmt"
 	"io/ioutil"
-	"os/exec"
 
 	"golang.org/x/crypto/ssh"
 
@@ -31,7 +30,7 @@ const (
 func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
 	log.Debugf(c, "Parsing ssh host keys")
 	hostKeyTypes := p.Get("keytypes", []string{"rsa", "dsa", "ecdsa"}).([]string)
-	pathTpl := p.Get("path", "/etc/ssh/ssh_host_%s_key").(string)
+	pathTpl := p.Get("path", "/var/run/secrets/deis/builder/ssh/ssh-host-%s-key").(string)
 	hostKeys := make([]ssh.Signer, 0, len(hostKeyTypes))
 	for _, t := range hostKeyTypes {
 		path := fmt.Sprintf(pathTpl, t)
@@ -43,17 +42,6 @@ func ParseHostKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Inte
 			} else {
 				log.Errf(c, "Failed to parse host key %s (skipping): %s", path, err)
 			}
-		}
-	}
-	if c.Get("enableV1", false).(bool) {
-		path := "/etc/ssh/ssh_host_key"
-		if key, err := ioutil.ReadFile(path); err != nil {
-			log.Errf(c, "Failed to read ssh_host_key")
-		} else if hk, err := ssh.ParsePrivateKey(key); err == nil {
-			log.Infof(c, "Parsed host key %s.", path)
-			hostKeys = append(hostKeys, hk)
-		} else {
-			log.Errf(c, "Failed to parse host key %s: %s", path, err)
 		}
 	}
 	return hostKeys, nil
@@ -114,16 +102,4 @@ func Configure(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrup
 	}
 
 	return cfg, nil
-}
-
-// GenSSHKeys generates the default set of SSH host keys.
-func GenSSHKeys(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	log.Debugf(c, "Generating ssh keys for sshd")
-	// Generate a new key
-	out, err := exec.Command("ssh-keygen", "-A").CombinedOutput()
-	if err != nil {
-		log.Infof(c, "ssh-keygen: %s", out)
-		return nil, err
-	}
-	return nil, nil
 }
