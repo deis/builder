@@ -24,12 +24,14 @@ func Run(gitHome string, nsLister k8s.NamespaceWatcher, fs sys.FS) error {
 	watcher, err := nsLister.Watch(nil, nil, "")
 	if err != nil {
 		log.Printf("unable to get watch events (%s)", err)
+		return err
 	}
+
 	for {
 		select {
 		case event, ok := <-watcher.ResultChan():
 			if !ok {
-				break
+				return nil
 			}
 			if event.Type == "DELETED" {
 				switch event.Object.(type) {
