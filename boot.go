@@ -89,8 +89,12 @@ func main() {
 				log.Printf("Starting deleted app cleaner")
 				cleanerErrCh := make(chan error)
 				go func() {
-					if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), fs); err != nil {
-						cleanerErrCh <- err
+					for {
+						if err := cleaner.Run(gitHomeDir, kubeClient.Namespaces(), fs); err != nil {
+							cleanerErrCh <- err
+							break
+						}
+						log.Print("namespace watcher channel closed.Starting the watch again")
 					}
 				}()
 
