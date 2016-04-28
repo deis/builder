@@ -1,3 +1,21 @@
+### v2.0.0-beta2 -> v2.0.0-beta3
+
+#### Features
+
+ - [`cd32029`](https://github.com/deis/builder/commit/cd3202999bc0b265332509e9f60aee6fbd7b442f) gitreceive: remove tmp build dir on success
+ - [`514d0e3`](https://github.com/deis/builder/commit/514d0e3f604de5ddb2450d0b7a5b5729325573e8) pkg/sshd: Store private keys in kubernetes secret
+
+#### Fixes
+
+ - [`1c37d86`](https://github.com/deis/builder/commit/1c37d86feae5925f430c2825c81abc5104cc1453) sshd: log incoming env request to debug level
+ - [`cd259f8`](https://github.com/deis/builder/commit/cd259f86e547996944f6312d5e0dc2fe43c19ded) slugbuilder: check for the succeded status while waiting for slugbuilder pod
+ - [`ab88b54`](https://github.com/deis/builder/commit/ab88b5412c9e7f848dc57de060f7215e8dc66e1b) bug: use the deis time which supports RFC3339 dates
+ - [`7701533`](https://github.com/deis/builder/commit/7701533b0a8cb334bdf9a18547db08d6efc62ff3) .github: rename docs-v2 to workflow
+
+#### Maintenance
+
+ - [`2a9db63`](https://github.com/deis/builder/commit/2a9db634a43427057f783a063ea122275c18f322) .travis.yml: Deep six the travis -> jenkins webhooks
+
 ### v2.0.0-beta1 -> v2.0.0-beta2
 
 #### Features
