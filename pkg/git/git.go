@@ -27,6 +27,7 @@ import (
 //
 // - .GitHome: the path to Git's home directory
 const preReceiveHookTplStr = `#!/bin/bash
+set -eo pipefail
 strip_remote_prefix() {
     stdbuf -i0 -o0 -e0 sed "s/^/"$'\e[1G'"/"
 }
