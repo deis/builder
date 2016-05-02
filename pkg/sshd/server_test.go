@@ -8,9 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/cookoo"
 	"github.com/arschles/assert"
-	"github.com/deis/builder/pkg/controller"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -29,6 +27,24 @@ func TestGitPktLine(t *testing.T) {
 	assert.Equal(t, outStr[4:], str, "remainder of string")
 }
 
+func serverConfigure() (*ssh.ServerConfig, error) {
+	cfg := &ssh.ServerConfig{
+		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			return mockAuthKey()
+		},
+	}
+	return cfg, nil
+}
+
+func clientConfig() *ssh.ClientConfig {
+	return &ssh.ClientConfig{
+		User: "username",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("password"),
+		},
+	}
+}
+
 // TestServer tests the SSH server.
 //
 // This listens on the non-standard port 2244 of localhost. This will generate
@@ -41,21 +57,20 @@ func TestReceive(t *testing.T) {
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
 
-	cfg := ssh.ServerConfig{
-		NoClientAuth: true,
-	}
+	cfg, err := serverConfigure()
+	assert.NoErr(t, err)
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	cxt := runServer(&cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
+	runServer(cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
 	// Connect to the server and issue env var set. This should return true.
-	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
+	client, err := ssh.Dial("tcp", testingServerAddr, clientConfig())
 	if err != nil {
 		t.Fatalf("Failed to connect client to local server: %s", err)
 	}
@@ -88,8 +103,6 @@ func TestReceive(t *testing.T) {
 		t.Fatalf("expected a failed run with command 'illegal command'")
 	}
 
-	closer := cxt.Get("sshd.Closer", nil).(chan interface{})
-	closer <- true
 }
 
 // TestPushInvalidArgsLength tests trying to do a push with only the command, not the repo
@@ -98,12 +111,13 @@ func TestPushInvalidArgsLength(t *testing.T) {
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
 
-	cfg := ssh.ServerConfig{NoClientAuth: true}
+	cfg, err := serverConfigure()
+	assert.NoErr(t, err)
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	runServer(&cfg, c, pushLock, testingServerAddr, 0*time.Second, t)
+	runServer(cfg, c, pushLock, testingServerAddr, 0*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -111,7 +125,7 @@ func TestPushInvalidArgsLength(t *testing.T) {
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
 	// Connect to the server and issue env var set. This should return true.
-	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
+	client, err := ssh.Dial("tcp", testingServerAddr, clientConfig())
 	assert.NoErr(t, err)
 
 	// check for invalid length of arguments
@@ -133,14 +147,13 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
 
-	cfg := ssh.ServerConfig{
-		NoClientAuth: true,
-	}
+	cfg, err := serverConfigure()
+	assert.NoErr(t, err)
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	runServer(&cfg, c, pushLock, testingServerAddr, 2*time.Second, t)
+	runServer(cfg, c, pushLock, testingServerAddr, 2*time.Second, t)
 
 	// Give server time to initialize.
 	time.Sleep(200 * time.Millisecond)
@@ -148,7 +161,7 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
 	// Connect to the server and issue env var set. This should return true.
-	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
+	client, err := ssh.Dial("tcp", testingServerAddr, clientConfig())
 	assert.NoErr(t, err)
 
 	const numPushers = 10
@@ -199,19 +212,20 @@ func TestConcurrentPushDifferentRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := ssh.ServerConfig{NoClientAuth: true}
+	cfg, err := serverConfigure()
+	assert.NoErr(t, err)
 	cfg.AddHostKey(key)
 	c := NewCircuit()
 	pushLock := NewInMemoryRepositoryLock()
-	runServer(&cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
+	runServer(cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, c.State(), ClosedState, "circuit state")
 
 	// Connect to the server and issue env var set. This should return true.
-	client, err := ssh.Dial("tcp", testingServerAddr, &ssh.ClientConfig{})
+	client, err := ssh.Dial("tcp", testingServerAddr, clientConfig())
 	assert.NoErr(t, err)
 
-	const numRepos = 20
+	const numRepos = 3
 	repoNames := make([]string, numRepos)
 	for i := 0; i < numRepos; i++ {
 		repoNames[i] = fmt.Sprintf("repo%d", i)
@@ -228,6 +242,7 @@ func TestConcurrentPushDifferentRepo(t *testing.T) {
 			assert.Equal(t, string(out), "OK", "output")
 		}(repoName)
 	}
+	wg.Wait()
 	assert.NoErr(t, waitWithTimeout(&wg, 1*time.Second))
 }
 
@@ -242,95 +257,34 @@ func runServer(
 	pushLock RepositoryLock,
 	testAddr string,
 	handlerSleepDur time.Duration,
-	t *testing.T) cookoo.Context {
-
-	reg, router, cxt := cookoo.Cookoo()
-	cxt.Put(ServerConfig, config)
-	cxt.Put(Address, testAddr)
-	cxt.Put("cookoo.Router", router)
-
-	reg.AddRoute(cookoo.Route{
-		Name: "sshPing",
-		Help: "Handles an ssh exec ping.",
-		Does: cookoo.Tasks{
-			cookoo.Cmd{
-				Name: "ping",
-				Fn:   Ping,
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-				},
-			},
-		},
-	})
-
-	reg.AddRoute(cookoo.Route{
-		Name: "pubkeyAuth",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "authN",
-				Fn:   mockAuthKey,
-				Using: []cookoo.Param{
-					{Name: "metadata", From: "cxt:metadata"},
-					{Name: "key", From: "cxt:key"},
-					{Name: "repoName", From: "cxt:repository"},
-				},
-			},
-		},
-	})
-
-	reg.AddRoute(cookoo.Route{
-		Name: "sshGitReceive",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "receive",
-				Fn:   mockDummyReceive(handlerSleepDur),
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-					{Name: "operation", From: "cxt:operation"},
-					{Name: "repoName", From: "cxt:repository"},
-					{Name: "permissions", From: "cxt:authN"},
-					{Name: "userinfo", From: "cxt:userinfo"},
-				},
-			},
-		},
-	})
+	t *testing.T) {
 
 	go func() {
-		if err := Serve(reg, router, c, gitHome, pushLock, cxt); err != nil {
+		if err := Serve(config, c, gitHome, pushLock, testAddr, "mock"); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()
-
-	return cxt
 }
 
-func mockAuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	c.Put("userinfo", &controller.UserInfo{
-		Username:    "deis",
-		Key:         testingClientPubKey,
-		Fingerprint: "",
-		Apps:        []string{"demo"},
-	})
-
+func mockAuthKey() (*ssh.Permissions, error) {
 	perm := &ssh.Permissions{
 		Extensions: map[string]string{
-			"user": "deis",
+			"user":        "deis",
+			"fingerprint": "",
+			"apps":        "demo,repo1,repo2,repo3,repo4,repo5,repo6,repo7,repo8,repo0,repo9",
 		},
 	}
 	return perm, nil
 }
 
-func mockDummyReceive(sleepDur time.Duration) func(cookoo.Context, *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	return func(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-		channel := p.Get("channel", nil).(ssh.Channel)
-		req := p.Get("request", nil).(*ssh.Request)
+func mockDummyReceive(sleepDur time.Duration) func(channel ssh.Channel, req *ssh.Request) error {
+	return func(channel ssh.Channel, req *ssh.Request) error {
+
 		time.Sleep(sleepDur)
 		channel.Write([]byte("OK"))
 		sendExitStatus(0, channel)
 		req.Reply(true, nil)
-		return nil, nil
+		return nil
 	}
 }
 

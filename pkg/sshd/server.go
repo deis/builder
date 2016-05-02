@@ -8,15 +8,17 @@
 package sshd
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/Masterminds/cookoo"
-	"github.com/Masterminds/cookoo/log"
-	"github.com/Masterminds/cookoo/safely"
+	"github.com/deis/builder/pkg/controller"
+	"github.com/deis/builder/pkg/git"
+	"github.com/deis/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -28,42 +30,80 @@ const (
 	// ServerConfig is the context key for ServerConfig object.
 	ServerConfig string = "ssh.ServerConfig"
 
-	multiplePush string = "Another git push is ongoing"
+	multiplePush       string = "Another git push is ongoing"
+	builderKeyLocation        = "/var/run/secrets/api/auth/builder-key"
 )
 
+var errBuildAppPerm = errors.New("user has no permission to build the app")
+var errDirPerm = errors.New("Cannot change directory in file name.")
+var errDirCreatePerm = errors.New("Empty repo name.")
+
+// AuthKey authenticates based on a public key.
+func AuthKey(key ssh.PublicKey) (*ssh.Permissions, error) {
+	log.Info("Starting ssh authentication")
+	userInfo, err := controller.UserInfoFromKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	userInfo.Key = string(ssh.MarshalAuthorizedKey(key))
+	apps := strings.Join(userInfo.Apps, ", ")
+	log.Debug("Key accepted for user %s.", userInfo.Username)
+	perm := &ssh.Permissions{
+		Extensions: map[string]string{
+			"user":        userInfo.Username,
+			"fingerprint": userInfo.Fingerprint,
+			"apps":        apps,
+		},
+	}
+	return perm, nil
+}
+
+// Configure creates a new SSH configuration object.
+//
+// Config sets a PublicKeyCallback handler that forwards public key auth
+// requests to the route named "pubkeyAuth".
+//
+// This assumes certain details about our environment, like the location of the
+// host keys. It also provides only key-based authentication.
+// ConfigureServerSshConfig
+//
+// Returns:
+//  An *ssh.ServerConfig
+func Configure() (*ssh.ServerConfig, error) {
+	cfg := &ssh.ServerConfig{
+		PublicKeyCallback: func(m ssh.ConnMetadata, k ssh.PublicKey) (*ssh.Permissions, error) {
+			return AuthKey(k)
+		},
+	}
+	hostKeyTypes := []string{"rsa", "dsa", "ecdsa"}
+	pathTpl := "/var/run/secrets/deis/builder/ssh/ssh-host-%s-key"
+	for _, t := range hostKeyTypes {
+		path := fmt.Sprintf(pathTpl, t)
+
+		key, err := ioutil.ReadFile(path)
+		if err != nil {
+			log.Debug("Failed to read key %s (skipping): %s", path, err)
+			return nil, err
+		}
+		hk, err := ssh.ParsePrivateKey(key)
+		if err != nil {
+			log.Debug("Failed to parse host key %s (skipping): %s", path, err)
+			return nil, err
+		}
+		log.Debug("Parsed host key %s.", path)
+		cfg.AddHostKey(hk)
+	}
+	return cfg, nil
+}
+
 // Serve starts a native SSH server.
-//
-// The general design of the server is that it acts as a main server for
-// a Cookoo app. It assumes that certain things have been configured for it,
-// like an ssh.ServerConfig. Once it runs, it will block until the main
-// process terminates. If you want to stop it prior to that, you can grab
-// the closer ("sshd.Closer") out of the context and send it a signal.
-//
-// Currently, the service is not generic. It only runs git hooks.
-//
-// This expects the following Context variables.
-// 	- ssh.Hostkeys ([]ssh.Signer): Host key, as an unparsed byte slice.
-// 	- ssh.Address (string): Address/port
-// 	- ssh.ServerConfig (*ssh.ServerConfig): The server config to use.
-//
-// This puts the following variables into the context:
-// 	- ssh.Closer (chan interface{}): Send a message to this to shutdown the server.
 func Serve(
-	reg *cookoo.Registry,
-	router *cookoo.Router,
+	cfg *ssh.ServerConfig,
 	serverCircuit *Circuit,
 	gitHomeDir string,
 	concurrentPushLock RepositoryLock,
-	c cookoo.Context) cookoo.Interrupt {
-
-	hostkeys := c.Get(HostKeys, []ssh.Signer{}).([]ssh.Signer)
-	addr := c.Get(Address, "0.0.0.0:2223").(string)
-	cfg := c.Get(ServerConfig, &ssh.ServerConfig{}).(*ssh.ServerConfig)
-
-	for _, hk := range hostkeys {
-		cfg.AddHostKey(hk)
-		log.Infof(c, "Added hostkey.")
-	}
+	addr, receivetype string) error {
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -71,15 +111,13 @@ func Serve(
 	}
 
 	srv := &server{
-		c:        c,
-		gitHome:  gitHomeDir,
-		pushLock: concurrentPushLock,
+		gitHome:     gitHomeDir,
+		pushLock:    concurrentPushLock,
+		receivetype: receivetype,
 	}
 
 	closer := make(chan interface{}, 1)
-	c.Put("sshd.Closer", closer)
-
-	log.Infof(c, "Listening on %s", addr)
+	log.Info("Listening on %s", addr)
 	serverCircuit.Close()
 	srv.listen(listener, cfg, closer)
 
@@ -88,35 +126,33 @@ func Serve(
 
 // server is the struct that encapsulates the SSH server.
 type server struct {
-	c        cookoo.Context
-	gitHome  string
-	pushLock RepositoryLock
+	gitHome     string
+	pushLock    RepositoryLock
+	receivetype string
 }
 
 // listen handles accepting and managing connections. However, since closer
 // is len(1), it will not block the sender.
 func (s *server) listen(l net.Listener, conf *ssh.ServerConfig, closer chan interface{}) error {
-	cxt := s.c
-	log.Info(cxt, "Accepting new connections.")
+
+	log.Info("Accepting new connections.")
 	defer l.Close()
 
 	// FIXME: Since Accept blocks, closer may not be checked often enough.
 	for {
-		log.Info(cxt, "Checking closer.")
+		log.Info("Checking closer.")
 		if len(closer) > 0 {
 			<-closer
-			log.Info(cxt, "Shutting down SSHD listener.")
+			log.Info("Shutting down SSHD listener.")
 			return nil
 		}
 		conn, err := l.Accept()
 		if err != nil {
-			log.Warnf(cxt, "Error during Accept: %s", err)
+			log.Err("Error during Accept: %s", err)
 			// We shouldn't kill the listener because of an error.
 			return err
 		}
-		safely.GoDo(cxt, func() {
-			s.handleConn(conn, conf)
-		})
+		go s.handleConn(conn, conf)
 	}
 }
 
@@ -125,22 +161,22 @@ func (s *server) listen(l net.Listener, conf *ssh.ServerConfig, closer chan inte
 // It manages the connection, but passes channels on to `answer()`.
 func (s *server) handleConn(conn net.Conn, conf *ssh.ServerConfig) {
 	defer conn.Close()
-	log.Info(s.c, "Accepted connection.")
-	_, chans, reqs, err := ssh.NewServerConn(conn, conf)
+	log.Info("Accepted connection.")
+	sshConn, chans, reqs, err := ssh.NewServerConn(conn, conf)
 	if err != nil {
 		// Handshake failure.
-		log.Debugf(s.c, "Failed handshake: %s", err)
+		log.Err("Failed handshake: %s", err)
 		return
 	}
 
 	// Discard global requests. We're only concerned with channels.
-	safely.GoDo(s.c, func() { ssh.DiscardRequests(reqs) })
+	go ssh.DiscardRequests(reqs)
 
 	condata := sshConnection(conn)
 
 	// Now we handle the channels.
 	for incoming := range chans {
-		log.Infof(s.c, "Channel type: %s\n", incoming.ChannelType())
+		log.Info("Channel type: %s\n", incoming.ChannelType())
 		if incoming.ChannelType() != "session" {
 			incoming.Reject(ssh.UnknownChannelType, "Unknown channel type")
 		}
@@ -150,7 +186,7 @@ func (s *server) handleConn(conn net.Conn, conf *ssh.ServerConfig) {
 			// Should close request and move on.
 			panic(err)
 		}
-		safely.GoDo(s.c, func() { s.answer(channel, req, condata) })
+		go s.answer(channel, req, condata, sshConn)
 	}
 	conn.Close()
 }
@@ -181,7 +217,7 @@ func sendExitStatus(status uint32, channel ssh.Channel) error {
 // correct behavior for a failed exec is.
 //
 // Support for setting environment variables via `env` has been disabled.
-func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshConn string) error {
+func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, condata string, sshconn *ssh.ServerConn) error {
 	defer channel.Close()
 
 	// Answer all the requests on this connection.
@@ -194,43 +230,35 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 		case "env":
 			o := &EnvVar{}
 			ssh.Unmarshal(req.Payload, o)
-			log.Debugf(s.c, "Key='%s', Value='%s'\n", o.Name, o.Value)
+			log.Info("Key='%s', Value='%s'\n", o.Name, o.Value)
 			req.Reply(true, nil)
 		case "exec":
 			clean := cleanExec(req.Payload)
 			parts := strings.SplitN(clean, " ", 2)
-
-			router := s.c.Get("cookoo.Router", nil).(*cookoo.Router)
-
-			// TODO: Should we unset the context value 'cookoo.Router'?
-			// We need a shallow copy of the context to avoid race conditions.
-			cxt := s.c.Copy()
-			cxt.Put("SSH_CONNECTION", sshConn)
-
-			// Only allow commands that we know about.
 			switch parts[0] {
 			case "ping":
-				cxt.Put("channel", channel)
-				cxt.Put("request", req)
-				sshPing := cxt.Get("route.sshd.sshPing", "sshPing").(string)
-				err := router.HandleRequest(sshPing, cxt, true)
+				err := Ping(channel, req)
 				if err != nil {
-					log.Warnf(s.c, "Error pinging: %s", err)
+					log.Info("Error pinging: %s", err)
 				}
 				return err
 			case "git-receive-pack", "git-upload-pack":
 				if len(parts) < 2 {
-					log.Warn(s.c, "Expected two-part command.\n")
+					log.Info("Expected two-part command.")
 					req.Reply(ok, nil)
 					break
 				}
-
-				repoName := parts[1]
-				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
-					log.Errf(s.c, multiplePush)
+				repoName, err := cleanRepoName(parts[1])
+				if err != nil {
+					log.Err("Illegal repo name: %s.", err)
+					channel.Stderr().Write([]byte("No repo given"))
+					return err
+				}
+				if err = s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
+					log.Info(multiplePush)
 					// The error must be in git format
 					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
-						log.Errf(s.c, "Failed to write to channel: %s", err)
+						log.Err("Failed to write to channel: %s", err)
 					}
 					sendExitStatus(1, channel)
 					req.Reply(false, nil)
@@ -238,41 +266,49 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				}
 
 				req.Reply(true, nil) // We processed. Yay.
-
-				cxt.Put("channel", channel)
-				cxt.Put("request", req)
-				cxt.Put("operation", parts[0])
-				cxt.Put("repository", parts[1])
-				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
-				err := router.HandleRequest(sshGitReceive, cxt, true)
-				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
-					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
-					// TODO: this is an important error case that needs to be covered
-					// Probably the best solution is to change the lock into a lease so that even on unlock
-					// failures, RepositoryLock will eventually yield
+				if !strings.Contains(sshconn.Permissions.Extensions["apps"], repoName) {
+					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
+						log.Err("unable to unlock repository lock for %s (%s)", repoName, err)
+						// TODO: this is an important error case that needs to be covered
+						// Probably the best solution is to change the lock into a lease so that even on unlock
+						// failures, RepositoryLock will eventually yield
+					}
+					return errBuildAppPerm
 				}
+				repo := repoName + ".git"
+				err = git.Receive(repo, parts[0], s.gitHome, channel, sshconn.Permissions.Extensions["fingerprint"], sshconn.Permissions.Extensions["user"], condata, s.receivetype)
+				if err != nil {
+					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
+						log.Err("unable to unlock repository lock for %s (%s)", repoName, err)
+						// TODO: this is an important error case that needs to be covered
+						// Probably the best solution is to change the lock into a lease so that even on unlock
+						// failures, RepositoryLock will eventually yield
+					}
+					return err
+				}
+
 				var xs uint32
 				if err != nil {
-					log.Errf(s.c, "Failed git receive: %v", err)
+					log.Err("Failed git receive: %v", err)
 					xs = 1
 				}
 				sendExitStatus(xs, channel)
 
 				return nil
 			default:
-				log.Warnf(s.c, "Illegal command is '%s'\n", clean)
+				log.Info("Illegal command is '%s'\n", clean)
 				req.Reply(false, nil)
 				return nil
 			}
 
 			if err := sendExitStatus(0, channel); err != nil {
-				log.Errf(s.c, "Failed to write exit status: %s", err)
+				log.Err("Failed to write exit status: %s", err)
 			}
 			return nil
 		default:
 			// We simply ignore all of the other cases and leave the
 			// channel open to take additional requests.
-			log.Infof(s.c, "Received request of type %s\n", req.Type)
+			log.Info("Received request of type %s\n", req.Type)
 			req.Reply(false, nil)
 		}
 	}
@@ -314,16 +350,26 @@ func cleanExec(pay []byte) string {
 // 	- channel (ssh.Channel): The channel to respond on.
 // 	- request (*ssh.Request): The request.
 //
-func Ping(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	channel := p.Get("channel", nil).(ssh.Channel)
-	req := p.Get("request", nil).(*ssh.Request)
-	log.Info(c, "PING\n")
+func Ping(channel ssh.Channel, req *ssh.Request) error {
+	log.Info("PING")
 	if _, err := channel.Write([]byte("pong")); err != nil {
-		log.Errf(c, "Failed to write to channel: %s", err)
+		log.Err("Failed to write to channel: %s", err)
 	}
 	sendExitStatus(0, channel)
 	req.Reply(true, nil)
-	return nil, nil
+	return nil
+}
+
+// cleanRepoName cleans a repository name for a git-sh operation.
+func cleanRepoName(name string) (string, error) {
+	if len(name) == 0 {
+		return name, errDirCreatePerm
+	}
+	if strings.Contains(name, "..") {
+		return "", errDirPerm
+	}
+	name = strings.Replace(name, "'", "", -1)
+	return strings.TrimPrefix(strings.TrimSuffix(name, ".git"), "/"), nil
 }
 
 // gitPktLine writes a line following the pkt-line git protocol. See https://github.com/git/git/blob/master/Documentation/technical/protocol-common.txt for the protocol and https://github.com/git/git/blob/master/Documentation/technical/pack-protocol.txt for its usage.
