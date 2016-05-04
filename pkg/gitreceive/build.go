@@ -258,10 +258,7 @@ func build(
 	log.Info("Use 'deis open' to view this application in your browser\n")
 	log.Info("To learn more, use 'deis help' or visit http://deis.io\n")
 
-	gcCmd := repoCmd(repoDir, "git", "gc")
-	if err := run(gcCmd); err != nil {
-		return fmt.Errorf("cleaning up the repository with %s (%s)", strings.Join(gcCmd.Args, " "), err)
-	}
+	run(repoCmd(repoDir, "git", "gc"))
 
 	return nil
 }
