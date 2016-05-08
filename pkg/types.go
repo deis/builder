@@ -31,6 +31,11 @@ type BuildHookResponse struct {
 	Release map[string]int `json:"release"`
 }
 
+// ControllerErrorResponse represents a controller's error response object.
+type ControllerErrorResponse struct {
+	ErrorMsg string `json:"detail"`
+}
+
 // Config represents a Deis application's configuration.
 type Config struct {
 	Owner   string                 `json:"owner"`

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -17,18 +18,16 @@ var (
 	potentialExploit = regexp.MustCompile(`\(\)\s+\{[^\}]+\};\s+(.*)`)
 )
 
-type unexpectedControllerStatusCode struct {
-	endpoint string
-	expected int
-	actual   int
+type unexpectedControllerError struct {
+	errorMsg string
 }
 
-func newUnexpectedControllerStatusCode(endpoint string, expectedCode, actualCode int) unexpectedControllerStatusCode {
-	return unexpectedControllerStatusCode{endpoint: endpoint, expected: expectedCode, actual: actualCode}
+func newUnexpectedControllerError(errorMsg string) unexpectedControllerError {
+	return unexpectedControllerError{errorMsg: errorMsg}
 }
 
-func (u unexpectedControllerStatusCode) Error() string {
-	return fmt.Sprintf("Deis controller endpoint %s: expected status code %d, got %d", u.endpoint, u.expected, u.actual)
+func (u unexpectedControllerError) Error() string {
+	return fmt.Sprintf("Unexpected error occurred: %s", u.errorMsg)
 }
 
 func controllerURLStr(conf *Config, additionalPath ...string) string {
@@ -67,9 +66,20 @@ func getAppConfig(conf *Config, builderKey, userName, appName string) (*pkg.Conf
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		return nil, newUnexpectedControllerStatusCode(url, 200, res.StatusCode)
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		errMsg := new(pkg.ControllerErrorResponse)
+		if err := json.NewDecoder(res.Body).Decode(errMsg); err != nil {
+			//If an error occurs decoding the json print the whole response body
+			respBody, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return nil, err
+			}
+			return nil, newUnexpectedControllerError(string(respBody))
+		}
+
+		return nil, newUnexpectedControllerError(errMsg.ErrorMsg)
 	}
+
 	ret := &pkg.Config{}
 	if err := json.NewDecoder(res.Body).Decode(ret); err != nil {
 		return nil, err
@@ -104,8 +114,18 @@ func publishRelease(conf *Config, builderKey string, buildHook *pkg.BuildHook) (
 
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		return nil, newUnexpectedControllerStatusCode(url, 200, res.StatusCode)
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		errMsg := new(pkg.ControllerErrorResponse)
+		if err := json.NewDecoder(res.Body).Decode(errMsg); err != nil {
+			//If an error occurs decoding the json print the whole response body
+			respBody, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return nil, err
+			}
+			return nil, newUnexpectedControllerError(string(respBody))
+		}
+
+		return nil, newUnexpectedControllerError(errMsg.ErrorMsg)
 	}
 
 	ret := new(pkg.BuildHookResponse)
@@ -144,9 +164,21 @@ func receive(conf *Config, builderKey, gitSha string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 201 {
-		return newUnexpectedControllerStatusCode(urlStr, 201, resp.StatusCode)
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		errMsg := new(pkg.ControllerErrorResponse)
+		if err := json.NewDecoder(resp.Body).Decode(errMsg); err != nil {
+			//If an error occurs decoding the json print the whole response body
+			respBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			return newUnexpectedControllerError(string(respBody))
+		}
+
+		return newUnexpectedControllerError(errMsg.ErrorMsg)
 	}
+
 	return nil
 }
 
