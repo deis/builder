@@ -241,7 +241,6 @@ func progress(msg string, interval time.Duration) chan bool {
 				return
 			case <-tick:
 				fmt.Println(msg)
-			default:
 			}
 		}
 	}()
