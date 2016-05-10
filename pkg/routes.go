@@ -50,23 +50,6 @@ func routes(reg *cookoo.Registry) {
 		},
 	})
 
-	// This provides a very basic SSH ping.
-	// Called by the sshd.Server
-	reg.AddRoute(cookoo.Route{
-		Name: "sshPing",
-		Help: "Handles an ssh exec ping.",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "ping",
-				Fn:   sshd.Ping,
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-				},
-			},
-		},
-	})
-
 	reg.AddRoute(cookoo.Route{
 		Name: "pubkeyAuth",
 		Does: []cookoo.Task{

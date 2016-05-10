@@ -53,7 +53,6 @@ func RunBuilder(sshHostIP string, sshHostPort int, gitHomeDir string, sshServerC
 	// isn't necessary for Cookoo, it makes it easy for us to mock these
 	// routes in tests. c.f. sshd/server.go
 	cxt.Put("route.sshd.pubkeyAuth", "pubkeyAuth")
-	cxt.Put("route.sshd.sshPing", "sshPing")
 	cxt.Put("route.sshd.sshGitReceive", "sshGitReceive")
 
 	// Start the SSH service.
