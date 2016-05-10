@@ -279,26 +279,9 @@ func runServer(
 		},
 	})
 
-	reg.AddRoute(cookoo.Route{
-		Name: "sshGitReceive",
-		Does: []cookoo.Task{
-			cookoo.Cmd{
-				Name: "receive",
-				Fn:   mockDummyReceive(handlerSleepDur),
-				Using: []cookoo.Param{
-					{Name: "request", From: "cxt:request"},
-					{Name: "channel", From: "cxt:channel"},
-					{Name: "operation", From: "cxt:operation"},
-					{Name: "repoName", From: "cxt:repository"},
-					{Name: "permissions", From: "cxt:authN"},
-					{Name: "userinfo", From: "cxt:userinfo"},
-				},
-			},
-		},
-	})
-
 	go func() {
-		if err := Serve(reg, router, c, gitHome, pushLock, cxt); err != nil {
+		gitRecvFunc := mockDummyReceive(handlerSleepDur)
+		if err := Serve(reg, router, c, gitHome, gitRecvFunc, pushLock, cxt); err != nil {
 			t.Fatalf("Failed serving with %s", err)
 		}
 	}()
@@ -322,16 +305,13 @@ func mockAuthKey(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interr
 	return perm, nil
 }
 
-func mockDummyReceive(sleepDur time.Duration) func(cookoo.Context, *cookoo.Params) (interface{}, cookoo.Interrupt) {
-	return func(c cookoo.Context, p *cookoo.Params) (interface{}, cookoo.Interrupt) {
-		channel := p.Get("channel", nil).(ssh.Channel)
-		req := p.Get("request", nil).(*ssh.Request)
+func mockDummyReceive(sleepDur time.Duration) GitReceiveFunc {
+	return GitReceiveFunc(func(a, b, c, d string, uinfo *controller.UserInfo, channel ssh.Channel) error {
 		time.Sleep(sleepDur)
 		channel.Write([]byte("OK"))
 		sendExitStatus(0, channel)
-		req.Reply(true, nil)
-		return nil, nil
-	}
+		return nil
+	})
 }
 
 func gitPktLineStr(str string) (string, error) {

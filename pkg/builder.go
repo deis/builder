@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/cookoo"
 	clog "github.com/Masterminds/cookoo/log"
+	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/sshd"
 )
 
@@ -59,7 +60,7 @@ func RunBuilder(sshHostIP string, sshHostPort int, gitHomeDir string, sshServerC
 	// Start the SSH service.
 	// TODO: We could refactor Serve to be a command, and then run this as
 	// a route.
-	if err := sshd.Serve(reg, router, sshServerCircuit, gitHomeDir, pushLock, cxt); err != nil {
+	if err := sshd.Serve(reg, router, sshServerCircuit, gitHomeDir, git.Receive, pushLock, cxt); err != nil {
 		clog.Errf(cxt, "SSH server failed: %s", err)
 		return StatusLocalError
 	}

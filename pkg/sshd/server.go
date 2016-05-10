@@ -17,6 +17,7 @@ import (
 	"github.com/Masterminds/cookoo"
 	"github.com/Masterminds/cookoo/log"
 	"github.com/Masterminds/cookoo/safely"
+	"github.com/deis/builder/pkg/controller"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -30,6 +31,9 @@ const (
 
 	multiplePush string = "Another git push is ongoing"
 )
+
+// GitReceiveFunc is the type of the (github.com/deis/builder/pkg/gitreceive).Recieve func. This type is passed to Serve so that unit tests can mock it
+type GitReceiveFunc func(string, string, string, string, *controller.UserInfo, ssh.Channel) error
 
 // Serve starts a native SSH server.
 //
@@ -53,6 +57,7 @@ func Serve(
 	router *cookoo.Router,
 	serverCircuit *Circuit,
 	gitHomeDir string,
+	gitRecv GitReceiveFunc,
 	concurrentPushLock RepositoryLock,
 	c cookoo.Context) cookoo.Interrupt {
 
@@ -71,6 +76,7 @@ func Serve(
 	}
 
 	srv := &server{
+		gitRecv:  gitRecv,
 		c:        c,
 		gitHome:  gitHomeDir,
 		pushLock: concurrentPushLock,
@@ -88,6 +94,7 @@ func Serve(
 
 // server is the struct that encapsulates the SSH server.
 type server struct {
+	gitRecv  GitReceiveFunc
 	c        cookoo.Context
 	gitHome  string
 	pushLock RepositoryLock
@@ -225,6 +232,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 					break
 				}
 
+				operation := parts[0]
 				repoName := parts[1]
 				if err := s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, multiplePush)
@@ -243,8 +251,23 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, sshCo
 				cxt.Put("request", req)
 				cxt.Put("operation", parts[0])
 				cxt.Put("repository", parts[1])
-				sshGitReceive := cxt.Get("route.sshd.sshGitReceive", "sshGitReceive").(string)
-				err := router.HandleRequest(sshGitReceive, cxt, true)
+				authN := cxt.Get("route.sshd.pubkeyAuth", "pubkeyAuth").(string)
+				if err := router.HandleRequest(authN, cxt, true); err != nil {
+					str := fmt.Sprintf("Unable to authenticate the user (%s)", err)
+					log.Errf(s.c, str)
+					req.Reply(false, nil)
+					sendExitStatus(1, channel)
+					return err
+				}
+				userInfo, ok := cxt.Get("userinfo", nil).(*controller.UserInfo)
+				if !ok {
+					str := fmt.Sprintf("unable to find the userinfo needed to run the git receive")
+					log.Errf(s.c, str)
+					req.Reply(false, nil)
+					sendExitStatus(1, channel)
+					return fmt.Errorf(str)
+				}
+				err := s.gitRecv(repoName, operation, s.gitHome, sshConn, userInfo, channel)
 				if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
 					log.Errf(s.c, "unable to unlock repository lock for %s (%s)", repoName, err)
 					// TODO: this is an important error case that needs to be covered
