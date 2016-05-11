@@ -6,14 +6,13 @@ import (
 	"time"
 
 	"github.com/deis/builder/pkg/sshd"
-	"k8s.io/kubernetes/pkg/api"
 )
 
 const (
 	waitTimeout = 2 * time.Second
 )
 
-func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
+func healthZHandler(bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		stopCh := make(chan struct{})
 
@@ -28,11 +27,6 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 		go listBuckets(bLister, listBucketsCh, listBucketsErrCh, stopCh)
 		numChecks++
 
-		namespaceListerCh := make(chan *api.NamespaceList)
-		namespaceListerErrCh := make(chan error)
-		go listNamespaces(nsLister, namespaceListerCh, namespaceListerErrCh, stopCh)
-		numChecks++
-
 		timeoutCh := time.After(waitTimeout)
 		defer close(stopCh)
 		for i := 0; i < numChecks; i++ {
@@ -43,18 +37,14 @@ func healthZHandler(nsLister NamespaceLister, bLister BucketLister, serverCircui
 				log.Printf("Healthcheck error getting server state (%s)", err)
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
-			// listing S3 buckets
+
+			// listing buckets
 			case <-listBucketsCh:
 			case err := <-listBucketsErrCh:
 				log.Printf("Healthcheck error listing buckets (%s)", err)
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
-			// listing k8s namespaces
-			case <-namespaceListerCh:
-			case err := <-namespaceListerErrCh:
-				log.Printf("Healthcheck error listing namespaces (%s)", err)
-				w.WriteHeader(http.StatusServiceUnavailable)
-				return
+
 			// timeout for everything all of the above
 			case <-timeoutCh:
 				log.Printf("Healthcheck endpoint timed out after %s", waitTimeout)

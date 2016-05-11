@@ -11,7 +11,8 @@ import (
 // with the indicative error.
 func Start(port int, nsLister NamespaceLister, bLister BucketLister, sshServerCircuit *sshd.Circuit) error {
 	mux := http.NewServeMux()
-	mux.Handle("/healthz", healthZHandler(nsLister, bLister, sshServerCircuit))
+	mux.Handle("/healthz", healthZHandler(bLister, sshServerCircuit))
+	mux.Handle("/readiness", readinessHandler(nsLister))
 
 	hostStr := fmt.Sprintf(":%d", port)
 	return http.ListenAndServe(hostStr, mux)

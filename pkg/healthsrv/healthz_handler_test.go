@@ -16,11 +16,10 @@ var (
 )
 
 func TestHealthZCircuitOpen(t *testing.T) {
-	nsLister := emptyNamespaceLister{}
 	bLister := emptyBucketLister{}
 	c := sshd.NewCircuit()
 
-	h := healthZHandler(nsLister, bLister, c)
+	h := healthZHandler(bLister, c)
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/healthz", bytes.NewBuffer(nil))
 	assert.NoErr(t, err)
@@ -30,11 +29,11 @@ func TestHealthZCircuitOpen(t *testing.T) {
 }
 
 func TestHealthZBucketListErr(t *testing.T) {
-	nsLister := emptyNamespaceLister{}
 	bLister := errBucketLister{err: errTest}
 	c := sshd.NewCircuit()
 	c.Close()
-	h := healthZHandler(nsLister, bLister, c)
+
+	h := healthZHandler(bLister, c)
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/healthz", bytes.NewBuffer(nil))
@@ -44,15 +43,12 @@ func TestHealthZBucketListErr(t *testing.T) {
 	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }
 
-func TestHealthZNamespaceListErr(t *testing.T) {
+func TestReadinessNamespaceListErr(t *testing.T) {
 	nsLister := errNamespaceLister{err: errTest}
-	bLister := emptyBucketLister{}
-	c := sshd.NewCircuit()
-	c.Close()
 
-	h := healthZHandler(nsLister, bLister, c)
+	h := readinessHandler(nsLister)
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/healthz", bytes.NewBuffer(nil))
+	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
@@ -60,14 +56,25 @@ func TestHealthZNamespaceListErr(t *testing.T) {
 }
 
 func TestHealthZSuccess(t *testing.T) {
-	nsLister := emptyNamespaceLister{}
 	bLister := emptyBucketLister{}
 	c := sshd.NewCircuit()
 	c.Close()
 
-	h := healthZHandler(nsLister, bLister, c)
+	h := healthZHandler(bLister, c)
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/healthz", bytes.NewBuffer(nil))
+	assert.NoErr(t, err)
+	h.ServeHTTP(w, r)
+	assert.Equal(t, w.Code, http.StatusOK, "response code")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
+}
+
+func TestReadinessSuccess(t *testing.T) {
+	nsLister := emptyNamespaceLister{}
+
+	h := readinessHandler(nsLister)
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusOK, "response code")
