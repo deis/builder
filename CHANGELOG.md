@@ -1,3 +1,20 @@
+### v2.0.0-beta3 -> v2.0.0-beta4
+
+#### Features
+
+ - [`d5bcd49`](https://github.com/deis/builder/commit/d5bcd49cd9c525067eb6f19cb0eb3e805ec9d680) controller: the error message from controller instead of response code
+
+#### Fixes
+
+ - [`de48920`](https://github.com/deis/builder/commit/de48920731b7d61a78a96fb1807f5e5a6caeef1b) gitreceive: ignore error if `git gc` fails
+ - [`1743208`](https://github.com/deis/builder/commit/1743208e551f5deaef3bbfc82949874dc6f63cc8) cleaner: remove the usage of watch api
+ - [`40d0e0c`](https://github.com/deis/builder/commit/40d0e0c8033de6fc8667a08a66e8d92848ba648e) git-push: the errors during git push
+
+#### Documentation
+
+ - [`adfa401`](https://github.com/deis/builder/commit/adfa4018232adf7f1b47849467a5c6ab09cf615a) badge: added code-beat badge
+ - [`123110b`](https://github.com/deis/builder/commit/123110b802f8c244b87f3212f56ab5034ebdb82d) CHANGELOG.md: update for v2.0.0-beta3
+
 ### v2.0.0-beta2 -> v2.0.0-beta3
 
 #### Features
