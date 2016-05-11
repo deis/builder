@@ -6,12 +6,9 @@ package pkg
 
 import (
 	"fmt"
-	"log"
-	"os"
 
-	"github.com/Masterminds/cookoo"
-	clog "github.com/Masterminds/cookoo/log"
 	"github.com/deis/builder/pkg/sshd"
+	"github.com/deis/pkg/log"
 )
 
 // Return codes that will be sent to the shell.
@@ -29,38 +26,15 @@ const (
 //
 // Run returns on of the Status* status code constants.
 func RunBuilder(sshHostIP string, sshHostPort int, gitHomeDir string, sshServerCircuit *sshd.Circuit, pushLock sshd.RepositoryLock) int {
-	reg, router, ocxt := cookoo.Cookoo()
-	log.SetFlags(0) // Time is captured elsewhere.
-
-	// We layer the context to add better logging and also synchronize
-	// access so that goroutines don't get into race conditions.
-	cxt := cookoo.SyncContext(ocxt)
-	cxt.Put("cookoo.Router", router)
-	cxt.AddLogger("stdout", os.Stdout)
-
-	// Build the routes. See routes.go.
-	routes(reg)
-
-	// Bootstrap the background services. If this fails, we stop.
-	if err := router.HandleRequest("boot", cxt, false); err != nil {
-		clog.Errf(cxt, "Fatal errror on boot: %s", err)
+	address := fmt.Sprintf("%s:%d", sshHostIP, sshHostPort)
+	cfg, err := sshd.Configure()
+	if err != nil {
+		log.Err("SSH server configuration failed: %s", err)
 		return StatusLocalError
 	}
-
-	cxt.Put(sshd.Address, fmt.Sprintf("%s:%d", sshHostIP, sshHostPort))
-
-	// Supply route names for handling various internal routing. While this
-	// isn't necessary for Cookoo, it makes it easy for us to mock these
-	// routes in tests. c.f. sshd/server.go
-	cxt.Put("route.sshd.pubkeyAuth", "pubkeyAuth")
-	cxt.Put("route.sshd.sshPing", "sshPing")
-	cxt.Put("route.sshd.sshGitReceive", "sshGitReceive")
-
-	// Start the SSH service.
-	// TODO: We could refactor Serve to be a command, and then run this as
-	// a route.
-	if err := sshd.Serve(reg, router, sshServerCircuit, gitHomeDir, pushLock, cxt); err != nil {
-		clog.Errf(cxt, "SSH server failed: %s", err)
+	receivetype := "gitreceive"
+	if err := sshd.Serve(cfg, sshServerCircuit, gitHomeDir, pushLock, address, receivetype); err != nil {
+		log.Err("SSH server failed: %s", err)
 		return StatusLocalError
 	}
 

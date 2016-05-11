@@ -8,12 +8,6 @@ import:
 - package: github.com/kelseyhightower/envconfig
 - package: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
-- package: github.com/Masterminds/cookoo
-  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
-  subpackages:
-  - log
-  - safely
-  - fmt
 - package: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:

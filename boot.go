@@ -5,7 +5,6 @@ import (
 	"os"
 	"runtime"
 
-	cookoolog "github.com/Masterminds/cookoo/log"
 	"github.com/codegangsta/cli"
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/cleaner"
@@ -36,7 +35,6 @@ func init() {
 func main() {
 	if os.Getenv("DEBUG") == "true" {
 		pkglog.DefaultLogger.SetDebug(true)
-		cookoolog.Level = cookoolog.LogDebug
 		log.Printf("Running in debug mode")
 	}
 
