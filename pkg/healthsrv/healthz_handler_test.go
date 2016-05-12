@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/arschles/assert"
@@ -45,8 +46,37 @@ func TestHealthZBucketListErr(t *testing.T) {
 
 func TestReadinessNamespaceListErr(t *testing.T) {
 	nsLister := errNamespaceLister{err: errTest}
+	client := successGetClient{}
+	os.Setenv("DEIS_CONTROLLER_SERVICE_HOST", "127.0.0.1")
+	os.Setenv("DEIS_CONTROLLER_SERVICE_PORT", "8000")
 
-	h := readinessHandler(nsLister)
+	h := readinessHandler(client, nsLister)
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
+	assert.NoErr(t, err)
+	h.ServeHTTP(w, r)
+	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
+}
+
+func TestReadinessControllerErr(t *testing.T) {
+	nsLister := emptyNamespaceLister{}
+	client := failureGetClient{}
+
+	h := readinessHandler(client, nsLister)
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
+	assert.NoErr(t, err)
+	h.ServeHTTP(w, r)
+	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
+	assert.Equal(t, w.Body.Len(), 0, "response body length")
+}
+
+func TestReadinessControllerGetErr(t *testing.T) {
+	nsLister := emptyNamespaceLister{}
+	client := errGetClient{err: errTest}
+
+	h := readinessHandler(client, nsLister)
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
 	assert.NoErr(t, err)
@@ -71,8 +101,9 @@ func TestHealthZSuccess(t *testing.T) {
 
 func TestReadinessSuccess(t *testing.T) {
 	nsLister := emptyNamespaceLister{}
+	client := successGetClient{}
 
-	h := readinessHandler(nsLister)
+	h := readinessHandler(client, nsLister)
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
 	assert.NoErr(t, err)
