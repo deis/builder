@@ -43,7 +43,7 @@ test:
 	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
 
 update-changelog:
-	${DEV_ENV_PREFIX} -e RELEASE=${DEIS_RELEASE} ${DEV_ENV_IMAGE} gen-changelog.sh \
+	${DEV_ENV_PREFIX} -e RELEASE=${WORKFLOW_RELEASE} ${DEV_ENV_IMAGE} gen-changelog.sh \
 	  | cat - CHANGELOG.md > tmp && mv tmp CHANGELOG.md
 
 docker-build: build
