@@ -254,10 +254,11 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 					channel.Stderr().Write([]byte("No repo given"))
 					return err
 				}
-				if err = s.pushLock.Lock(repoName, time.Duration(0)); err != nil {
+				wrapErr := wrapInLock(s.pushLock, repoName, time.Duration(0), s.runReceive(req, sshconn, channel, repoName, parts, condata))
+				if wrapErr == errAlreadyLocked {
 					log.Info(multiplePush)
 					// The error must be in git format
-					if err := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); err != nil {
+					if pktErr := gitPktLine(channel, fmt.Sprintf("ERR %v\n", multiplePush)); pktErr != nil {
 						log.Err("Failed to write to channel: %s", err)
 					}
 					sendExitStatus(1, channel)
@@ -265,30 +266,8 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 					return nil
 				}
 
-				req.Reply(true, nil) // We processed. Yay.
-				if !strings.Contains(sshconn.Permissions.Extensions["apps"], repoName) {
-					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
-						log.Err("unable to unlock repository lock for %s (%s)", repoName, err)
-						// TODO: this is an important error case that needs to be covered
-						// Probably the best solution is to change the lock into a lease so that even on unlock
-						// failures, RepositoryLock will eventually yield
-					}
-					return errBuildAppPerm
-				}
-				repo := repoName + ".git"
-				err = git.Receive(repo, parts[0], s.gitHome, channel, sshconn.Permissions.Extensions["fingerprint"], sshconn.Permissions.Extensions["user"], condata, s.receivetype)
-				if err != nil {
-					if err := s.pushLock.Unlock(repoName, time.Duration(0)); err != nil {
-						log.Err("unable to unlock repository lock for %s (%s)", repoName, err)
-						// TODO: this is an important error case that needs to be covered
-						// Probably the best solution is to change the lock into a lease so that even on unlock
-						// failures, RepositoryLock will eventually yield
-					}
-					return err
-				}
-
 				var xs uint32
-				if err != nil {
+				if wrapErr != nil {
 					log.Err("Failed git receive: %v", err)
 					xs = 1
 				}
@@ -314,6 +293,37 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 	}
 
 	return nil
+}
+
+func (s *server) runReceive(
+	req *ssh.Request,
+	sshConn *ssh.ServerConn,
+	channel ssh.Channel,
+	repoName string,
+	parts []string,
+	connData string,
+) func() error {
+	return func() error {
+		req.Reply(true, nil) // We processed. Yay.
+		if !strings.Contains(sshConn.Permissions.Extensions["apps"], repoName) {
+			return errBuildAppPerm
+		}
+		repo := repoName + ".git"
+		recvErr := git.Receive(
+			repo,
+			parts[0],
+			s.gitHome,
+			channel,
+			sshConn.Permissions.Extensions["fingerprint"],
+			sshConn.Permissions.Extensions["user"],
+			connData,
+			s.receivetype,
+		)
+		if recvErr != nil {
+			return recvErr
+		}
+		return nil
+	}
 }
 
 // ExecCmd is an SSH exec request.
