@@ -46,5 +46,4 @@ Also, please provide a description of the desired result after the tester comple
 Please make sure the below checklist is complete.
 
 - [ ] Your pull request is concise and to the point (make another PR for refactoring nearby code)
-- [ ] Your commits are squashed into logical units of work
 - [ ] Your commits follow the [commit style guidelines](http://docs.deis.io/en/latest/contributing/standards/#commit-style-guide)
