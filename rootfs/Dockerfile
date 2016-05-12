@@ -32,6 +32,6 @@ RUN apk add --update-cache \
 
 COPY . /
 
-ENV DEIS_RELEASE 2.0.0-dev
+ENV WORKFLOW_RELEASE 2.0.0-dev
 
 ENTRYPOINT ["boot", "server"]
