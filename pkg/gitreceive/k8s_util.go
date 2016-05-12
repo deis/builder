@@ -17,7 +17,7 @@ const (
 
 	tarPath          = "TAR_PATH"
 	putPath          = "PUT_PATH"
-	debugKey         = "DEBUG"
+	debugKey         = "DEIS_DEBUG"
 	objectStore      = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
 	dockerSocketPath = "/var/run/docker.sock"
