@@ -2,8 +2,6 @@ package k8s
 
 import (
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/fields"
-	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/watch"
 )
 
@@ -17,7 +15,7 @@ import (
 //	var nsl NamespaceLister
 //	nsl = kubeClient.Namespaces()
 type NamespaceLister interface {
-	List(labels.Selector, fields.Selector) (*api.NamespaceList, error)
+	List(opts api.ListOptions) (*api.NamespaceList, error)
 }
 
 // NamespaceWatcher is a (k8s.io/kubernetes/pkg/client/unversioned).NamespaceInterface compatible
@@ -30,5 +28,5 @@ type NamespaceLister interface {
 //	var nsl NamespaceWatcher
 //	nsl = kubeClient.Namespaces()
 type NamespaceWatcher interface {
-	Watch(label labels.Selector, field fields.Selector, resourceVersion string) (watch.Interface, error)
+	Watch(opts api.ListOptions) (watch.Interface, error)
 }

@@ -7,13 +7,13 @@ ignore:
 import:
 - package: github.com/kelseyhightower/envconfig
 - package: github.com/gorilla/mux
-  version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
+  version: 8096f47503459bcc74d1f4c487b7e6e42e5746b5
 - package: golang.org/x/crypto
-  version: f7445b17d61953e333441674c2d11e91ae4559d3
+  version: c84e1f8e3a7e322d497cd16c0e8a13c7e127baf3
   subpackages:
   - ssh
 - package: gopkg.in/yaml.v2
-  version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
+  version: d466437aa4adc35830964cffc5b5f262c63ddcb4
 - package: github.com/pborman/uuid
 - package: github.com/deis/pkg
   version: 7f41ea6de942139d5de67f4d4cb2cccced991f6f
@@ -23,9 +23,12 @@ import:
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
 - package: k8s.io/kubernetes
-  version: ~1.1
+  version: v1.2.4
 - package: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
 - package: github.com/docker/distribution
-  repo: https://github.com/deis/distribution
-  vcs: git
+  version: cd27f179f2c10c5d300e6d09025b538c475b0d51
+- package: github.com/spf13/pflag
+  version: 08b1a584251b5b62f458943640fc8ebd4d50aaa5
+- package: google.golang.org/cloud
+  version: eb47ba841d53d93506cfbfbc03927daf9cc48f88
