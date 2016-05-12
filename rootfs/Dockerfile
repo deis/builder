@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM gcr.io/google_containers/ubuntu-slim:0.2
 
 # specify the git user's home and name
 ENV GITHOME /home/git

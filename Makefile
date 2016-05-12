@@ -6,10 +6,13 @@ include versioning.mk
 export GO15VENDOREXPERIMENT=1
 
 # dockerized development environment variables
+GOCODE_BIN := ${GOPATH}/bin
+GOCODE_LIB := ${GOPATH}/lib
+GOCODE_PKG := ${GOPATH}/pkg
 REPO_PATH := github.com/deis/${SHORT_NAME}
 DEV_ENV_IMAGE := quay.io/deis/go-dev:0.12.0
 DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
-DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
+DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -v ${GOCODE_BIN}:/go/bin -v ${GOCODE_LIB}:/go/lib -v ${GOCODE_PKG}:/go/pkg -w ${DEV_ENV_WORK_DIR}
 DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
@@ -35,8 +38,7 @@ glideup:
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
 build:
-	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go
-	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
+	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go
 	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} upx -9 ${BINARY_DEST_DIR}/boot
 
 test:
@@ -55,12 +57,3 @@ docker-push:
 	docker push ${IMAGE}
 
 .PHONY: all build docker-compile kube-up kube-down deploy
-
-define check-static-binary
-	  if file $(1) | egrep -q "(statically linked|Mach-O)"; then \
-	    echo ""; \
-	  else \
-	    echo "The binary file $(1) is not statically linked. Build canceled"; \
-	    exit 1; \
-	  fi
-endef
