@@ -1,10 +1,6 @@
 // Package sshd implements an SSH server.
 //
 // See https://tools.ietf.org/html/rfc4254
-//
-// This was copied over (and effectively forked from) cookoo-ssh. Mainly this
-// differs from the cookoo-ssh version in that this does not act like a
-// stand-alone SSH server.
 package sshd
 
 import (
@@ -224,8 +220,6 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 	for req := range requests {
 		ok := false
 
-		// I think that ideally what we want to do here is pass this on to
-		// the Cookoo router and let it handle each Type on its own.
 		switch req.Type {
 		case "env":
 			o := &EnvVar{}
