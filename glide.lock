@@ -1,5 +1,5 @@
-hash: a81f6461a68f51fa8b1cb8e100ca09da48b2c873f93d56eb274c68521efbd591
-updated: 2016-05-13T12:48:09.857988507-07:00
+hash: 2b5787f68eb20d94cd80d67b2b3ac2723e2758604d14667abd73fb95f0c82c07
+updated: 2016-05-13T13:13:35.789713188-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -58,7 +58,7 @@ imports:
   - log
   - prettyprint
 - name: github.com/docker/distribution
-  version: 193356763efd27a744a0e776d3ce812a74c20673
+  version: d90ad66106dab9137e450d426c12603e8feb4b65
   repo: https://github.com/deis/distribution
   vcs: git
   subpackages:
@@ -135,7 +135,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
-  version: cea086319492c3940683ea5e122aa5de70a33923
+  version: 91921eb4cf999321cdbeebdba5a03555800d493b
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -160,7 +160,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 55eb11d21d2a31a3cc93838241d04800f52e823d
 - name: github.com/spf13/pflag
-  version: 5644820622454e71517561946e3d94b9f9db6842
+  version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
 - name: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
@@ -169,6 +169,7 @@ imports:
   version: c2528b2dd8352441850638a8bb678c2ad056fd3e
   subpackages:
   - context
+  - context/ctxhttp
   - trace
   - internal/timeseries
 - name: golang.org/x/oauth2
@@ -179,13 +180,14 @@ imports:
   - internal
   - jws
 - name: google.golang.org/api
-  version: 18450f4e95c7e76ce3a5dc3a8cb7178ab6d56121
+  version: fceeaa645c4015c833842e6ed6052b2dda667079
   subpackages:
   - storage/v1
   - googleapi
   - googleapi/internal/uritemplates
+  - gensupport
 - name: google.golang.org/appengine
-  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
+  version: e234e71924d4aa52444bc76f2f831f13fa1eca60
   subpackages:
   - urlfetch
   - internal
@@ -254,4 +256,6 @@ imports:
   - third_party/forked/reflect
 - name: speter.net/go/exp/math/dec/inf
   version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
+  repo: http://gopkg.in/inf.v0
+  vcs: git
 devImports: []
