@@ -38,5 +38,5 @@ import:
     - googleapi
     - googleapi/internal/uritemplates
 - package: speter.net/go/exp/math/dec/inf
-  repo: http://gopkg.in/inf.v0
+  repo: https://github.com/go-inf/inf
   vcs: git
