@@ -86,6 +86,17 @@ func TestDoubleLockUnlock(t *testing.T) {
 	}
 }
 
+func TestWrapInLock(t *testing.T) {
+	lck := NewInMemoryRepositoryLock()
+	assert.NoErr(t, wrapInLock(lck, "repo", 0*time.Second, func() error {
+		return nil
+	}))
+	lck.Lock("repo", 0*time.Second)
+	assert.Err(t, errAlreadyLocked, wrapInLock(lck, "repo", 0*time.Second, func() error {
+		return nil
+	}))
+}
+
 func lockAndCallback(rl RepositoryLock, id string, callbackCh chan<- interface{}) {
 	if err := rl.Lock(id, time.Duration(0)); err == nil {
 		callbackCh <- true

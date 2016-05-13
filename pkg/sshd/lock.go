@@ -1,9 +1,14 @@
 package sshd
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
+)
+
+var (
+	errAlreadyLocked = errors.New("already locked")
 )
 
 // RepositoryLock interface that allows the creation of a lock associated
@@ -18,6 +23,14 @@ type RepositoryLock interface {
 	// a timeout to get the lock. If it was not possible to get the lock after the timeout
 	// an error is returned.
 	Unlock(repoName string, timeout time.Duration) error
+}
+
+func wrapInLock(lck RepositoryLock, repoName string, timeout time.Duration, fn func() error) error {
+	if err := lck.Lock(repoName, timeout); err != nil {
+		return errAlreadyLocked
+	}
+	defer lck.Unlock(repoName, timeout)
+	return fn()
 }
 
 // NewInMemoryRepositoryLock returns a new instance of a RepositoryLock.
