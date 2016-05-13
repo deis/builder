@@ -40,7 +40,6 @@ func TestLocalDirs(t *testing.T) {
 		"cleaner":    1,
 		"conf":       1,
 		"controller": 1,
-		"env":        1,
 		"git":        1,
 		"gitreceive": 1,
 		"healthsrv":  1,

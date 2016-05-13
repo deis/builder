@@ -1,5 +1,5 @@
-hash: e4e94613a0041e98bda9501d42a1c620551794fd9e70759766149101a0dc701c
-updated: 2016-04-18T16:26:01.119187285-06:00
+hash: a81f6461a68f51fa8b1cb8e100ca09da48b2c873f93d56eb274c68521efbd591
+updated: 2016-05-13T12:48:09.857988507-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -136,13 +136,6 @@ imports:
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
   version: cea086319492c3940683ea5e122aa5de70a33923
-- name: github.com/Masterminds/cookoo
-  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
-  subpackages:
-  - log
-  - safely
-  - fmt
-  - io
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -167,7 +160,7 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: 55eb11d21d2a31a3cc93838241d04800f52e823d
 - name: github.com/spf13/pflag
-  version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
+  version: 5644820622454e71517561946e3d94b9f9db6842
 - name: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
@@ -186,7 +179,7 @@ imports:
   - internal
   - jws
 - name: google.golang.org/api
-  version: fceeaa645c4015c833842e6ed6052b2dda667079
+  version: 18450f4e95c7e76ce3a5dc3a8cb7178ab6d56121
   subpackages:
   - storage/v1
   - googleapi
@@ -225,10 +218,10 @@ imports:
   subpackages:
   - pkg/client/unversioned
   - pkg/api
-  - pkg/api/errors
-  - pkg/util/wait
   - pkg/fields
   - pkg/labels
+  - pkg/api/errors
+  - pkg/util/wait
   - pkg/watch
   - pkg/api/install
   - pkg/api/latest
@@ -249,9 +242,9 @@ imports:
   - pkg/conversion
   - pkg/types
   - pkg/util/rand
-  - pkg/util/errors
   - pkg/util/fielderrors
   - pkg/util/validation
+  - pkg/util/errors
   - pkg/api/registered
   - pkg/api/util
   - pkg/api/v1
