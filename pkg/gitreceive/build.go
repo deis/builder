@@ -242,10 +242,10 @@ func build(
 
 	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, procType, usingDockerfile)
 	quit := progress("...", conf.SessionIdleInterval())
+	log.Info("Launching App...")
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
 	quit <- true
 	<-quit
-	log.Info("Launching App...")
 	if err != nil {
 		return fmt.Errorf("publishing release (%s)", err)
 	}
