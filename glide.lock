@@ -1,5 +1,5 @@
-hash: e4e94613a0041e98bda9501d42a1c620551794fd9e70759766149101a0dc701c
-updated: 2016-04-18T16:26:01.119187285-06:00
+hash: b1efd8d89a7114d3646633cc78039ee057892a519f24d037883ef2b890d7c40b
+updated: 2016-05-18T14:01:38.723061304-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -136,13 +136,6 @@ imports:
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
 - name: github.com/kelseyhightower/envconfig
   version: cea086319492c3940683ea5e122aa5de70a33923
-- name: github.com/Masterminds/cookoo
-  version: 110a04ff7dc3e7c9b86c1a2413906a16a2bb65cb
-  subpackages:
-  - log
-  - safely
-  - fmt
-  - io
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -168,6 +161,8 @@ imports:
   version: 55eb11d21d2a31a3cc93838241d04800f52e823d
 - name: github.com/spf13/pflag
   version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
+  repo: https://github.com/spf13/pflag
+  vcs: git
 - name: golang.org/x/crypto
   version: f7445b17d61953e333441674c2d11e91ae4559d3
   subpackages:
@@ -176,6 +171,7 @@ imports:
   version: c2528b2dd8352441850638a8bb678c2ad056fd3e
   subpackages:
   - context
+  - context/ctxhttp
   - trace
   - internal/timeseries
 - name: golang.org/x/oauth2
@@ -187,10 +183,13 @@ imports:
   - jws
 - name: google.golang.org/api
   version: fceeaa645c4015c833842e6ed6052b2dda667079
+  repo: https://code.googlesource.com/google-api-go-client
+  vcs: git
   subpackages:
-  - storage/v1
   - googleapi
+  - storage/v1
   - googleapi/internal/uritemplates
+  - gensupport
 - name: google.golang.org/appengine
   version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
@@ -225,10 +224,10 @@ imports:
   subpackages:
   - pkg/client/unversioned
   - pkg/api
-  - pkg/api/errors
-  - pkg/util/wait
   - pkg/fields
   - pkg/labels
+  - pkg/api/errors
+  - pkg/util/wait
   - pkg/watch
   - pkg/api/install
   - pkg/api/latest
@@ -249,9 +248,9 @@ imports:
   - pkg/conversion
   - pkg/types
   - pkg/util/rand
-  - pkg/util/errors
   - pkg/util/fielderrors
   - pkg/util/validation
+  - pkg/util/errors
   - pkg/api/registered
   - pkg/api/util
   - pkg/api/v1
@@ -261,4 +260,6 @@ imports:
   - third_party/forked/reflect
 - name: speter.net/go/exp/math/dec/inf
   version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
+  repo: https://github.com/belua/inf
+  vcs: git
 devImports: []
