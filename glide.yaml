@@ -29,3 +29,14 @@ import:
 - package: github.com/docker/distribution
   repo: https://github.com/deis/distribution
   vcs: git
+- package: speter.net/go/exp/math/dec/inf
+  repo: https://github.com/belua/inf
+  vcs: git
+- package: google.golang.org/api
+  version: fceeaa645c4015c833842e6ed6052b2dda667079
+  repo: https://code.googlesource.com/google-api-go-client
+  vcs: git
+- package: github.com/spf13/pflag
+  version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
+  repo: https://github.com/spf13/pflag
+  vcs: git
