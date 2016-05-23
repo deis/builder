@@ -35,9 +35,8 @@ glideup:
 # the Docker environment. Other alternatives are cross-compiling, doing
 # the build as a `docker build`.
 build:
-	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go
-	@$(call check-static-binary,$(BINARY_DEST_DIR)/boot)
-	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} upx -9 ${BINARY_DEST_DIR}/boot
+	${DEV_ENV_CMD} go build -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go
+	${DEV_ENV_CMD} upx -9 ${BINARY_DEST_DIR}/boot
 
 test:
 	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
@@ -55,12 +54,3 @@ docker-push:
 	docker push ${IMAGE}
 
 .PHONY: all build docker-compile kube-up kube-down deploy
-
-define check-static-binary
-	  if file $(1) | egrep -q "(statically linked|Mach-O)"; then \
-	    echo ""; \
-	  else \
-	    echo "The binary file $(1) is not statically linked. Build canceled"; \
-	    exit 1; \
-	  fi
-endef
