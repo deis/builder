@@ -1,3 +1,16 @@
+### v2.0.0-beta4 -> v2.0.0-rc1
+
+#### Features
+
+ - [`a002c31`](https://github.com/deis/builder/commit/a002c3174aabe8aab0ca7675bc370f438919478e) probes: add controller check to the readiness probe
+
+
+#### Maintenance
+
+ - [`635b21e`](https://github.com/deis/builder/commit/635b21ed10e1353ab227dee9116e0d9f70c616ba) Dockerfile: Refactor image to use ubuntu-slim
+ - [`54c14e6`](https://github.com/deis/builder/commit/54c14e6ea129c2fe68e7781849b0907ea2e6f729) packages: use github mirror for speter/inf
+ - [`9f9414e`](https://github.com/deis/builder/commit/9f9414e3d01d44b7fc79a5aa732f1f56ef789656) Makefile,Dockerfile: DEIS_RELEASE -> WORKFLOW_RELEASE
+
 ### v2.0.0-beta3 -> v2.0.0-beta4
 
 #### Features
