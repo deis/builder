@@ -232,10 +232,8 @@ func build(
 	log.Debug("Done")
 
 	procType := pkg.ProcessType{}
-	if bType == buildTypeProcfile {
-		if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey()); err != nil {
-			return err
-		}
+	if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey(), bType); err != nil {
+		return err
 	}
 
 	log.Info("Build complete.")
@@ -275,7 +273,7 @@ func prettyPrintJSON(data interface{}) (string, error) {
 	return string(formatted.Bytes()), nil
 }
 
-func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string) (pkg.ProcessType, error) {
+func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string, bType buildType) (pkg.ProcessType, error) {
 	procType := pkg.ProcessType{}
 	if _, err := os.Stat(fmt.Sprintf("%s/Procfile", dirName)); err == nil {
 		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", dirName))
@@ -285,6 +283,9 @@ func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string) (pkg.
 		if err := yaml.Unmarshal(rawProcFile, &procType); err != nil {
 			return nil, fmt.Errorf("procfile %s/ProcFile is malformed (%s)", dirName, err)
 		}
+		return procType, nil
+	}
+	if bType != buildTypeProcfile {
 		return procType, nil
 	}
 	log.Debug("Procfile not present. Getting it from the buildpack")
