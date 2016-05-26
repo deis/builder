@@ -34,7 +34,7 @@ func TestGetProcFileFromRepoSuccess(t *testing.T) {
 		}
 	}()
 	getter := &storage.FakeObjectGetter{}
-	procType, err := getProcFile(getter, tmpDir, objKey)
+	procType, err := getProcFile(getter, tmpDir, objKey, buildTypeProcfile)
 	actualData := pkg.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
@@ -56,7 +56,7 @@ func TestGetProcFileFromRepoFailure(t *testing.T) {
 		}
 	}()
 	getter := &storage.FakeObjectGetter{}
-	_, err = getProcFile(getter, tmpDir, objKey)
+	_, err = getProcFile(getter, tmpDir, objKey, buildTypeProcfile)
 
 	assert.True(t, err != nil, "no error received when there should have been")
 }
@@ -69,7 +69,7 @@ func TestGetProcFileFromServerSuccess(t *testing.T) {
 		},
 	}
 
-	procType, err := getProcFile(getter, "", objKey)
+	procType, err := getProcFile(getter, "", objKey, buildTypeProcfile)
 	actualData := pkg.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
@@ -84,7 +84,7 @@ func TestGetProcFileFromServerFailure(t *testing.T) {
 		},
 	}
 
-	_, err := getProcFile(getter, "", objKey)
+	_, err := getProcFile(getter, "", objKey, buildTypeProcfile)
 	assert.Err(t, err, fmt.Errorf("error in reading %s (%s)", objKey, expectedErr))
 	assert.True(t, err != nil, "no error received when there should have been")
 }
