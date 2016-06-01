@@ -84,7 +84,7 @@ func dirHasGitSuffix(dir string) bool {
 // On any error, it uses log messages to output a human readable description of what happened.
 func Run(gitHome string, nsLister k8s.NamespaceLister, fs sys.FS, pollSleepDuration time.Duration) error {
 	for {
-		nsList, err := nsLister.List(labels.Everything(), fields.Everything())
+		nsList, err := nsLister.List(api.ListOptions{LabelSelector: labels.Everything(), FieldSelector: fields.Everything()})
 		if err != nil {
 			log.Printf("Cleaner error listing namespaces (%s)", err)
 			continue

@@ -190,7 +190,7 @@ func build(
 	req := kubeClient.Get().Namespace(newPod.Namespace).Name(newPod.Name).Resource("pods").SubResource("log").VersionedParams(
 		&api.PodLogOptions{
 			Follow: true,
-		}, api.Scheme)
+		}, api.ParameterCodec)
 
 	rc, err := req.Stream()
 	if err != nil {

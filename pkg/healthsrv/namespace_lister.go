@@ -11,12 +11,12 @@ import (
 // for unit tests.
 type NamespaceLister interface {
 	// List lists all namespaces that are selected by the given label and field selectors.
-	List(labels.Selector, fields.Selector) (*api.NamespaceList, error)
+	List(opts api.ListOptions) (*api.NamespaceList, error)
 }
 
 type emptyNamespaceLister struct{}
 
-func (n emptyNamespaceLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
+func (n emptyNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
 	return &api.NamespaceList{}, nil
 }
 
@@ -24,7 +24,7 @@ type errNamespaceLister struct {
 	err error
 }
 
-func (e errNamespaceLister) List(labels.Selector, fields.Selector) (*api.NamespaceList, error) {
+func (e errNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
 	return nil, e.err
 }
 
@@ -35,7 +35,7 @@ func (e errNamespaceLister) List(labels.Selector, fields.Selector) (*api.Namespa
 // errCh. At most one of {succCh, errCh} will be sent on. If stopCh is closed, no pending or
 // future sends will occur.
 func listNamespaces(nl NamespaceLister, succCh chan<- *api.NamespaceList, errCh chan<- error, stopCh <-chan struct{}) {
-	nsList, err := nl.List(labels.Everything(), fields.Everything())
+	nsList, err := nl.List(api.ListOptions{LabelSelector: labels.Everything(), FieldSelector: fields.Everything()})
 	if err != nil {
 		select {
 		case errCh <- err:
