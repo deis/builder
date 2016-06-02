@@ -183,7 +183,12 @@ func build(
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	if err := waitForPod(kubeClient, newPod.Namespace, newPod.Name, conf.SessionIdleInterval(), conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	pw := k8s.NewPodWatcher(kubeClient, "deis")
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+	go pw.Controller.Run(stopCh)
+
+	if err := waitForPod(pw, newPod.Namespace, newPod.Name, conf.SessionIdleInterval(), conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("watching events for builder pod startup (%s)", err)
 	}
 
@@ -213,7 +218,7 @@ func build(
 	)
 	// check the state and exit code of the build pod.
 	// if the code is not 0 return error
-	if err := waitForPodEnd(kubeClient, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
+	if err := waitForPodEnd(pw, newPod.Namespace, newPod.Name, conf.BuilderPodTickDuration(), conf.BuilderPodWaitDuration()); err != nil {
 		return fmt.Errorf("error getting builder pod status (%s)", err)
 	}
 	log.Debug("Done")
