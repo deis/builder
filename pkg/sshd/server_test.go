@@ -21,6 +21,7 @@ func TestGitPktLine(t *testing.T) {
 	str := "hello world"
 	err := gitPktLine(b, str)
 	assert.NoErr(t, err)
+
 	outStr := string(b.Bytes())
 	assert.True(t, len(outStr) > 4, "output string <= 4 chars")
 	assert.Equal(t, outStr[:4], fmt.Sprintf("%04x", len(str)+4), "hex prefix")
@@ -62,7 +63,7 @@ func TestReceive(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock()
+	pushLock := NewInMemoryRepositoryLock(0)
 	runServer(cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 
 	// Give server time to initialize.
@@ -116,7 +117,7 @@ func TestPushInvalidArgsLength(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock()
+	pushLock := NewInMemoryRepositoryLock(0)
 	runServer(cfg, c, pushLock, testingServerAddr, 0*time.Second, t)
 
 	// Give server time to initialize.
@@ -152,7 +153,7 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock()
+	pushLock := NewInMemoryRepositoryLock(0)
 	runServer(cfg, c, pushLock, testingServerAddr, 2*time.Second, t)
 
 	// Give server time to initialize.
@@ -216,7 +217,7 @@ func TestConcurrentPushDifferentRepo(t *testing.T) {
 	assert.NoErr(t, err)
 	cfg.AddHostKey(key)
 	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock()
+	pushLock := NewInMemoryRepositoryLock(time.Duration(1 * time.Minute))
 	runServer(cfg, c, pushLock, testingServerAddr, time.Duration(0), t)
 	time.Sleep(200 * time.Millisecond)
 	assert.Equal(t, c.State(), ClosedState, "circuit state")

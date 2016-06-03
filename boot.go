@@ -53,7 +53,7 @@ func main() {
 				}
 				fs := sys.RealFS()
 				env := sys.RealEnv()
-				pushLock := sshd.NewInMemoryRepositoryLock()
+				pushLock := sshd.NewInMemoryRepositoryLock(cnf.GitLockTimeout())
 				circ := sshd.NewCircuit()
 
 				storageParams, err := conf.GetStorageParams(env)

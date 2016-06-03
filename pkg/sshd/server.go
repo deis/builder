@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
@@ -248,7 +247,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 					channel.Stderr().Write([]byte("No repo given"))
 					return err
 				}
-				wrapErr := wrapInLock(s.pushLock, repoName, time.Duration(0), s.runReceive(req, sshconn, channel, repoName, parts, condata))
+				wrapErr := wrapInLock(s.pushLock, repoName, s.runReceive(req, sshconn, channel, repoName, parts, condata))
 				if wrapErr == errAlreadyLocked {
 					log.Info(multiplePush)
 					// The error must be in git format
@@ -262,7 +261,7 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 
 				var xs uint32
 				if wrapErr != nil {
-					log.Err("Failed git receive: %v", err)
+					log.Err("Failed git receive: %v", wrapErr)
 					xs = 1
 				}
 				sendExitStatus(xs, channel)

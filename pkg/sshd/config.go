@@ -14,9 +14,15 @@ type Config struct {
 	StorageType                  string `envconfig:"BUILDER_STORAGE" default:"minio"`
 	SlugBuilderImagePullPolicy   string `envconfig:"SLUG_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
 	DockerBuilderImagePullPolicy string `envconfig:"DOCKER_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
+	LockTimeout                  int    `envconfig:"GIT_LOCK_TIMEOUT" default:"10"`
 }
 
 // CleanerPollSleepDuration returns c.CleanerPollSleepDurationSec as a time.Duration.
 func (c Config) CleanerPollSleepDuration() time.Duration {
 	return time.Duration(c.CleanerPollSleepDurationSec) * time.Second
+}
+
+//GitLockTimeout return LockTimeout in minutes
+func (c Config) GitLockTimeout() time.Duration {
+	return time.Duration(c.LockTimeout) * time.Minute
 }
