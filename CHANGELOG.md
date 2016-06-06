@@ -1,3 +1,9 @@
+### v2.0.0-rc1 -> v2.0.0-rc2
+
+#### Fixes
+
+- [`f0dbc67`](https://github.com/deis/builder/commit/f0dbc67ebc22b6d350f62db179a51c86f6da1e15) proctype: deploy dockerfile app with procfile
+
 ### v2.0.0-beta4 -> v2.0.0-rc1
 
 #### Features
