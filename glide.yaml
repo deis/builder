@@ -16,14 +16,14 @@ import:
   version: eca94c41d994ae2215d455ce578ae6e2dc6ee516
 - package: github.com/pborman/uuid
 - package: github.com/deis/pkg
-  version: 7f41ea6de942139d5de67f4d4cb2cccced991f6f
+  version: 189ed6bd6b6aa6629b72c2c5472095e176eec8a6
   subpackages:
   - time
   - log
 - package: github.com/codegangsta/cli
   version: a65b733b303f0055f8d324d805f393cd3e7a7904
 - package: k8s.io/kubernetes
-  version: ~1.1
+  version: 1.2.4
 - package: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
 - package: github.com/docker/distribution
