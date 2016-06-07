@@ -142,8 +142,6 @@ func TestPushInvalidArgsLength(t *testing.T) {
 
 // TestConcurrentPushSameRepo tests many concurrent pushes, each to the same repo
 func TestConcurrentPushSameRepo(t *testing.T) {
-	t.Skip("skipping because the global lock prevents testing the repository lock, for multiple concurrent pushes to the same repo")
-	t.SkipNow()
 	const testingServerAddr = "127.0.0.1:2245"
 	key, err := sshTestingHostKey()
 	assert.NoErr(t, err)
@@ -153,7 +151,7 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	cfg.AddHostKey(key)
 
 	c := NewCircuit()
-	pushLock := NewInMemoryRepositoryLock(0)
+	pushLock := NewInMemoryRepositoryLock(500 * time.Millisecond)
 	runServer(cfg, c, pushLock, testingServerAddr, 2*time.Second, t)
 
 	// Give server time to initialize.
@@ -165,15 +163,15 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 	client, err := ssh.Dial("tcp", testingServerAddr, clientConfig())
 	assert.NoErr(t, err)
 
-	const numPushers = 10
+	const numPushers = 4
 	outCh := make(chan *sshSessionOutput, numPushers)
 	for i := 0; i < numPushers; i++ {
 		go func() {
-			sess, err := client.NewSession()
-			assert.NoErr(t, err)
+			sess, newSessErr := client.NewSession()
+			assert.NoErr(t, newSessErr)
 			defer sess.Close()
-			out, err := sess.Output("git-upload-pack /demo.git")
-			outCh <- &sshSessionOutput{outStr: string(out), err: err}
+			out, outErr := sess.Output("git-upload-pack /demo.git")
+			outCh <- &sshSessionOutput{outStr: string(out), err: outErr}
 		}()
 	}
 
@@ -186,18 +184,18 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 		case sessOut := <-outCh:
 			output := sessOut.outStr
 			err := sessOut.err
-			if output != multiPushLine && output != "OK" {
-				t.Fatalf("expected 'OK' or '%s', but got '%s' (error '%s')", multiPushLine, output, err)
-			}
-
-			if sessOut.err != nil {
-				t.Fatalf("found '%s' output with an error '%s'", output, err)
-			}
-
 			if !foundOK && output == "OK" {
 				foundOK = true
-			} else if output == "OK" {
-				t.Fatalf("found second 'OK' when shouldn't have")
+				continue
+			}
+			if foundOK && err != nil && output != "OK" {
+				if output != multiPushLine {
+					t.Errorf("output for pusher %d was not '%s' (it was '%s')", i, multiplePush, output)
+				}
+				continue
+			}
+			if foundOK && output == "OK" {
+				t.Fatalf("more than 1 success was found")
 			}
 
 		case <-time.After(to):
