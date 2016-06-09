@@ -17,9 +17,9 @@ type SlugBuilderInfo struct {
 
 // NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data
 func NewSlugBuilderInfo(slugName string) *SlugBuilderInfo {
-	tarKey := fmt.Sprintf("home/%s/tar", slugName)
+	tarKey := fmt.Sprintf("/home/%s/tar", slugName)
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
-	pushKey := fmt.Sprintf("home/%s/push", slugName)
+	pushKey := fmt.Sprintf("/home/%s/push", slugName)
 
 	return &SlugBuilderInfo{
 		pushKey: pushKey,

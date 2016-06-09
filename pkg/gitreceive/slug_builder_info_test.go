@@ -12,8 +12,8 @@ func TestPushKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error building git sha (%s)", err)
 	}
-	sbi := NewSlugBuilderInfo(appName + ":git-" + sha.Short())
-	expectedPushKey := "home/" + appName + ":git-" + sha.Short() + "/push"
+	sbi := NewSlugBuilderInfo(appName + "/git-" + sha.Short())
+	expectedPushKey := "/home/" + appName + "/git-" + sha.Short() + "/push"
 	if sbi.PushKey() != expectedPushKey {
 		t.Errorf("push key %s didn't match expected %s", sbi.PushKey(), expectedPushKey)
 	}
@@ -24,9 +24,9 @@ func TestTarKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error building git sha (%s)", err)
 	}
-	slugName := appName + ":git-" + sha.Short()
+	slugName := appName + "/git-" + sha.Short()
 	sbi := NewSlugBuilderInfo(slugName)
-	expectedTarKey := "home/" + slugName + "/tar"
+	expectedTarKey := "/home/" + slugName + "/tar"
 	if sbi.TarKey() != expectedTarKey {
 		t.Errorf("tar key %s didn't match expected %s", sbi.TarKey(), expectedTarKey)
 	}
@@ -35,6 +35,6 @@ func TestTarKey(t *testing.T) {
 func TestAbsoluteSlugObjectKey(t *testing.T) {
 	sha, err := git.NewSha(rawSha)
 	assert.NoErr(t, err)
-	sbi := NewSlugBuilderInfo(appName + ":git-" + sha.Short())
+	sbi := NewSlugBuilderInfo(appName + "/git-" + sha.Short())
 	assert.Equal(t, sbi.AbsoluteSlugObjectKey(), sbi.PushKey()+"/"+slugTGZName, "absolute slug key")
 }

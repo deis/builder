@@ -73,7 +73,7 @@ func build(
 	repoDir := filepath.Join(conf.GitHome, repo)
 	buildDir := filepath.Join(repoDir, "build")
 
-	slugName := fmt.Sprintf("%s:git-%s", appName, gitSha.Short())
+	slugName := fmt.Sprintf("%s/git-%s", appName, gitSha.Short())
 	if err := os.MkdirAll(buildDir, os.ModeDir); err != nil {
 		return fmt.Errorf("making the build directory %s (%s)", buildDir, err)
 	}
