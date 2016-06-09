@@ -1,3 +1,18 @@
+### v2.0.0-rc2 -> v2.0.0
+
+#### Features
+
+- [`6fdcf08`](https://github.com/deis/builder/commit/6fdcf08064d9ac7b15115553e76c7dc3e6c31f37) lock: add timeout to repository lock feature
+
+#### Documentation
+
+- [`e038851`](https://github.com/deis/builder/commit/e038851678da9363a99a3639d67181abb6ab68bf) CHANGELOG.md: add entry for v2.0.0-rc2
+- [`58a8786`](https://github.com/deis/builder/commit/58a8786d764db22a7f01c68398ec86aff34f6541) pkg: update help URL to https://deis.com/
+
+#### Maintenance
+
+- [`f6580ee`](https://github.com/deis/builder/commit/f6580ee558309f9d5902e660b2de69a0e07d776a) various: remove beta status
+
 ### v2.0.0-rc1 -> v2.0.0-rc2
 
 #### Fixes
