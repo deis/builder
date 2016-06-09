@@ -19,6 +19,7 @@ import (
 	"github.com/docker/distribution/registry/storage/driver/factory"
 	_ "github.com/docker/distribution/registry/storage/driver/gcs"
 	_ "github.com/docker/distribution/registry/storage/driver/s3-aws"
+	_ "github.com/docker/distribution/registry/storage/driver/swift"
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
