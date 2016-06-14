@@ -1,5 +1,5 @@
-hash: 14f1bdb619e0654cdeb3d1455dffa67ded9b4b09b1b5451c75b4a520bdc18800
-updated: 2016-06-01T16:42:49.464730878-06:00
+hash: 9df32a50888e0f5657e579c16497a627e75ec3a72b4ac59ed8df0910aeed8a94
+updated: 2016-06-14T14:13:11.935549861-06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -54,7 +54,7 @@ imports:
   - log
   - prettyprint
 - name: github.com/docker/distribution
-  version: 8448fac2cc300df316ee3ab851039892483f235c
+  version: 0afef00d5764404d70f86076f364551657d51de6
   repo: https://github.com/deis/distribution
   vcs: git
   subpackages:
@@ -63,9 +63,11 @@ imports:
   - registry/storage/driver/factory
   - registry/storage/driver/gcs
   - registry/storage/driver/s3-aws
+  - registry/storage/driver/swift
   - context
   - registry/storage/driver/base
   - registry/client/transport
+  - version
   - uuid
 - name: github.com/docker/docker
   version: 0f5c9d301b9b1cca66b3ea0f9dec3b5317d3686d
@@ -131,6 +133,12 @@ imports:
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
   - pbutil
+- name: github.com/mitchellh/mapstructure
+  version: 482a9fd5fa83e8c4e7817413b80f3eb8feec03ef
+- name: github.com/ncw/swift
+  version: c54732e87b0b283d1baf0a18db689d0aea460ba3
+  subpackages:
+  - swifttest
 - name: github.com/opencontainers/runc
   version: 7ca2aa4873aea7cb4265b1726acb24b90d8726c6
   subpackages:
@@ -236,9 +244,12 @@ imports:
   - pkg/api
   - pkg/fields
   - pkg/labels
-  - pkg/api/errors
   - pkg/util/wait
+  - pkg/client/cache
+  - pkg/controller/framework
+  - pkg/runtime
   - pkg/watch
+  - pkg/api/errors
   - pkg/api/install
   - pkg/api/meta
   - pkg/api/unversioned
@@ -254,7 +265,6 @@ imports:
   - pkg/apis/metrics/install
   - pkg/client/restclient
   - pkg/client/typed/discovery
-  - pkg/runtime
   - pkg/util/net
   - pkg/util/sets
   - pkg/version
@@ -267,11 +277,12 @@ imports:
   - pkg/util/intstr
   - pkg/util/rand
   - pkg/util/validation
-  - pkg/util/validation/field
   - pkg/util/runtime
+  - pkg/conversion/queryparams
+  - pkg/util/errors
+  - pkg/util/validation/field
   - pkg/api/v1
   - pkg/apimachinery
-  - pkg/util/errors
   - pkg/apis/authorization
   - pkg/apis/authorization/v1beta1
   - pkg/apis/autoscaling/v1
@@ -285,7 +296,6 @@ imports:
   - pkg/client/metrics
   - pkg/client/transport
   - pkg/watch/json
-  - pkg/conversion/queryparams
   - third_party/forked/reflect
   - pkg/runtime/serializer/json
   - pkg/runtime/serializer/recognizer
