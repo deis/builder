@@ -1,6 +1,7 @@
 package sshd
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -10,6 +11,10 @@ import (
 
 const (
 	callbackTimeout = 1 * time.Second
+)
+
+var (
+	gitError = errors.New("git receive error")
 )
 
 func TestMultipleSameRepoLocks(t *testing.T) {
@@ -91,7 +96,10 @@ func TestWrapInLock(t *testing.T) {
 	assert.NoErr(t, wrapInLock(lck, "repo", func() error {
 		return nil
 	}))
-	lck.Lock("repo")
+	assert.Err(t, gitError, wrapInLock(lck, "repo", func() error {
+		return gitError
+	}))
+	assert.NoErr(t, lck.Lock("repo"))
 	assert.Err(t, errAlreadyLocked, wrapInLock(lck, "repo", func() error {
 		return nil
 	}))
