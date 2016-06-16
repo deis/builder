@@ -1,7 +1,7 @@
 # Deis Builder v2
 
 [![Build Status](https://travis-ci.org/deis/builder.svg?branch=master)](https://travis-ci.org/deis/builder)
-[![Go Report Card](http://goreportcard.com/badge/deis/builder)](http://goreportcard.com/report/deis/builder)
+[![Go Report Card](https://goreportcard.com/badge/github.com/deis/builder)](https://goreportcard.com/report/github.com/deis/builder)
 [![codebeat badge](https://codebeat.co/badges/e29e5e2b-531d-4374-810b-f05053c47688)](https://codebeat.co/projects/github-com-deis-builder) [![Docker Repository on Quay](https://quay.io/repository/deisci/builder/status "Docker Repository on Quay")](https://quay.io/repository/deisci/builder)
 
 Deis (pronounced DAY-iss) Workflow is an open source Platform as a Service (PaaS) that adds a developer-friendly layer to any [Kubernetes][k8s-home] cluster, making it easy to deploy and manage applications on your own servers.
