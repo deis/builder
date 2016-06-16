@@ -27,7 +27,7 @@ type Config struct {
 	Fingerprint                   string `envconfig:"FINGERPRINT" required:"true"`
 	PodNamespace                  string `envconfig:"POD_NAMESPACE" required:"true"`
 	StorageRegion                 string `envconfig:"STORAGE_REGION" default:"us-east-1"`
-	Debug                         bool   `envconfig:"DEBUG" default:"false"`
+	Debug                         bool   `envconfig:"DEIS_DEBUG" default:"false"`
 	BuilderPodTickDurationMSec    int    `envconfig:"BUILDER_POD_TICK_DURATION" default:"100"`
 	BuilderPodWaitDurationMSec    int    `envconfig:"BUILDER_POD_WAIT_DURATION" default:"900000"` // 15 minutes
 	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`

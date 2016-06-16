@@ -34,7 +34,7 @@ func init() {
 }
 
 func main() {
-	if os.Getenv("DEBUG") == "true" {
+	if os.Getenv("DEIS_DEBUG") == "true" {
 		pkglog.DefaultLogger.SetDebug(true)
 		log.Printf("Running in debug mode")
 	}

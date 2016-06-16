@@ -16,7 +16,7 @@ install, and start **deis/builder**.
 
 ## Environment Variables
 
-* **DEBUG** enables verbose output if set
+* **DEIS_DEBUG** enables verbose output if set
 * **ETCD_PORT** sets the TCP port on which to connect to the local etcd
   daemon (default: *4001*)
 * **ETCD_PATH** sets the etcd directory where the builder announces
