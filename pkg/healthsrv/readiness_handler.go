@@ -18,11 +18,6 @@ func readinessHandler(client GetClient, nsLister NamespaceLister) http.Handler {
 		go listNamespaces(nsLister, namespaceListerCh, namespaceListerErrCh, stopCh)
 		numChecks++
 
-		controllerStateCh := make(chan string)
-		controllerStateErrCh := make(chan error)
-		go controllerState(client, controllerStateCh, controllerStateErrCh, stopCh)
-		numChecks++
-
 		timeoutCh := time.After(waitTimeout)
 		defer close(stopCh)
 		for i := 0; i < numChecks; i++ {
@@ -31,13 +26,6 @@ func readinessHandler(client GetClient, nsLister NamespaceLister) http.Handler {
 			case <-namespaceListerCh:
 			case err := <-namespaceListerErrCh:
 				log.Printf("Readinesscheck error listing namespaces (%s)", err)
-				w.WriteHeader(http.StatusServiceUnavailable)
-				return
-
-			// listing k8s namespaces
-			case <-controllerStateCh:
-			case err := <-controllerStateErrCh:
-				log.Printf("Readinesscheck error listning controller (%s)", err)
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 
