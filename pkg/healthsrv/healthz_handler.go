@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	waitTimeout = 2 * time.Second
+	waitTimeout = 10 * time.Second
 )
 
 func healthZHandler(bLister BucketLister, serverCircuit *sshd.Circuit) http.Handler {
