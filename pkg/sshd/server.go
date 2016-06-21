@@ -255,7 +255,6 @@ func (s *server) answer(channel ssh.Channel, requests <-chan *ssh.Request, conda
 						log.Err("Failed to write to channel: %s", err)
 					}
 					sendExitStatus(1, channel)
-					req.Reply(false, nil)
 					return nil
 				}
 
