@@ -50,7 +50,7 @@ update-changelog:
 
 docker-build: build
 	docker build --rm -t ${IMAGE} rootfs
-	docker tag -f ${IMAGE} ${MUTABLE_IMAGE}
+	docker tag ${IMAGE} ${MUTABLE_IMAGE}
 
 # Push to a registry that Kubernetes can access.
 docker-push:
