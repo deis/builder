@@ -111,10 +111,9 @@ func Serve(
 		receivetype: receivetype,
 	}
 
-	closer := make(chan interface{}, 1)
 	log.Info("Listening on %s", addr)
 	serverCircuit.Close()
-	srv.listen(listener, cfg, closer)
+	srv.listen(listener, cfg)
 
 	return nil
 }
@@ -128,23 +127,16 @@ type server struct {
 
 // listen handles accepting and managing connections. However, since closer
 // is len(1), it will not block the sender.
-func (s *server) listen(l net.Listener, conf *ssh.ServerConfig, closer chan interface{}) error {
+func (s *server) listen(l net.Listener, conf *ssh.ServerConfig) error {
 
 	log.Info("Accepting new connections.")
 	defer l.Close()
 
-	// FIXME: Since Accept blocks, closer may not be checked often enough.
 	for {
-		log.Info("Checking closer.")
-		if len(closer) > 0 {
-			<-closer
-			log.Info("Shutting down SSHD listener.")
-			return nil
-		}
 		conn, err := l.Accept()
 		if err != nil {
 			log.Err("Error during Accept: %s", err)
-			// We shouldn't kill the listener because of an error.
+			// We shut down the listener if Accept errors
 			return err
 		}
 		go s.handleConn(conn, conf)
