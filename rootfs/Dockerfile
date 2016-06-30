@@ -48,5 +48,3 @@ RUN apt-get update \
 CMD ["/usr/bin/boot", "server"]
 EXPOSE 2223
 EXPOSE 3000
-
-ENV WORKFLOW_RELEASE 2.0.0
