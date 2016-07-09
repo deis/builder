@@ -51,7 +51,7 @@ func GetStorageParams(env sys.Env) (Parameters, error) {
 	}
 
 	for _, file := range files {
-		if file.IsDir() {
+		if file.IsDir() || file.Name() == "..data" {
 			continue
 		}
 		data, err := ioutil.ReadFile(storageCredLocation + file.Name())
