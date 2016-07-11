@@ -165,9 +165,11 @@ func createPreReceiveHook(gitHome, repoPath string) error {
 	defer fd.Close()
 
 	// parse & generate the template anew each receive for each new git home
-	log.Info("Writing pre-receive hook to %s", writePath)
 	if err := preReceiveHookTpl.Execute(fd, map[string]string{"GitHome": gitHome}); err != nil {
 		return fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
+	}
+	if err := os.Chmod(writePath, 0755); err != nil {
+		return fmt.Errorf("Cannot change pre-receive hook script permissions (%s)", err)
 	}
 
 	return nil
