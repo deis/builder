@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -158,16 +157,20 @@ func createRepo(repoPath string) (bool, error) {
 
 // createPreReceiveHook renders preReceiveHookTpl to repoPath/hooks/pre-receive
 func createPreReceiveHook(gitHome, repoPath string) error {
-	// parse & generate the template anew each receive for each new git home
-	var hookByteBuf bytes.Buffer
-	if err := preReceiveHookTpl.Execute(&hookByteBuf, map[string]string{"GitHome": gitHome}); err != nil {
-		return err
-	}
-
 	writePath := filepath.Join(repoPath, "hooks", "pre-receive")
-	log.Info("Writing pre-receive hook to %s", writePath)
-	if err := ioutil.WriteFile(writePath, hookByteBuf.Bytes(), 0755); err != nil {
+	fd, err := os.Create(writePath)
+	if err != nil {
+		return fmt.Errorf("Cannot create pre-receive hook file at %s (%s)", writePath, err)
+	}
+	defer fd.Close()
+
+	// parse & generate the template anew each receive for each new git home
+	if err := preReceiveHookTpl.Execute(fd, map[string]string{"GitHome": gitHome}); err != nil {
 		return fmt.Errorf("Cannot write pre-receive hook to %s (%s)", writePath, err)
 	}
+	if err := os.Chmod(writePath, 0755); err != nil {
+		return fmt.Errorf("Cannot change pre-receive hook script permissions (%s)", err)
+	}
+
 	return nil
 }
