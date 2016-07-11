@@ -3,3 +3,4 @@ vendor/
 rootfs/usr/bin/
 ./builder
 coverage.txt
+testdata/hooks/pre-receive
