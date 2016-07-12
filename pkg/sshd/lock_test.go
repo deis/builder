@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	gitError = errors.New("git receive error")
+	errGitReceive = errors.New("git receive error")
 )
 
 func TestMultipleSameRepoLocks(t *testing.T) {
@@ -92,15 +92,20 @@ func TestDoubleLockUnlock(t *testing.T) {
 }
 
 func TestWrapInLock(t *testing.T) {
-	lck := NewInMemoryRepositoryLock(0)
-	assert.NoErr(t, wrapInLock(lck, "repo", func() error {
+	const repoName = "repo"
+	lck := NewInMemoryRepositoryLock(100 * time.Second)
+	assert.NoErr(t, wrapInLock(lck, repoName, func() error {
 		return nil
 	}))
-	assert.Err(t, gitError, wrapInLock(lck, "repo", func() error {
-		return gitError
+	assert.NoErr(t, lck.Lock(repoName))
+	assert.Err(t, errAlreadyLocked, wrapInLock(lck, repoName, func() error {
+		return errGitReceive
 	}))
-	assert.NoErr(t, lck.Lock("repo"))
-	assert.Err(t, errAlreadyLocked, wrapInLock(lck, "repo", func() error {
+	assert.Err(t, errAlreadyLocked, wrapInLock(lck, repoName, func() error {
+		return nil
+	}))
+	assert.NoErr(t, lck.Unlock(repoName))
+	assert.NoErr(t, wrapInLock(lck, repoName, func() error {
 		return nil
 	}))
 }
