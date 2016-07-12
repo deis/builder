@@ -33,7 +33,7 @@ func TestGetStorageParams(t *testing.T) {
 
 	params, err := GetStorageParams(sys.NewFakeEnv())
 	if err != nil {
-		t.Errorf("recevied error while retrieving storage params: %v", err)
+		t.Errorf("received error while retrieving storage params: %v", err)
 	}
 
 	val, ok := params["foo"]
@@ -51,6 +51,16 @@ func TestGetStorageParams(t *testing.T) {
 
 	_, err = GetStorageParams(sys.NewFakeEnv())
 	if err != nil {
-		t.Errorf("recevied error while retrieving storage params: %v", err)
+		t.Errorf("received error while retrieving storage params: %v", err)
+	}
+
+	// create the special "..data" directory symlink, expecting it to pass
+	if err := os.Symlink(storageCredLocation+"bar", storageCredLocation+"..data"); err != nil {
+		t.Fatalf("could not create dir symlink ..data -> %s: %v", storageCredLocation+"bar", err)
+	}
+
+	_, err = GetStorageParams(sys.NewFakeEnv())
+	if err != nil {
+		t.Errorf("received error while retrieving storage params: %v", err)
 	}
 }
