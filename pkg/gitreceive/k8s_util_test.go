@@ -132,6 +132,7 @@ func TestBuildPod(t *testing.T) {
 			build.imgName,
 			build.storageType,
 			build.dockerBuilderImage,
+			"5555",
 			build.dockerBuilderImagePullPolicy,
 		)
 
