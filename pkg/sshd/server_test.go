@@ -175,33 +175,20 @@ func TestConcurrentPushSameRepo(t *testing.T) {
 		}()
 	}
 
+	// ensure at least 1 output was successful
 	foundOK := false
 	to := 1 * time.Second
-	multiPushLine, err := gitPktLineStr(multiplePush)
-	assert.NoErr(t, err)
 	for i := 0; i < numPushers; i++ {
 		select {
 		case sessOut := <-outCh:
-			output := sessOut.outStr
-			err := sessOut.err
-			if !foundOK && output == "OK" {
+			if sessOut.outStr == "OK" {
 				foundOK = true
-				continue
 			}
-			if foundOK && err != nil && output != "OK" {
-				if output != multiPushLine {
-					t.Errorf("output for pusher %d was not '%s' (it was '%s')", i, multiplePush, output)
-				}
-				continue
-			}
-			if foundOK && output == "OK" {
-				t.Fatalf("more than 1 success was found")
-			}
-
 		case <-time.After(to):
 			t.Fatalf("didn't receive an output within %s", to)
 		}
 	}
+	assert.True(t, foundOK, "no SSH requests were successful")
 }
 
 // TestConcurrentPushDifferentRepo tests many concurrent pushes, each to a different repo
