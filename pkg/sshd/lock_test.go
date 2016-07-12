@@ -93,7 +93,7 @@ func TestDoubleLockUnlock(t *testing.T) {
 
 func TestWrapInLock(t *testing.T) {
 	const repoName = "repo"
-	lck := NewInMemoryRepositoryLock(0)
+	lck := NewInMemoryRepositoryLock(100 * time.Second)
 	assert.NoErr(t, wrapInLock(lck, repoName, func() error {
 		return nil
 	}))
