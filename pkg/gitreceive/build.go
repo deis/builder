@@ -149,6 +149,7 @@ func build(
 			slugName,
 			conf.StorageType,
 			conf.DockerBuilderImage,
+			conf.RegistryProxyPort,
 			dockerBuilderImagePullPolicy,
 		)
 	} else {
