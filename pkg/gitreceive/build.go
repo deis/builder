@@ -138,8 +138,21 @@ func build(
 
 	var pod *api.Pod
 	var buildPodName string
+	image := appName
 	if usingDockerfile {
 		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
+		registryLocation := conf.RegistryLocation
+		registryEnv := make(map[string]string)
+		if registryLocation != "on-cluster" {
+			registryEnv, err = getRegistryDetails(kubeClient, &image, registryLocation, conf.PodNamespace, conf.RegistrySecretPrefix)
+			if err != nil {
+				return fmt.Errorf("error getting private registry details %s", err)
+			}
+			image = image + ":git-" + gitSha.Short()
+		}
+		registryEnv["DEIS_REGISTRY_PROXY_PORT"] = conf.RegistryProxyPort
+		registryEnv["DEIS_REGISTRY_LOCATION"] = registryLocation
+
 		pod = dockerBuilderPod(
 			conf.Debug,
 			buildPodName,
@@ -149,7 +162,7 @@ func build(
 			slugName,
 			conf.StorageType,
 			conf.DockerBuilderImage,
-			conf.RegistryProxyPort,
+			registryEnv,
 			dockerBuilderImagePullPolicy,
 		)
 	} else {
@@ -244,7 +257,7 @@ func build(
 
 	log.Info("Build complete.")
 
-	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, procType, usingDockerfile)
+	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, image, procType, usingDockerfile)
 	quit := progress("...", conf.SessionIdleInterval())
 	log.Info("Launching App...")
 	buildHookResp, err := publishRelease(conf, builderKey, buildHook)

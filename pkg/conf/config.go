@@ -16,6 +16,7 @@ const (
 	gcsKey              = "key.json"
 )
 
+// Parameters is map which contains storage params
 type Parameters map[string]interface{}
 
 // EnvConfig is a convenience function to process the envconfig (
@@ -43,6 +44,7 @@ func GetBuilderKey() (string, error) {
 	return builderKey, nil
 }
 
+// GetStorageParams returns the credentials required for connecting to object storage
 func GetStorageParams(env sys.Env) (Parameters, error) {
 	params := make(map[string]interface{})
 	files, err := ioutil.ReadDir(storageCredLocation)
