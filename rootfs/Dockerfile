@@ -7,8 +7,6 @@ RUN adduser --system \
 	--group \
 	git
 
-COPY . /
-
 RUN apt-get update \
 	&& apt-get install -y \
 		sudo \
@@ -44,6 +42,8 @@ RUN apt-get update \
 	&& passwd -u git \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/man /usr/share/doc
+
+COPY . /
 
 CMD ["/usr/bin/boot", "server"]
 EXPOSE 2223
