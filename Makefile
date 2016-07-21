@@ -12,6 +12,13 @@ DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
 DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
 DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
 
+# Get the component informtation to a tmp location and get replica count
+KUBE := $(shell which kubectl)
+ifdef KUBE
+$(shell kubectl get rc deis-$(SHORT_NAME) --namespace deis -o yaml > /tmp/deis-$(SHORT_NAME))
+DESIRED_REPLICAS=$(shell kubectl get -o template rc/deis-$(SHORT_NAME) --template={{.status.replicas}} --namespace deis)
+endif
+
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
 BINARY_DEST_DIR := rootfs/usr/bin
@@ -55,5 +62,10 @@ docker-build: build
 # Push to a registry that Kubernetes can access.
 docker-push:
 	docker push ${IMAGE}
+
+deploy: docker-build docker-push
+	sed 's#\(image:\) .*#\1 $(IMAGE)#' /tmp/deis-$(SHORT_NAME) | kubectl apply --validate=true -f -
+	kubectl scale rc deis-$(SHORT_NAME) --replicas 0 --namespace deis
+	kubectl scale rc deis-$(SHORT_NAME) --replicas $(DESIRED_REPLICAS) --namespace deis
 
 .PHONY: all build docker-compile kube-up kube-down deploy
