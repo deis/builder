@@ -84,7 +84,7 @@ func build(
 	}
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
-			fmt.Errorf("unable to remove tmpdir %s (%s)", tmpDir, err)
+			log.Info("unable to remove tmpdir %s (%s)", tmpDir, err)
 		}
 	}()
 

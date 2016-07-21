@@ -114,7 +114,7 @@ func buildPod(
 		Spec: api.PodSpec{
 			RestartPolicy: api.RestartPolicyNever,
 			Containers: []api.Container{
-				api.Container{
+				{
 					ImagePullPolicy: pullPolicy,
 				},
 			},
@@ -139,7 +139,7 @@ func buildPod(
 	})
 
 	pod.Spec.Containers[0].VolumeMounts = []api.VolumeMount{
-		api.VolumeMount{
+		{
 			Name:      objectStore,
 			MountPath: objectStorePath,
 			ReadOnly:  true,
