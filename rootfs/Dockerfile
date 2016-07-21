@@ -7,8 +7,11 @@ RUN adduser --system \
 	--group \
 	git
 
-RUN apt-get update \
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E1DF1F24 \
+	&& echo "deb http://ppa.launchpad.net/git-core/ppa/ubuntu xenial main" >> /etc/apt/sources.list \
+	&& apt-get update \
 	&& apt-get install -y \
+		git \
 		sudo \
 		openssh-server \
 		coreutils \
@@ -19,29 +22,8 @@ RUN apt-get update \
 	&& rm -rf /etc/ssh/ssh_host* \
 	&& mkdir /apps \
 	&& apt-get clean \
-	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/man /usr/share/doc
-
-# install git from source
-ENV GIT_VERSION 2.8.4
-RUN apt-get update \
-	&& apt-get install -y \
-		build-essential \
-		gettext \
-		libcurl4-gnutls-dev \
-		libexpat1-dev \
-		libssl-dev \
-		libz-dev \
-		--no-install-recommends \
-	&& curl -SsL https://github.com/git/git/archive/v$GIT_VERSION.tar.gz --output git.tar.gz \
-	&& tar -xzf git.tar.gz \
-	&& cd git-$GIT_VERSION \
-	&& make prefix=/usr/local all \
-	&& make prefix=/usr/local install \
-	&& cd .. \
-	&& rm -rf git-$GIT_VERSION git.tar.gz \
-	&& passwd -u git \
-	&& apt-get clean \
-	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/man /usr/share/doc
+	&& rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/man /usr/share/doc \
+	&& passwd -u git
 
 COPY . /
 
