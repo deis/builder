@@ -38,13 +38,14 @@ type ControllerErrorResponse struct {
 
 // Config represents a Deis application's configuration.
 type Config struct {
-	Owner   string                 `json:"owner"`
-	App     string                 `json:"app"`
-	Values  map[string]interface{} `json:"values"`
-	Memory  map[string]string      `json:"memory"`
-	CPU     map[string]int         `json:"cpu"`
-	Tags    map[string]string      `json:"tags"`
-	UUID    string                 `json:"uuid"`
-	Created time.Time              `json:"created"`
-	Updated time.Time              `json:"updated"`
+	Owner    string                 `json:"owner"`
+	App      string                 `json:"app"`
+	Values   map[string]interface{} `json:"values"`
+	Memory   map[string]string      `json:"memory"`
+	CPU      map[string]int         `json:"cpu"`
+	Tags     map[string]string      `json:"tags"`
+	UUID     string                 `json:"uuid"`
+	Created  time.Time              `json:"created"`
+	Updated  time.Time              `json:"updated"`
+	Registry map[string]interface{} `json:"registry"`
 }

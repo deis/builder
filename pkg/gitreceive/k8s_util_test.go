@@ -40,6 +40,7 @@ type dockerBuildCase struct {
 	name                         string
 	namespace                    string
 	env                          map[string]interface{}
+	registry                     string
 	tarKey                       string
 	imgName                      string
 	dockerBuilderImage           string
@@ -110,16 +111,16 @@ func TestBuildPod(t *testing.T) {
 	}
 
 	dockerBuilds := []dockerBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "img", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "img", "customimage", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "img", "customimage", api.PullIfNotPresent, ""},
-		{true, "test", "default", env, "tar", "img", "customimage", api.PullNever, ""},
+		{true, "test", "default", emptyEnv, `{"foo":"bar"}`, "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "{}", "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "{}", "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "{}", "tar", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "{}", "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "{}", "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", env, "{}", "tar", "img", "", api.PullAlways, ""},
+		{true, "test", "default", env, "{}", "tar", "img", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "{}", "tar", "img", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "{}", "tar", "img", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range dockerBuilds {
@@ -128,6 +129,7 @@ func TestBuildPod(t *testing.T) {
 			build.name,
 			build.namespace,
 			build.env,
+			build.registry,
 			build.tarKey,
 			build.imgName,
 			build.storageType,

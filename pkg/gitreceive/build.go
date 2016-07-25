@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/k8s"
@@ -19,7 +21,6 @@ import (
 	"github.com/deis/pkg/log"
 	"github.com/docker/distribution/context"
 	storagedriver "github.com/docker/distribution/registry/storage/driver"
-	"gopkg.in/yaml.v2"
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
 )
@@ -104,6 +105,13 @@ func build(
 		}
 	}
 
+	// Serialize docker registry configuration into a string.
+	registry, err := json.Marshal(appConf.Registry)
+
+	if err != nil {
+		return fmt.Errorf("error serializing docker registry authentication to json: %v", err)
+	}
+
 	// build a tarball from the new objects
 	appTgz := fmt.Sprintf("%s.tar.gz", appName)
 	gitArchiveCmd := repoCmd(repoDir, "git", "archive", "--format=tar.gz", fmt.Sprintf("--output=%s", appTgz), gitSha.Short())
@@ -145,6 +153,7 @@ func build(
 			buildPodName,
 			conf.PodNamespace,
 			appConf.Values,
+			string(registry),
 			slugBuilderInfo.TarKey(),
 			slugName,
 			conf.StorageType,
