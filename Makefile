@@ -29,6 +29,11 @@ BINDIR := ./rootfs
 
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
+GO_FILES = $(wildcard *.go)
+GO_PACKAGES := $(shell find pkg -maxdepth 1 -type d)
+GO_PACKAGES_REPO_PATH = $(addprefix $(REPO_PATH)/,$(GO_PACKAGES))
+GOFMT = gofmtresult=$$(gofmt -e -l -s ${GO_FILES} ${GO_PACKAGES}); if [[ -n $$gofmtresult ]]; then echo "gofmt errors found in the following files: $${gofmtresult}"; false; fi;
+
 all:
 	@echo "Use a Makefile to control top-level building of the project."
 
@@ -45,7 +50,16 @@ build:
 	${DEV_ENV_CMD} go build -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/boot boot.go
 	${DEV_ENV_CMD} upx -9 ${BINARY_DEST_DIR}/boot
 
-test:
+test: test-style test-unit
+
+test-style:
+		${DEV_ENV_CMD} bash -c '${GOFMT}'
+		${DEV_ENV_CMD} sh -c 'go vet $(repo_path) $(GO_PACKAGES_REPO_PATH)'
+	@for i in $(addsuffix /...,$(GO_PACKAGES)); do \
+		${DEV_ENV_CMD} golint $$i; \
+	done
+
+test-unit:
 	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
 
 test-cover:

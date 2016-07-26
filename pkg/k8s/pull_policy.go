@@ -10,9 +10,9 @@ var (
 	emptyPullPolicy = api.PullPolicy("")
 	// ValidPullPolicies is the set of pull policies that this package considers valid
 	ValidPullPolicies = map[api.PullPolicy]struct{}{
-		api.PullAlways:       struct{}{},
-		api.PullIfNotPresent: struct{}{},
-		api.PullNever:        struct{}{},
+		api.PullAlways:       {},
+		api.PullIfNotPresent: {},
+		api.PullNever:        {},
 	}
 )
 

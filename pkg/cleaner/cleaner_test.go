@@ -12,8 +12,8 @@ import (
 
 func TestGetDiff(t *testing.T) {
 	nsList := []api.Namespace{
-		api.Namespace{ObjectMeta: api.ObjectMeta{Name: "app1"}},
-		api.Namespace{ObjectMeta: api.ObjectMeta{Name: "app2"}},
+		{ObjectMeta: api.ObjectMeta{Name: "app1"}},
+		{ObjectMeta: api.ObjectMeta{Name: "app2"}},
 	}
 	dirList := []string{"app1", "app3"}
 	diff := getDiff(nsList, dirList)
