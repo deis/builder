@@ -27,8 +27,8 @@ type UserInfo struct {
 	Apps        []string
 }
 
-// ControllerURLStr returns the url for connecting to deis controller
-func ControllerURLStr(additionalPath ...string) (string, error) {
+// URLStr returns the url of the controller with the given path prepended.
+func URLStr(additionalPath ...string) (string, error) {
 	host := os.Getenv(hostEnvName)
 	port := os.Getenv(portEnvName)
 
@@ -66,7 +66,7 @@ func fingerprint(key ssh.PublicKey) string {
 // UserInfoFromKey makes a request to the controller to get the user info from they given key.
 func UserInfoFromKey(key ssh.PublicKey) (*UserInfo, error) {
 	fp := fingerprint(key)
-	url, err := ControllerURLStr("v2", "hooks", "key", fp)
+	url, err := URLStr("v2", "hooks", "key", fp)
 	if err != nil {
 		return nil, err
 	}

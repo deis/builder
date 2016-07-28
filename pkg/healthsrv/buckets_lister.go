@@ -11,20 +11,6 @@ type BucketLister interface {
 	List(ctx context.Context, opath string) ([]string, error)
 }
 
-type emptyBucketLister struct{}
-
-func (e emptyBucketLister) List(ctx context.Context, opath string) ([]string, error) {
-	return nil, nil
-}
-
-type errBucketLister struct {
-	err error
-}
-
-func (e errBucketLister) List(ctx context.Context, opath string) ([]string, error) {
-	return nil, e.err
-}
-
 // listBuckets calls bl.ListBuckets(...) and sends the results back on the various given channels.
 // This func is intended to be run in a goroutine and communicates via the channels it's passed.
 //

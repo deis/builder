@@ -2,9 +2,7 @@ package healthsrv
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/deis/builder/pkg/controller"
 )
@@ -15,36 +13,8 @@ type GetClient interface {
 	Get(string) (*http.Response, error)
 }
 
-type successGetClient struct{}
-
-func (e successGetClient) Get(url string) (*http.Response, error) {
-	resp := &http.Response{
-		Body:       ioutil.NopCloser(strings.NewReader("")),
-		StatusCode: http.StatusOK,
-	}
-	return resp, nil
-}
-
-type failureGetClient struct{}
-
-func (e failureGetClient) Get(url string) (*http.Response, error) {
-	resp := &http.Response{
-		Body:       ioutil.NopCloser(strings.NewReader("")),
-		StatusCode: http.StatusServiceUnavailable,
-	}
-	return resp, nil
-}
-
-type errGetClient struct {
-	err error
-}
-
-func (e errGetClient) Get(url string) (*http.Response, error) {
-	return nil, e.err
-}
-
 func controllerState(client GetClient, succCh chan<- string, errCh chan<- error, stopCh <-chan struct{}) {
-	url, err := controller.ControllerURLStr("healthz")
+	url, err := controller.URLStr("healthz")
 	if err != nil {
 		select {
 		case errCh <- err:

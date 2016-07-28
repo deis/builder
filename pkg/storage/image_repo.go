@@ -13,7 +13,7 @@ import (
 )
 
 // CreateImageRepo create a repository for the image on amazon's ECR(EC2 Container Repository)
-// if it doesnt exist as repository needs to be present before pushing and image into it.
+// if it doesn't exist as repository needs to be present before pushing and image into it.
 func CreateImageRepo(reponame string, params map[string]string) error {
 
 	accessKey, ok := params["accesskey"]

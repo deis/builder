@@ -7,7 +7,7 @@ export GO15VENDOREXPERIMENT=1
 
 # dockerized development environment variables
 REPO_PATH := github.com/deis/${SHORT_NAME}
-DEV_ENV_IMAGE := quay.io/deis/go-dev:0.14.0
+DEV_ENV_IMAGE := quay.io/deis/go-dev:0.16.0
 DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
 DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
 DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
@@ -29,10 +29,7 @@ BINDIR := ./rootfs
 
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
-GO_FILES = $(wildcard *.go)
-GO_PACKAGES := $(shell find pkg -maxdepth 1 -type d)
-GO_PACKAGES_REPO_PATH = $(addprefix $(REPO_PATH)/,$(GO_PACKAGES))
-GOFMT = gofmtresult=$$(gofmt -e -l -s ${GO_FILES} ${GO_PACKAGES}); if [[ -n $$gofmtresult ]]; then echo "gofmt errors found in the following files: $${gofmtresult}"; false; fi;
+GOTEST := go test --race
 
 all:
 	@echo "Use a Makefile to control top-level building of the project."
@@ -53,14 +50,10 @@ build:
 test: test-style test-unit
 
 test-style:
-		${DEV_ENV_CMD} bash -c '${GOFMT}'
-		${DEV_ENV_CMD} sh -c 'go vet $(repo_path) $(GO_PACKAGES_REPO_PATH)'
-	@for i in $(addsuffix /...,$(GO_PACKAGES)); do \
-		${DEV_ENV_CMD} golint $$i; \
-	done
+	${DEV_ENV_CMD} lint
 
 test-unit:
-	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
+	${DEV_ENV_CMD} sh -c '${GOTEST} $$(glide nv)'
 
 test-cover:
 	${DEV_ENV_CMD} test-cover.sh

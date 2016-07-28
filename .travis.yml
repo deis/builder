@@ -13,6 +13,6 @@ sudo: required
 install:
   - make bootstrap
 script:
-  - make test-cover build docker-build
+  - make test-style test-cover build docker-build
 after_success:
   - bash <(curl -s https://codecov.io/bash)
