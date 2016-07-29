@@ -132,6 +132,8 @@ func TestBuildPod(t *testing.T) {
 			build.imgName,
 			build.storageType,
 			build.dockerBuilderImage,
+			"localhost",
+			"5555",
 			regEnv,
 			build.dockerBuilderImagePullPolicy,
 		)
