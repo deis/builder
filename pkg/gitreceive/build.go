@@ -162,6 +162,8 @@ func build(
 			slugName,
 			conf.StorageType,
 			conf.DockerBuilderImage,
+			conf.RegistryHost,
+			conf.RegistryPort,
 			registryEnv,
 			dockerBuilderImagePullPolicy,
 		)

@@ -16,6 +16,8 @@ type Config struct {
 	// k8s service discovery env vars
 	ControllerHost       string `envconfig:"DEIS_CONTROLLER_SERVICE_HOST" required:"true"`
 	ControllerPort       string `envconfig:"DEIS_CONTROLLER_SERVICE_PORT" required:"true"`
+	RegistryHost         string `envconfig:"DEIS_REGISTRY_SERVICE_HOST" required:"true"`
+	RegistryPort         string `envconfig:"DEIS_REGISTRY_SERVICE_PORT" required:"true"`
 	RegistryProxyPort    string `envconfig:"DEIS_REGISTRY_PROXY_PORT" default:"5555"`
 	RegistryLocation     string `envconfig:"DEIS_REGISTRY_LOCATION" default:"on-cluster"`
 	RegistrySecretPrefix string `envconfig:"DEIS_REGISTRY_SECRET_PREFIX" default:"private-registry"`

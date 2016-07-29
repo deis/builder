@@ -43,7 +43,9 @@ func dockerBuilderPod(
 	tarKey,
 	imageName,
 	storageType,
-	image string,
+	image,
+	registryHost,
+	registryPort string,
 	registryEnv map[string]string,
 	pullPolicy api.PullPolicy,
 ) *api.Pod {
@@ -56,6 +58,10 @@ func dockerBuilderPod(
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
 	addEnvToPod(pod, builderStorage, storageType)
+	// inject existing DEIS_REGISTRY_SERVICE_HOST and PORT info to dockerbuilder
+	// see https://github.com/deis/dockerbuilder/issues/83
+	addEnvToPod(pod, "DEIS_REGISTRY_SERVICE_HOST", registryHost)
+	addEnvToPod(pod, "DEIS_REGISTRY_SERVICE_PORT", registryPort)
 
 	for key, value := range registryEnv {
 		addEnvToPod(pod, key, value)
