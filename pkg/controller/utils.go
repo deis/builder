@@ -27,6 +27,7 @@ type UserInfo struct {
 	Apps        []string
 }
 
+// ControllerURLStr returns the url for connecting to deis controller
 func ControllerURLStr(additionalPath ...string) (string, error) {
 	host := os.Getenv(hostEnvName)
 	port := os.Getenv(portEnvName)

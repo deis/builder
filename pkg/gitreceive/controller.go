@@ -186,7 +186,7 @@ func createBuildHook(
 	slugBuilderInfo *SlugBuilderInfo,
 	gitSha *git.SHA,
 	username,
-	appName string,
+	appName, image string,
 	procType pkg.ProcessType,
 	usingDockerfile bool,
 ) *pkg.BuildHook {
@@ -194,7 +194,7 @@ func createBuildHook(
 		Sha:         gitSha.Short(),
 		ReceiveUser: username,
 		ReceiveRepo: appName,
-		Image:       appName,
+		Image:       image,
 		Procfile:    procType,
 	}
 	if !usingDockerfile {

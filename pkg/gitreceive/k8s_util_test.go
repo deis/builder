@@ -121,7 +121,7 @@ func TestBuildPod(t *testing.T) {
 		{true, "test", "default", env, "tar", "img", "customimage", api.PullIfNotPresent, ""},
 		{true, "test", "default", env, "tar", "img", "customimage", api.PullNever, ""},
 	}
-
+	regEnv := map[string]string{"REG_LOC": "on-cluster"}
 	for _, build := range dockerBuilds {
 		pod = dockerBuilderPod(
 			build.debug,
@@ -132,7 +132,7 @@ func TestBuildPod(t *testing.T) {
 			build.imgName,
 			build.storageType,
 			build.dockerBuilderImage,
-			"5555",
+			regEnv,
 			build.dockerBuilderImagePullPolicy,
 		)
 
@@ -145,6 +145,7 @@ func TestBuildPod(t *testing.T) {
 
 		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
 		checkForEnv(t, pod, "IMG_NAME", build.imgName)
+		checkForEnv(t, pod, "REG_LOC", "on-cluster")
 		if build.dockerBuilderImage != "" {
 			if pod.Spec.Containers[0].Image != build.dockerBuilderImage {
 				t.Errorf("expected %v but returned %v", build.dockerBuilderImage, pod.Spec.Containers[0].Image)

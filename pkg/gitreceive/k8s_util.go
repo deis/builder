@@ -43,7 +43,8 @@ func dockerBuilderPod(
 	tarKey,
 	imageName,
 	storageType,
-	image, registryProxyPort string,
+	image string,
+	registryEnv map[string]string,
 	pullPolicy api.PullPolicy,
 ) *api.Pod {
 
@@ -55,7 +56,10 @@ func dockerBuilderPod(
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, "IMG_NAME", imageName)
 	addEnvToPod(pod, builderStorage, storageType)
-	addEnvToPod(pod, "DEIS_REGISTRY_PROXY_PORT", registryProxyPort)
+
+	for key, value := range registryEnv {
+		addEnvToPod(pod, key, value)
+	}
 
 	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
 		Name:      dockerSocketName,

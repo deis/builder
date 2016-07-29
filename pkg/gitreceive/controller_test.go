@@ -22,15 +22,15 @@ func TestCreateBuildHook(t *testing.T) {
 
 	slugName := appName + ":git-" + sha.Short()
 	slugBuilderInfo := NewSlugBuilderInfo(slugName)
-	hookUsingDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, procType, true)
+	hookUsingDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, slugName, procType, true)
 	assert.Equal(t, hookUsingDockerfile.Sha, sha.Short(), "git sha")
 	assert.Equal(t, hookUsingDockerfile.ReceiveUser, username, "username")
 	assert.Equal(t, hookUsingDockerfile.ReceiveRepo, appName, "username")
-	assert.Equal(t, hookUsingDockerfile.Image, appName, "image")
+	assert.Equal(t, hookUsingDockerfile.Image, slugName, "image")
 	assert.Equal(t, hookUsingDockerfile.Procfile, procType, "procfile")
 	assert.Equal(t, hookUsingDockerfile.Dockerfile, "true", "dockerfile field")
 
-	hookNoDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, procType, false)
+	hookNoDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, slugName, procType, false)
 	assert.Equal(t, hookNoDockerfile.Sha, sha.Short(), "git sha")
 	assert.Equal(t, hookNoDockerfile.ReceiveUser, username, "username")
 	assert.Equal(t, hookNoDockerfile.ReceiveRepo, appName, "username")
