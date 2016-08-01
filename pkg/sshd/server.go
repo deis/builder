@@ -25,8 +25,7 @@ const (
 	// ServerConfig is the context key for ServerConfig object.
 	ServerConfig string = "ssh.ServerConfig"
 
-	multiplePush       string = "Another git push is ongoing"
-	builderKeyLocation        = "/var/run/secrets/api/auth/builder-key"
+	multiplePush string = "Another git push is ongoing"
 )
 
 var errBuildAppPerm = errors.New("user has no permission to build the app")
@@ -303,10 +302,8 @@ func (s *server) runReceive(
 			connData,
 			s.receivetype,
 		)
-		if recvErr != nil {
-			return recvErr
-		}
-		return nil
+
+		return recvErr
 	}
 }
 

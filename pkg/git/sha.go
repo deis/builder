@@ -5,10 +5,8 @@ import (
 	"regexp"
 )
 
-const (
-	// this constant represents the length of a shortened git sha - 8 characters long
-	shortShaIdx = 8
-)
+// this constant represents the length of a shortened git sha - 8 characters long
+const shortShaIdx = 8
 
 var shaRegex = regexp.MustCompile(`^[\da-f]{40}$`)
 
@@ -33,7 +31,7 @@ func NewSha(rawSha string) (*SHA, error) {
 	if !shaRegex.MatchString(rawSha) {
 		return nil, ErrInvalidGitSha{sha: rawSha}
 	}
-	return &SHA{full: rawSha, short: rawSha[0:8]}, nil
+	return &SHA{full: rawSha, short: rawSha[0:shortShaIdx]}, nil
 }
 
 // Full returns the full git sha.

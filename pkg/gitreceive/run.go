@@ -58,8 +58,6 @@ func Run(conf *Config, fs sys.FS, env sys.Env, storageDriver storagedriver.Stora
 			}
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return nil
+
+	return scanner.Err()
 }

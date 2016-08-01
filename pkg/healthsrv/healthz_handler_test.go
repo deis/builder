@@ -3,10 +3,16 @@ package healthsrv
 import (
 	"bytes"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
+
+	"k8s.io/kubernetes/pkg/api"
+
+	"github.com/docker/distribution/context"
 
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/sshd"
@@ -15,6 +21,62 @@ import (
 var (
 	errTest = errors.New("test error")
 )
+
+type emptyBucketLister struct{}
+
+func (e emptyBucketLister) List(ctx context.Context, opath string) ([]string, error) {
+	return nil, nil
+}
+
+type errBucketLister struct {
+	err error
+}
+
+func (e errBucketLister) List(ctx context.Context, opath string) ([]string, error) {
+	return nil, e.err
+}
+
+type successGetClient struct{}
+
+func (e successGetClient) Get(url string) (*http.Response, error) {
+	resp := &http.Response{
+		Body:       ioutil.NopCloser(strings.NewReader("")),
+		StatusCode: http.StatusOK,
+	}
+	return resp, nil
+}
+
+type failureGetClient struct{}
+
+func (e failureGetClient) Get(url string) (*http.Response, error) {
+	resp := &http.Response{
+		Body:       ioutil.NopCloser(strings.NewReader("")),
+		StatusCode: http.StatusServiceUnavailable,
+	}
+	return resp, nil
+}
+
+type errGetClient struct {
+	err error
+}
+
+func (e errGetClient) Get(url string) (*http.Response, error) {
+	return nil, e.err
+}
+
+type emptyNamespaceLister struct{}
+
+func (n emptyNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
+	return &api.NamespaceList{}, nil
+}
+
+type errNamespaceLister struct {
+	err error
+}
+
+func (e errNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
+	return nil, e.err
+}
 
 func TestHealthZCircuitOpen(t *testing.T) {
 	bLister := emptyBucketLister{}

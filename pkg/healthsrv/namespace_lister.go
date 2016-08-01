@@ -14,20 +14,6 @@ type NamespaceLister interface {
 	List(opts api.ListOptions) (*api.NamespaceList, error)
 }
 
-type emptyNamespaceLister struct{}
-
-func (n emptyNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
-	return &api.NamespaceList{}, nil
-}
-
-type errNamespaceLister struct {
-	err error
-}
-
-func (e errNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
-	return nil, e.err
-}
-
 // listNamespaces calls nl.List(...) and sends the results back on the various given channels.
 // This func is intended to be run in a goroutine and communicates via the channels it's passed.
 //

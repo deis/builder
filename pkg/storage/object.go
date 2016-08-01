@@ -9,12 +9,6 @@ import (
 	storagedriver "github.com/docker/distribution/registry/storage/driver"
 )
 
-const (
-	noSuchKeyCode = "NoSuchKey"
-
-	octetStream = "application/octet-stream"
-)
-
 // ObjectExists determines whether the object in ${bucketName}/${objKey} exists, as reported by
 // statter. Returns the following:
 //

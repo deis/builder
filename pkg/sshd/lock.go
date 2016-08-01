@@ -63,7 +63,7 @@ type inMemoryRepoLock struct {
 	timeout time.Duration
 }
 
-// Lock aquires a lock associated with the specified name.
+// Lock acquires a lock associated with the specified name.
 func (rl *inMemoryRepoLock) Lock(repoName string) error {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
