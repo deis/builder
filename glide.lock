@@ -1,8 +1,8 @@
-hash: 9df32a50888e0f5657e579c16497a627e75ec3a72b4ac59ed8df0910aeed8a94
-updated: 2016-06-14T14:13:11.935549861-06:00
+hash: 1e383d7d2c4c1a38f252802ddf37ecb9f2771678e1a5d8c4604a0d99eea6161b
+updated: 2016-08-05T14:32:21.251035346-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
-  version: 75cd24fc2f2c
+  version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/arschles/assert
   version: 6882f85ccdc7c1822b146d1a6b0c2c48f91b5140
 - name: github.com/aws/aws-sdk-go
@@ -31,6 +31,9 @@ imports:
   - private/waiter
   - service/cloudfront/sign
   - service/s3
+  - service/ecr
+  - private/protocol/jsonrpc
+  - private/protocol/json/jsonutil
 - name: github.com/Azure/azure-sdk-for-go
   version: 95361a2573b1fa92a00c5fc2707a80308483c6f9
   subpackages:
@@ -47,6 +50,12 @@ imports:
   version: 3e6e67c4dcea3ac2f25fd4731abc0e1deaf36216
   subpackages:
   - spew
+- name: github.com/deis/controller-sdk-go
+  version: 1c9d1c9821ed4984babf7136f1de46ac1698590a
+  subpackages:
+  - api
+  - hooks
+  - pkg/time
 - name: github.com/deis/pkg
   version: 189ed6bd6b6aa6629b72c2c5472095e176eec8a6
   subpackages:
@@ -123,6 +132,8 @@ imports:
   version: 14f550f51af52180c2eefed15e5fd18d63c0a64a
 - name: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
+- name: github.com/goware/urlx
+  version: 8bb4a2e4339f55b15164907177e96e9faf885504
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/juju/ratelimit
@@ -164,6 +175,10 @@ imports:
   - model
 - name: github.com/prometheus/procfs
   version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
+- name: github.com/PuerkitoBio/purell
+  version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
+- name: github.com/PuerkitoBio/urlesc
+  version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/Sirupsen/logrus
   version: 55eb11d21d2a31a3cc93838241d04800f52e823d
   subpackages:
@@ -185,6 +200,7 @@ imports:
   subpackages:
   - context
   - context/ctxhttp
+  - idna
   - http2
   - trace
   - http2/hpack
@@ -196,6 +212,19 @@ imports:
   - internal
   - jws
   - jwt
+- name: golang.org/x/text
+  version: 2910a502d2bf9e43193af9d68ca516529614eed3
+  subpackages:
+  - secure/precis
+  - unicode/norm
+  - cases
+  - runes
+  - secure/bidirule
+  - transform
+  - width
+  - language
+  - unicode/bidi
+  - internal/tag
 - name: google.golang.org/api
   version: fceeaa645c4015c833842e6ed6052b2dda667079
   repo: https://code.googlesource.com/google-api-go-client
@@ -313,7 +342,7 @@ imports:
   - pkg/util/hash
   - pkg/util/net/sets
 - name: speter.net/go/exp/math/dec/inf
-  version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
+  version: 46a40649338836f5d25521ce343379da79ef2184
   repo: https://github.com/belua/inf
   vcs: git
-devImports: []
+testImports: []

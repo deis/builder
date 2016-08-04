@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/sshd"
 )
 
@@ -11,7 +12,10 @@ import (
 // with the indicative error.
 func Start(port int, nsLister NamespaceLister, bLister BucketLister, sshServerCircuit *sshd.Circuit) error {
 	mux := http.NewServeMux()
-	client := &http.Client{}
+	client, err := controller.New()
+	if err != nil {
+		return err
+	}
 	mux.Handle("/healthz", healthZHandler(bLister, sshServerCircuit))
 	mux.Handle("/readiness", readinessHandler(client, nsLister))
 

@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/arschles/assert"
-	"github.com/deis/builder/pkg"
 	"github.com/deis/builder/pkg/storage"
+	"github.com/deis/controller-sdk-go/api"
 	"github.com/docker/distribution/context"
 	"gopkg.in/yaml.v2"
 )
@@ -35,7 +35,7 @@ func TestGetProcFileFromRepoSuccess(t *testing.T) {
 	}()
 	getter := &storage.FakeObjectGetter{}
 	procType, err := getProcFile(getter, tmpDir, objKey, buildTypeProcfile)
-	actualData := pkg.ProcessType{}
+	actualData := api.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
 	assert.Equal(t, procType, actualData, "data")
@@ -70,7 +70,7 @@ func TestGetProcFileFromServerSuccess(t *testing.T) {
 	}
 
 	procType, err := getProcFile(getter, "", objKey, buildTypeProcfile)
-	actualData := pkg.ProcessType{}
+	actualData := api.ProcessType{}
 	yaml.Unmarshal(data, &actualData)
 	assert.NoErr(t, err)
 	assert.Equal(t, procType, actualData, "data")

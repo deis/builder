@@ -7,6 +7,11 @@ import (
 	"github.com/deis/builder/pkg/git"
 )
 
+const (
+	rawSha  = "c3b4e4ba8b7267226ff02ad07a3a2cca9c9237de"
+	appName = "myapp"
+)
+
 func TestPushKey(t *testing.T) {
 	sha, err := git.NewSha(rawSha)
 	if err != nil {
