@@ -191,7 +191,7 @@ func waitForPod(pw *k8s.PodWatcher, ns, podName string, ticker, interval, timeou
 			return true, nil
 		}
 		if pod.Status.Phase == api.PodFailed {
-			return true, fmt.Errorf("Giving up; pod went into failed status: \n%s", fmt.Sprintf("%#v", pod))
+			return true, fmt.Errorf("Giving up; pod went into failed status: \n[%s]:%s", pod.Status.Reason, pod.Status.Message)
 		}
 		return false, nil
 	}
