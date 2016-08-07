@@ -28,13 +28,13 @@ func TestCreateBuildHook(t *testing.T) {
 	assert.Equal(t, hookUsingDockerfile.ReceiveRepo, appName, "username")
 	assert.Equal(t, hookUsingDockerfile.Image, slugName, "image")
 	assert.Equal(t, hookUsingDockerfile.Procfile, procType, "procfile")
-	assert.Equal(t, hookUsingDockerfile.Dockerfile, "true", "dockerfile field")
+	assert.Equal(t, hookUsingDockerfile.Dockerfile, true, "dockerfile field")
 
 	hookNoDockerfile := createBuildHook(slugBuilderInfo, sha, username, appName, slugName, procType, false)
 	assert.Equal(t, hookNoDockerfile.Sha, sha.Short(), "git sha")
 	assert.Equal(t, hookNoDockerfile.ReceiveUser, username, "username")
 	assert.Equal(t, hookNoDockerfile.ReceiveRepo, appName, "username")
 	assert.Equal(t, hookNoDockerfile.Procfile, procType, "procfile")
-	assert.Equal(t, hookNoDockerfile.Dockerfile, "", "dockerfile field")
+	assert.Equal(t, hookNoDockerfile.Dockerfile, false, "dockerfile field")
 
 }
