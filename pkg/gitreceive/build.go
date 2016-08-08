@@ -11,11 +11,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deis/builder/pkg"
+	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
+	"github.com/deis/controller-sdk-go"
+	deisAPI "github.com/deis/controller-sdk-go/api"
+	"github.com/deis/controller-sdk-go/hooks"
 	"github.com/deis/pkg/log"
 	"github.com/docker/distribution/context"
 	storagedriver "github.com/docker/distribution/registry/storage/driver"
@@ -44,6 +47,7 @@ func run(cmd *exec.Cmd) error {
 }
 
 func build(
+	client *deis.Client,
 	conf *Config,
 	storageDriver storagedriver.StorageDriver,
 	kubeClient *client.Client,
@@ -91,11 +95,12 @@ func build(
 	slugBuilderInfo := NewSlugBuilderInfo(slugName)
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
-	appConf, err := getAppConfig(conf, builderKey, conf.Username, appName)
-	if err != nil {
-		return fmt.Errorf("getting app config for %s (%s)", appName, err)
+	appConf, err := hooks.GetAppConfig(client, conf.Username, appName)
+	if controller.CheckAPICompat(client, err) != nil {
+		return err
 	}
-	log.Debug("got the following config back for app %s: %+v", appName, *appConf)
+
+	log.Debug("got the following config back for app %s: %+v", appName, appConf)
 	var buildPackURL string
 	if buildPackURLInterface, ok := appConf.Values["BUILDPACK_URL"]; ok {
 		if bpStr, ok := buildPackURLInterface.(string); ok {
@@ -252,25 +257,23 @@ func build(
 	}
 	log.Debug("Done")
 
-	procType := pkg.ProcessType{}
+	procType := deisAPI.ProcessType{}
 	if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey(), bType); err != nil {
 		return err
 	}
 
 	log.Info("Build complete.")
 
-	buildHook := createBuildHook(slugBuilderInfo, gitSha, conf.Username, appName, image, procType, usingDockerfile)
 	quit := progress("...", conf.SessionIdleInterval())
 	log.Info("Launching App...")
-	buildHookResp, err := publishRelease(conf, builderKey, buildHook)
+	if !usingDockerfile {
+		image = slugBuilderInfo.AbsoluteSlugObjectKey()
+	}
+	release, err := hooks.CreateBuild(client, conf.Username, conf.App(), image, gitSha.Short(), procType, usingDockerfile)
 	quit <- true
 	<-quit
-	if err != nil {
+	if controller.CheckAPICompat(client, err) != nil {
 		return fmt.Errorf("publishing release (%s)", err)
-	}
-	release, ok := buildHookResp.Release["version"]
-	if !ok {
-		return fmt.Errorf("No release returned from Deis controller")
 	}
 
 	log.Info("Done, %s:v%d deployed to Deis\n", appName, release)
@@ -294,8 +297,8 @@ func prettyPrintJSON(data interface{}) (string, error) {
 	return string(formatted.Bytes()), nil
 }
 
-func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string, bType buildType) (pkg.ProcessType, error) {
-	procType := pkg.ProcessType{}
+func getProcFile(getter storage.ObjectGetter, dirName, procfileKey string, bType buildType) (deisAPI.ProcessType, error) {
+	procType := deisAPI.ProcessType{}
 	if _, err := os.Stat(fmt.Sprintf("%s/Procfile", dirName)); err == nil {
 		rawProcFile, err := ioutil.ReadFile(fmt.Sprintf("%s/Procfile", dirName))
 		if err != nil {

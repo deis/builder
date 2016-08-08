@@ -3,10 +3,10 @@ package healthsrv
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -16,6 +16,7 @@ import (
 
 	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/sshd"
+	"github.com/deis/controller-sdk-go"
 )
 
 var (
@@ -38,14 +39,6 @@ func (e errBucketLister) List(ctx context.Context, opath string) ([]string, erro
 
 type successGetClient struct{}
 
-func (e successGetClient) Get(url string) (*http.Response, error) {
-	resp := &http.Response{
-		Body:       ioutil.NopCloser(strings.NewReader("")),
-		StatusCode: http.StatusOK,
-	}
-	return resp, nil
-}
-
 type failureGetClient struct{}
 
 func (e failureGetClient) Get(url string) (*http.Response, error) {
@@ -54,14 +47,6 @@ func (e failureGetClient) Get(url string) (*http.Response, error) {
 		StatusCode: http.StatusServiceUnavailable,
 	}
 	return resp, nil
-}
-
-type errGetClient struct {
-	err error
-}
-
-func (e errGetClient) Get(url string) (*http.Response, error) {
-	return nil, e.err
 }
 
 type emptyNamespaceLister struct{}
@@ -76,6 +61,29 @@ type errNamespaceLister struct {
 
 func (e errNamespaceLister) List(opts api.ListOptions) (*api.NamespaceList, error) {
 	return nil, e.err
+}
+
+type fakeHTTPServer struct {
+	// determines wether to return success or failure.
+	Healthy bool
+}
+
+func (f fakeHTTPServer) ServeHTTP(res http.ResponseWriter, req *http.Request) {
+	res.Header().Add("DEIS_API_VERSION", deis.APIVersion)
+
+	if req.URL.Path == "/healthz" {
+		if f.Healthy {
+			res.WriteHeader(http.StatusOK)
+		} else {
+			res.WriteHeader(http.StatusServiceUnavailable)
+		}
+		res.Write(nil)
+		return
+	}
+
+	fmt.Printf("Unrecongized URL %s\n", req.URL)
+	res.WriteHeader(http.StatusNotFound)
+	res.Write(nil)
 }
 
 func TestHealthZCircuitOpen(t *testing.T) {
@@ -107,10 +115,15 @@ func TestHealthZBucketListErr(t *testing.T) {
 }
 
 func TestReadinessNamespaceListErr(t *testing.T) {
+	handler := fakeHTTPServer{true}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client, err := deis.New(false, server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	nsLister := errNamespaceLister{err: errTest}
-	client := successGetClient{}
-	os.Setenv("DEIS_CONTROLLER_SERVICE_HOST", "127.0.0.1")
-	os.Setenv("DEIS_CONTROLLER_SERVICE_PORT", "8000")
 
 	h := readinessHandler(client, nsLister)
 	w := httptest.NewRecorder()
@@ -122,8 +135,15 @@ func TestReadinessNamespaceListErr(t *testing.T) {
 }
 
 func TestReadinessControllerErr(t *testing.T) {
+	handler := fakeHTTPServer{false}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client, err := deis.New(false, server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	nsLister := emptyNamespaceLister{}
-	client := failureGetClient{}
 
 	h := readinessHandler(client, nsLister)
 	w := httptest.NewRecorder()
@@ -131,20 +151,6 @@ func TestReadinessControllerErr(t *testing.T) {
 	assert.NoErr(t, err)
 	h.ServeHTTP(w, r)
 	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
-	assert.Equal(t, w.Body.Len(), 0, "response body length")
-}
-
-func TestReadinessControllerGetErr(t *testing.T) {
-	nsLister := emptyNamespaceLister{}
-	client := errGetClient{err: errTest}
-
-	h := readinessHandler(client, nsLister)
-	w := httptest.NewRecorder()
-	r, err := http.NewRequest("GET", "/readiness", bytes.NewBuffer(nil))
-	assert.NoErr(t, err)
-	h.ServeHTTP(w, r)
-	assert.Equal(t, w.Code, http.StatusServiceUnavailable, "response code")
-	assert.Equal(t, w.Body.Len(), 0, "response body length")
 }
 
 func TestHealthZSuccess(t *testing.T) {
@@ -162,8 +168,15 @@ func TestHealthZSuccess(t *testing.T) {
 }
 
 func TestReadinessSuccess(t *testing.T) {
+	handler := fakeHTTPServer{true}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+	client, err := deis.New(false, server.URL, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	nsLister := emptyNamespaceLister{}
-	client := successGetClient{}
 
 	h := readinessHandler(client, nsLister)
 	w := httptest.NewRecorder()

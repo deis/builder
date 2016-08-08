@@ -13,6 +13,7 @@ import (
 
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
+	"github.com/deis/controller-sdk-go/hooks"
 	"github.com/deis/pkg/log"
 	"golang.org/x/crypto/ssh"
 )
@@ -35,18 +36,25 @@ var errDirCreatePerm = errors.New("Empty repo name.")
 // AuthKey authenticates based on a public key.
 func AuthKey(key ssh.PublicKey) (*ssh.Permissions, error) {
 	log.Info("Starting ssh authentication")
-	userInfo, err := controller.UserInfoFromKey(key)
+	client, err := controller.New()
 	if err != nil {
 		return nil, err
 	}
 
-	userInfo.Key = string(ssh.MarshalAuthorizedKey(key))
+	fp := fingerprint(key)
+
+	userInfo, err := hooks.UserFromKey(client, fp)
+	if controller.CheckAPICompat(client, err) != nil {
+		log.Info("Failed to authenticate user ssh key %s with the controller: %s", fp, err)
+		return nil, err
+	}
+
 	apps := strings.Join(userInfo.Apps, ", ")
 	log.Debug("Key accepted for user %s.", userInfo.Username)
 	perm := &ssh.Permissions{
 		Extensions: map[string]string{
 			"user":        userInfo.Username,
-			"fingerprint": userInfo.Fingerprint,
+			"fingerprint": fp,
 			"apps":        apps,
 		},
 	}

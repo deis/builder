@@ -1,4 +1,4 @@
-package controller
+package sshd
 
 import (
 	"testing"
