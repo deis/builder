@@ -42,7 +42,7 @@ type Config struct {
 	App     string                 `json:"app"`
 	Values  map[string]interface{} `json:"values"`
 	Memory  map[string]string      `json:"memory"`
-	CPU     map[string]int         `json:"cpu"`
+	CPU     map[string]string      `json:"cpu"`
 	Tags    map[string]string      `json:"tags"`
 	UUID    string                 `json:"uuid"`
 	Created time.Time              `json:"created"`
