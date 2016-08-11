@@ -7,9 +7,7 @@ import (
 	"strings"
 
 	builderconf "github.com/deis/builder/pkg/conf"
-	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/sys"
-	"github.com/deis/controller-sdk-go/hooks"
 	"github.com/deis/pkg/log"
 	storagedriver "github.com/docker/distribution/registry/storage/driver"
 
@@ -50,19 +48,9 @@ func Run(conf *Config, fs sys.FS, env sys.Env, storageDriver storagedriver.Stora
 
 		log.Debug("read [%s,%s,%s]", oldRev, newRev, refName)
 
-		client, err := controller.New()
-		if err != nil {
-			return err
-		}
-
-		if err := hooks.CreatePush(client, conf.Username, conf.App(), newRev, conf.Fingerprint,
-			conf.SSHConnection, conf.SSHOriginalCommand); err != nil {
-			return err
-		}
-
 		// if we're processing a receive-pack on an existing repo, run a build
 		if strings.HasPrefix(conf.SSHOriginalCommand, "git-receive-pack") {
-			if err := build(client, conf, storageDriver, kubeClient, fs, env, builderKey, newRev); err != nil {
+			if err := build(conf, storageDriver, kubeClient, fs, env, builderKey, newRev); err != nil {
 				return err
 			}
 		}
