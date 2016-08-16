@@ -16,7 +16,6 @@ import (
 	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/storage"
 	"github.com/deis/builder/pkg/sys"
-	"github.com/deis/controller-sdk-go"
 	deisAPI "github.com/deis/controller-sdk-go/api"
 	"github.com/deis/controller-sdk-go/hooks"
 	"github.com/deis/pkg/log"
@@ -47,7 +46,6 @@ func run(cmd *exec.Cmd) error {
 }
 
 func build(
-	client *deis.Client,
 	conf *Config,
 	storageDriver storagedriver.StorageDriver,
 	kubeClient *client.Client,
@@ -93,6 +91,11 @@ func build(
 	}()
 
 	slugBuilderInfo := NewSlugBuilderInfo(slugName)
+
+	client, err := controller.New()
+	if err != nil {
+		return err
+	}
 
 	// Get the application config from the controller, so we can check for a custom buildpack URL
 	appConf, err := hooks.GetAppConfig(client, conf.Username, appName)
