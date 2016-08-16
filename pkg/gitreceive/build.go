@@ -279,7 +279,7 @@ func build(
 		return fmt.Errorf("publishing release (%s)", err)
 	}
 
-	log.Info("Done, %s:v%d deployed to Deis\n", appName, release)
+	log.Info("Done, %s:v%d deployed to Workflow\n", appName, release)
 	log.Info("Use 'deis open' to view this application in your browser\n")
 	log.Info("To learn more, use 'deis help' or visit https://deis.com/\n")
 
