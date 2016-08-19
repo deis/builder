@@ -29,6 +29,7 @@ type slugBuildCase struct {
 	env                        map[string]interface{}
 	tarKey                     string
 	putKey                     string
+	cacheKey                   string
 	buildPack                  string
 	slugBuilderImage           string
 	slugBuilderImagePullPolicy api.PullPolicy
@@ -56,16 +57,16 @@ func TestBuildPod(t *testing.T) {
 	var pod *api.Pod
 
 	slugBuilds := []slugBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullIfNotPresent, ""},
-		{true, "test", "default", env, "tar", "put-url", "buildpack", "customimage", api.PullNever, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "customimage", api.PullAlways, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range slugBuilds {
@@ -76,6 +77,7 @@ func TestBuildPod(t *testing.T) {
 			build.env,
 			build.tarKey,
 			build.putKey,
+			build.cacheKey,
 			build.buildPack,
 			build.storageType,
 			build.slugBuilderImage,

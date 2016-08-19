@@ -90,7 +90,7 @@ func build(
 		}
 	}()
 
-	slugBuilderInfo := NewSlugBuilderInfo(slugName)
+	slugBuilderInfo := NewSlugBuilderInfo(appName, gitSha.Short())
 
 	client, err := controller.New()
 	if err != nil {
@@ -184,6 +184,7 @@ func build(
 			appConf.Values,
 			slugBuilderInfo.TarKey(),
 			slugBuilderInfo.PushKey(),
+			slugBuilderInfo.CacheKey(),
 			buildPackURL,
 			conf.StorageType,
 			conf.SlugBuilderImage,
