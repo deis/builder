@@ -17,6 +17,7 @@ const (
 
 	tarPath          = "TAR_PATH"
 	putPath          = "PUT_PATH"
+	cachePath        = "CACHE_PATH"
 	debugKey         = "DEIS_DEBUG"
 	objectStore      = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
@@ -91,6 +92,7 @@ func slugbuilderPod(
 	env map[string]interface{},
 	tarKey,
 	putKey,
+	cacheKey,
 	buildpackURL,
 	storageType,
 	image string,
@@ -104,6 +106,7 @@ func slugbuilderPod(
 
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
+	addEnvToPod(pod, cachePath, cacheKey)
 	addEnvToPod(pod, builderStorage, storageType)
 
 	if buildpackURL != "" {
