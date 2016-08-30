@@ -40,7 +40,7 @@ func (s SlugBuilderInfo) PushKey() string { return s.pushKey }
 // folder, not including the final filename.
 func (s SlugBuilderInfo) TarKey() string { return s.tarKey }
 
-// CacheKey returns the object sotrage key that the slug builder will use to store the cache in
+// CacheKey returns the object storage key that the slug builder will use to store the cache in
 // it's application specific and persisted between deploys (doesn't contain git-sha)
 func (s SlugBuilderInfo) CacheKey() string { return s.cacheKey }
 
