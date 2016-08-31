@@ -94,6 +94,7 @@ func TestBuildPod(t *testing.T) {
 
 		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
 		checkForEnv(t, pod, "PUT_PATH", build.putKey)
+		checkForEnv(t, pod, "CACHE_PATH", build.cacheKey)
 
 		if build.buildPack != "" {
 			checkForEnv(t, pod, "BUILDPACK_URL", build.buildPack)
