@@ -58,10 +58,7 @@ func TestBuildPod(t *testing.T) {
 
 	slugBuilds := []slugBuildCase{
 		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "buildpack", "customimage", api.PullAlways, ""},
@@ -114,10 +111,7 @@ func TestBuildPod(t *testing.T) {
 
 	dockerBuilds := []dockerBuildCase{
 		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
 		{true, "test", "default", emptyEnv, "tar", "img", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "img", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "img", "customimage", api.PullAlways, ""},
