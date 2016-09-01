@@ -19,6 +19,7 @@ const (
 	putPath          = "PUT_PATH"
 	cachePath        = "CACHE_PATH"
 	debugKey         = "DEIS_DEBUG"
+	sourceVersion    = "SOURCE_VERSION"
 	objectStore      = "objectstorage-keyfile"
 	dockerSocketName = "docker-socket"
 	dockerSocketPath = "/var/run/docker.sock"
@@ -42,6 +43,7 @@ func dockerBuilderPod(
 	namespace string,
 	env map[string]interface{},
 	tarKey,
+	gitShortHash string,
 	imageName,
 	storageType,
 	image,
@@ -57,6 +59,7 @@ func dockerBuilderPod(
 	pod.Spec.Containers[0].Image = image
 
 	addEnvToPod(pod, tarPath, tarKey)
+	addEnvToPod(pod, sourceVersion, gitShortHash)
 	addEnvToPod(pod, "IMG_NAME", imageName)
 	addEnvToPod(pod, builderStorage, storageType)
 	// inject existing DEIS_REGISTRY_SERVICE_HOST and PORT info to dockerbuilder
@@ -93,6 +96,7 @@ func slugbuilderPod(
 	tarKey,
 	putKey,
 	cacheKey,
+	gitShortHash string,
 	buildpackURL,
 	storageType,
 	image string,
@@ -107,6 +111,7 @@ func slugbuilderPod(
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
 	addEnvToPod(pod, cachePath, cacheKey)
+	addEnvToPod(pod, sourceVersion, gitShortHash)
 	addEnvToPod(pod, builderStorage, storageType)
 
 	if buildpackURL != "" {
