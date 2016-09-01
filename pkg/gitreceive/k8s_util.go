@@ -108,9 +108,12 @@ func slugbuilderPod(
 	pod.Spec.Containers[0].Name = slugBuilderName
 	pod.Spec.Containers[0].Image = image
 
+	if _, ok := env["DEIS_DISABLE_CACHE"]; !ok {
+		addEnvToPod(pod, cachePath, cacheKey)
+	}
+
 	addEnvToPod(pod, tarPath, tarKey)
 	addEnvToPod(pod, putPath, putKey)
-	addEnvToPod(pod, cachePath, cacheKey)
 	addEnvToPod(pod, sourceVersion, gitShortHash)
 	addEnvToPod(pod, builderStorage, storageType)
 
