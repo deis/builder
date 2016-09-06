@@ -90,8 +90,6 @@ func build(
 		}
 	}()
 
-	slugBuilderInfo := NewSlugBuilderInfo(appName, gitSha.Short())
-
 	client, err := controller.New()
 	if err != nil {
 		return err
@@ -109,6 +107,20 @@ func build(
 		if bpStr, ok := buildPackURLInterface.(string); ok {
 			log.Debug("found custom buildpack URL %s", bpStr)
 			buildPackURL = bpStr
+		}
+	}
+
+	_, disableCaching := appConf.Values["DEIS_DISABLE_CACHE"]
+	slugBuilderInfo := NewSlugBuilderInfo(appName, gitSha.Short(), disableCaching)
+
+	if slugBuilderInfo.DisableCaching() {
+		log.Debug("caching disabled for app %s", appName)
+		// If cache file exists, delete it
+		if _, err := storageDriver.Stat(context.Background(), slugBuilderInfo.CacheKey()); err == nil {
+			log.Debug("deleting cache %s for app %s", slugBuilderInfo.CacheKey(), appName)
+			if err := storageDriver.Delete(context.Background(), slugBuilderInfo.CacheKey()); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -178,6 +190,11 @@ func build(
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
+
+		cacheKey := ""
+		if !slugBuilderInfo.DisableCaching() {
+			cacheKey = slugBuilderInfo.CacheKey()
+		}
 		pod = slugbuilderPod(
 			conf.Debug,
 			buildPodName,
@@ -185,7 +202,7 @@ func build(
 			appConf.Values,
 			slugBuilderInfo.TarKey(),
 			slugBuilderInfo.PushKey(),
-			slugBuilderInfo.CacheKey(),
+			cacheKey,
 			gitSha.Short(),
 			buildPackURL,
 			conf.StorageType,
