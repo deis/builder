@@ -42,4 +42,4 @@ import:
   repo: https://github.com/spf13/pflag
   vcs: git
 - package: github.com/deis/controller-sdk-go
-  version: 1c9d1c9821ed4984babf7136f1de46ac1698590a
+  version: c71a2e5efa5dea38c8dfb94c11305c2f05c9af9c
