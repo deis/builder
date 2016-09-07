@@ -1,5 +1,5 @@
-hash: 1e383d7d2c4c1a38f252802ddf37ecb9f2771678e1a5d8c4604a0d99eea6161b
-updated: 2016-08-05T14:32:21.251035346-07:00
+hash: 2d4c50945d148891b3c15ca93ff699e006f3c3105d2a627290aeaa64e1b41184
+updated: 2016-09-07T00:45:24.711110597Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -51,7 +51,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/controller-sdk-go
-  version: 1c9d1c9821ed4984babf7136f1de46ac1698590a
+  version: c71a2e5efa5dea38c8dfb94c11305c2f05c9af9c
   subpackages:
   - api
   - hooks
