@@ -56,15 +56,12 @@ func TestBuildPod(t *testing.T) {
 	env := make(map[string]interface{})
 	env["KEY"] = "VALUE"
 
-	cacheDisabledEnv := make(map[string]interface{})
-	cacheDisabledEnv["DEIS_DISABLE_CACHE"] = "1"
-
 	var pod *api.Pod
 
 	slugBuilds := []slugBuildCase{
 		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", cacheDisabledEnv, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
+		{true, "test", "default", emptyEnv, "tar", "put-url", "", "deadbeef", "", "", api.PullAlways, ""},
 		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
 		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullAlways, ""},
@@ -100,12 +97,12 @@ func TestBuildPod(t *testing.T) {
 		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
 		checkForEnv(t, pod, "PUT_PATH", build.putKey)
 
-		if _, ok := build.env["DEIS_DISABLE_CACHE"]; !ok {
-			checkForEnv(t, pod, "CACHE_PATH", build.cacheKey)
-		} else {
+		if build.cacheKey == "" {
 			if cachePath, err := envValueFromKey(pod, "CACHE_PATH"); err == nil {
 				t.Errorf("expected CACHE_PATH not to be defined but it was defined with %v", cachePath)
 			}
+		} else {
+			checkForEnv(t, pod, "CACHE_PATH", build.cacheKey)
 		}
 
 		if build.buildPack != "" {
