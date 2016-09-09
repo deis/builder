@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/deis/builder/pkg/sys"
 	"github.com/kelseyhightower/envconfig"
@@ -40,7 +41,7 @@ func GetBuilderKey() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyLocation, err)
 	}
-	builderKey := string(builderKeyBytes)
+	builderKey := strings.Trim(string(builderKeyBytes), "\n")
 	return builderKey, nil
 }
 
