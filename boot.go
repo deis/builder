@@ -81,7 +81,7 @@ func main() {
 				log.Printf("Starting health check server on port %d", cnf.HealthSrvPort)
 				healthSrvCh := make(chan error)
 				go func() {
-					if err := healthsrv.Start(cnf.HealthSrvPort, kubeClient.Namespaces(), storageDriver, circ); err != nil {
+					if err := healthsrv.Start(cnf, kubeClient.Namespaces(), storageDriver, circ); err != nil {
 						healthSrvCh <- err
 					}
 				}()
@@ -96,7 +96,7 @@ func main() {
 				log.Printf("Starting SSH server on %s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
 				sshCh := make(chan int)
 				go func() {
-					sshCh <- pkg.RunBuilder(cnf.SSHHostIP, cnf.SSHHostPort, gitHomeDir, circ, pushLock)
+					sshCh <- pkg.RunBuilder(cnf, gitHomeDir, circ, pushLock)
 				}()
 
 				select {

@@ -25,9 +25,9 @@ const (
 // Git.
 //
 // Run returns on of the Status* status code constants.
-func RunBuilder(sshHostIP string, sshHostPort int, gitHomeDir string, sshServerCircuit *sshd.Circuit, pushLock sshd.RepositoryLock) int {
-	address := fmt.Sprintf("%s:%d", sshHostIP, sshHostPort)
-	cfg, err := sshd.Configure()
+func RunBuilder(cnf *sshd.Config, gitHomeDir string, sshServerCircuit *sshd.Circuit, pushLock sshd.RepositoryLock) int {
+	address := fmt.Sprintf("%s:%d", cnf.SSHHostIP, cnf.SSHHostPort)
+	cfg, err := sshd.Configure(cnf)
 	if err != nil {
 		log.Err("SSH server configuration failed: %s", err)
 		return StatusLocalError

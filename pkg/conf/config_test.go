@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"testing"
 
+	"github.com/arschles/assert"
 	"github.com/deis/builder/pkg/sys"
 )
 
@@ -63,4 +64,28 @@ func TestGetStorageParams(t *testing.T) {
 	if err != nil {
 		t.Errorf("received error while retrieving storage params: %v", err)
 	}
+}
+
+func TestGetControllerClient(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "tmpdir")
+	if err != nil {
+		t.Fatalf("error creating temp directory (%s)", err)
+	}
+	data := []byte("testbuilderkey")
+	if err := ioutil.WriteFile(tmpDir+"/builder-key", data, 0644); err != nil {
+		t.Fatalf("error creating %s/builder-key (%s)", tmpDir, err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Fatalf("failed to remove builder-key from %s (%s)", tmpDir, err)
+		}
+	}()
+	key, err := GetBuilderKey(tmpDir + "/builder-key")
+	assert.NoErr(t, err)
+	assert.Equal(t, key, string(data), "data")
+}
+
+func TestGetBuilderKeyError(t *testing.T) {
+	_, err := GetBuilderKey("/builder-key")
+	assert.True(t, err != nil, "no error received when there should have been")
 }

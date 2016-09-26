@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	builderKeyLocation  = "/var/run/secrets/api/auth/builder-key"
+	BuilderKeyLocation  = "/var/run/secrets/api/auth/builder-key"
 	storageCredLocation = "/var/run/secrets/deis/objectstore/creds/"
 	minioHostEnvVar     = "DEIS_MINIO_SERVICE_HOST"
 	minioPortEnvVar     = "DEIS_MINIO_SERVICE_PORT"
@@ -36,10 +36,10 @@ func EnvConfig(appName string, conf interface{}) error {
 }
 
 // GetBuilderKey returns the key to be used as token to interact with deis-controller
-func GetBuilderKey() (string, error) {
-	builderKeyBytes, err := ioutil.ReadFile(builderKeyLocation)
+func GetBuilderKey(builderKeyPath string) (string, error) {
+	builderKeyBytes, err := ioutil.ReadFile(builderKeyPath)
 	if err != nil {
-		return "", fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyLocation, err)
+		return "", fmt.Errorf("couldn't get builder key from %s (%s)", builderKeyPath, err)
 	}
 	builderKey := strings.Trim(string(builderKeyBytes), "\n")
 	return builderKey, nil
