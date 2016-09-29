@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"path/filepath"
 	"testing"
 
 	"github.com/arschles/assert"
@@ -64,6 +65,21 @@ func TestGetStorageParams(t *testing.T) {
 	if err != nil {
 		t.Errorf("received error while retrieving storage params: %v", err)
 	}
+
+	env := sys.NewFakeEnv()
+	env.Envs = map[string]string{
+		"BUILDER_STORAGE":         "minio",
+		"DEIS_MINIO_SERVICE_HOST": "localhost",
+		"DEIS_MINIO_SERVICE_PORT": "8088",
+	}
+	params, err = GetStorageParams(env)
+	if err != nil {
+		t.Errorf("received error while retrieving storage params: %v", err)
+	}
+	assert.Equal(t, params["regionendpoint"], "http://localhost:8088", "region endpoint")
+	assert.Equal(t, params["secure"], false, "secure")
+	assert.Equal(t, params["region"], "us-east-1", "region")
+	assert.Equal(t, params["bucket"], "git", "bucket")
 }
 
 func TestGetControllerClient(t *testing.T) {
@@ -71,21 +87,25 @@ func TestGetControllerClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating temp directory (%s)", err)
 	}
-	data := []byte("testbuilderkey")
-	if err := ioutil.WriteFile(tmpDir+"/builder-key", data, 0644); err != nil {
-		t.Fatalf("error creating %s/builder-key (%s)", tmpDir, err)
-	}
+
 	defer func() {
 		if err := os.RemoveAll(tmpDir); err != nil {
 			t.Fatalf("failed to remove builder-key from %s (%s)", tmpDir, err)
 		}
 	}()
-	key, err := GetBuilderKey(tmpDir + "/builder-key")
+
+	BuilderKeyLocation = filepath.Join(tmpDir, "builder-key")
+	data := []byte("testbuilderkey")
+	if err := ioutil.WriteFile(BuilderKeyLocation, data, 0644); err != nil {
+		t.Fatalf("error creating %s (%s)", BuilderKeyLocation, err)
+	}
+
+	key, err := GetBuilderKey()
 	assert.NoErr(t, err)
 	assert.Equal(t, key, string(data), "data")
 }
 
 func TestGetBuilderKeyError(t *testing.T) {
-	_, err := GetBuilderKey("/builder-key")
+	_, err := GetBuilderKey()
 	assert.True(t, err != nil, "no error received when there should have been")
 }

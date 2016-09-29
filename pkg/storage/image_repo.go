@@ -15,16 +15,22 @@ import (
 // CreateImageRepo create a repository for the image on amazon's ECR(EC2 Container Repository)
 // if it doesn't exist as repository needs to be present before pushing and image into it.
 func CreateImageRepo(reponame string, params map[string]string) error {
+	var (
+		accessKey  string
+		secretKey  string
+		regionName string
+		ok         bool
+	)
 
-	accessKey, ok := params["accesskey"]
+	accessKey, ok = params["accesskey"]
 	if !ok {
 		accessKey = ""
 	}
-	secretKey, ok := params["secretkey"]
+	secretKey, ok = params["secretkey"]
 	if !ok {
 		secretKey = ""
 	}
-	regionName, ok := params["region"]
+	regionName, ok = params["region"]
 	if !ok || fmt.Sprint(regionName) == "" {
 		return fmt.Errorf("No region parameter provided")
 	}
@@ -32,8 +38,8 @@ func CreateImageRepo(reponame string, params map[string]string) error {
 	creds := credentials.NewChainCredentials([]credentials.Provider{
 		&credentials.StaticProvider{
 			Value: credentials.Value{
-				AccessKeyID:     fmt.Sprint(accessKey),
-				SecretAccessKey: fmt.Sprint(secretKey),
+				AccessKeyID:     accessKey,
+				SecretAccessKey: secretKey,
 			},
 		},
 		&credentials.EnvProvider{},

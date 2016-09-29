@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/k8s"
@@ -62,7 +61,7 @@ func build(
 
 	slugBuilderImagePullPolicy, err := k8s.PullPolicyFromString(conf.SlugBuilderImagePullPolicy)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	repo := conf.Repository
@@ -91,7 +90,7 @@ func build(
 		}
 	}()
 
-	client, err := controller.New(conf.ControllerHost, conf.ControllerPort, builderconf.BuilderKeyLocation)
+	client, err := controller.New(conf.ControllerHost, conf.ControllerPort)
 	if err != nil {
 		return err
 	}

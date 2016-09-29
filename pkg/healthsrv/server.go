@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/sshd"
 )
@@ -13,7 +12,7 @@ import (
 // with the indicative error.
 func Start(cnf *sshd.Config, nsLister NamespaceLister, bLister BucketLister, sshServerCircuit *sshd.Circuit) error {
 	mux := http.NewServeMux()
-	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort, builderconf.BuilderKeyLocation)
+	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort)
 	if err != nil {
 		return err
 	}

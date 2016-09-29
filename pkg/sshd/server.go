@@ -11,7 +11,6 @@ import (
 	"net"
 	"strings"
 
-	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/controller-sdk-go/hooks"
@@ -37,7 +36,7 @@ var errDirCreatePerm = errors.New("Empty repo name.")
 // AuthKey authenticates based on a public key.
 func AuthKey(key ssh.PublicKey, cnf *Config) (*ssh.Permissions, error) {
 	log.Info("Starting ssh authentication")
-	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort, builderconf.BuilderKeyLocation)
+	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort)
 	if err != nil {
 		return nil, err
 	}
