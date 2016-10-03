@@ -2,9 +2,6 @@ language: generic
 branches:
   only:
     - master
-cache:
-  directories:
-    - vendor
 env:
   DEV_REGISTRY=quay.io
 services:
