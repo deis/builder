@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/builder/pkg/k8s"
@@ -90,7 +91,7 @@ func build(
 		}
 	}()
 
-	client, err := controller.New()
+	client, err := controller.New(conf.ControllerHost, conf.ControllerPort, builderconf.BuilderKeyLocation)
 	if err != nil {
 		return err
 	}

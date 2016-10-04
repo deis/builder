@@ -2,22 +2,14 @@ package controller
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/deis/builder/pkg/conf"
 	deis "github.com/deis/controller-sdk-go"
 	"github.com/deis/pkg/log"
 )
 
-const (
-	hostEnvName = "DEIS_CONTROLLER_SERVICE_HOST"
-	portEnvName = "DEIS_CONTROLLER_SERVICE_PORT"
-)
-
 // New creates a new SDK client configured as the builder.
-func New() (*deis.Client, error) {
-	host := os.Getenv(hostEnvName)
-	port := os.Getenv(portEnvName)
+func New(host, port, builderKeyPath string) (*deis.Client, error) {
 
 	client, err := deis.New(true, fmt.Sprintf("http://%s:%s/", host, port), "")
 	if err != nil {
@@ -25,7 +17,7 @@ func New() (*deis.Client, error) {
 	}
 	client.UserAgent = "deis-builder"
 
-	builderKey, err := conf.GetBuilderKey()
+	builderKey, err := conf.GetBuilderKey(builderKeyPath)
 	if err != nil {
 		return client, err
 	}

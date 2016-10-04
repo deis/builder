@@ -11,6 +11,7 @@ import (
 	"net"
 	"strings"
 
+	builderconf "github.com/deis/builder/pkg/conf"
 	"github.com/deis/builder/pkg/controller"
 	"github.com/deis/builder/pkg/git"
 	"github.com/deis/controller-sdk-go/hooks"
@@ -34,9 +35,9 @@ var errDirPerm = errors.New("Cannot change directory in file name.")
 var errDirCreatePerm = errors.New("Empty repo name.")
 
 // AuthKey authenticates based on a public key.
-func AuthKey(key ssh.PublicKey) (*ssh.Permissions, error) {
+func AuthKey(key ssh.PublicKey, cnf *Config) (*ssh.Permissions, error) {
 	log.Info("Starting ssh authentication")
-	client, err := controller.New()
+	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort, builderconf.BuilderKeyLocation)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +73,10 @@ func AuthKey(key ssh.PublicKey) (*ssh.Permissions, error) {
 //
 // Returns:
 //  An *ssh.ServerConfig
-func Configure() (*ssh.ServerConfig, error) {
+func Configure(cnf *Config) (*ssh.ServerConfig, error) {
 	cfg := &ssh.ServerConfig{
 		PublicKeyCallback: func(m ssh.ConnMetadata, k ssh.PublicKey) (*ssh.Permissions, error) {
-			return AuthKey(k)
+			return AuthKey(k, cnf)
 		},
 	}
 	hostKeyTypes := []string{"rsa", "dsa", "ecdsa"}
