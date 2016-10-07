@@ -1,0 +1,128 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: deis-builder
+  labels:
+    heritage: deis
+  annotations:
+    component.deis.io/version: {{ .Values.docker_tag }}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: deis-builder
+  template:
+    metadata:
+      labels:
+        app: deis-builder
+    spec:
+      serviceAccount: deis-builder
+      containers:
+        - name: deis-builder
+          image: quay.io/{{.Values.org}}/builder:{{.Values.docker_tag}}
+          imagePullPolicy: {{.Values.pull_policy}}
+          ports:
+            - containerPort: 2223
+              name: ssh
+            - containerPort: 8092
+              name: healthsrv
+{{- if or (.Values.limits_cpu) (.Values.limits_memory)}}
+          resources:
+            limits:
+{{- if (.Values.limits_cpu) }}
+              cpu: {{.Values.limits_cpu}}
+{{- end}}
+{{- if (.Values.limits_memory) }}
+              memory: {{.Values.limits_memory}}
+{{- end}}
+{{- end}}
+          env:
+            # NOTE(bacongobbler): use deis/registry_proxy to work around Docker --insecure-registry requirements
+            - name: "DEIS_REGISTRY_SERVICE_HOST"
+              value: "localhost"
+            - name: "DEIS_REGISTRY_SERVICE_PORT"
+              value: "{{ .Values.global.host_port }}"
+            - name: "HEALTH_SERVER_PORT"
+              value: "8092"
+            - name: "EXTERNAL_PORT"
+              value: "2223"
+            - name: BUILDER_STORAGE
+              value: "{{ .Values.global.storage }}"
+            - name: "DEIS_REGISTRY_LOCATION"
+              value: "{{ .Values.global.registry_location }}"
+            - name: "DEIS_REGISTRY_SECRET_PREFIX"
+              value: "{{ .Values.global.secret_prefix }}"
+            # Set GIT_LOCK_TIMEOUT to number of minutes you want to wait to git push again to the same repository
+            - name: "GIT_LOCK_TIMEOUT"
+              value: "10"
+            - name: "SLUGBUILDER_IMAGE_NAME"
+              valueFrom:
+                configMapKeyRef:
+                  name: slugbuilder-config
+                  key: image
+            - name: SLUG_BUILDER_IMAGE_PULL_POLICY
+              valueFrom:
+                configMapKeyRef:
+                  name: slugbuilder-config
+                  key: pullPolicy
+            - name: "DOCKERBUILDER_IMAGE_NAME"
+              valueFrom:
+                configMapKeyRef:
+                  name: dockerbuilder-config
+                  key: image
+            - name: DOCKER_BUILDER_IMAGE_PULL_POLICY
+              valueFrom:
+                configMapKeyRef:
+                  name: dockerbuilder-config
+                  key: pullPolicy
+            # This var needs to be passed so that the minio client (https://github.com/minio/mc) will work in Alpine linux
+            - name: "DOCKERIMAGE"
+              value: "1"
+            - name: "DEIS_DEBUG"
+              value: "false"
+            - name: "POD_NAMESPACE"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DEIS_BUILDER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: builder-key-auth
+                  key: builder-key
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8092
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8092
+            initialDelaySeconds: 30
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: builder-key-auth
+              mountPath: /var/run/secrets/api/auth
+              readOnly: true
+            - name: builder-ssh-private-keys
+              mountPath: /var/run/secrets/deis/builder/ssh
+              readOnly: true
+            - name: objectstore-creds
+              mountPath: /var/run/secrets/deis/objectstore/creds
+              readOnly: true
+      volumes:
+        - name: builder-key-auth
+          secret:
+            secretName: builder-key-auth
+        - name: builder-ssh-private-keys
+          secret:
+            secretName: builder-ssh-private-keys
+        - name: objectstore-creds
+          secret:
+            secretName: objectstorage-keyfile
