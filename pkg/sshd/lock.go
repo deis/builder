@@ -42,7 +42,7 @@ func wrapInLock(lck RepositoryLock, repoName string, fn func() error) error {
 	select {
 	case <-timer.C:
 		defer close(doneCh)
-		return fmt.Errorf("%s lock exceeded timout", repoName)
+		return fmt.Errorf("%s lock exceeded timeout", repoName)
 	case err := <-fnCh:
 		return err
 	}
