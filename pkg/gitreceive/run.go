@@ -27,7 +27,7 @@ func readLine(line string) (string, string, string, error) {
 func Run(conf *Config, fs sys.FS, env sys.Env, storageDriver storagedriver.StorageDriver) error {
 	log.Debug("Running git hook")
 
-	builderKey, err := builderconf.GetBuilderKey(builderconf.BuilderKeyLocation)
+	builderKey, err := builderconf.GetBuilderKey()
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 // New creates a new SDK client configured as the builder.
-func New(host, port, builderKeyPath string) (*deis.Client, error) {
+func New(host, port string) (*deis.Client, error) {
 
 	client, err := deis.New(true, fmt.Sprintf("http://%s:%s/", host, port), "")
 	if err != nil {
@@ -17,7 +17,7 @@ func New(host, port, builderKeyPath string) (*deis.Client, error) {
 	}
 	client.UserAgent = "deis-builder"
 
-	builderKey, err := conf.GetBuilderKey(builderKeyPath)
+	builderKey, err := conf.GetBuilderKey()
 	if err != nil {
 		return client, err
 	}

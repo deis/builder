@@ -53,8 +53,6 @@ func TestObjectExistsOtherErr(t *testing.T) {
 }
 
 func TestWaitForObjectMissing(t *testing.T) {
-	// Skipped for now. See https://github.com/deis/builder/issues/238
-	t.SkipNow()
 	statter := &FakeObjectStatter{
 		Fn: func(context.Context, string) (storagedriver.FileInfo, error) {
 			return storagedriver.FileInfoInternal{FileInfoFields: storagedriver.FileInfoFields{}}, storagedriver.PathNotFoundError{Path: objPath}

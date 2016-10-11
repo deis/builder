@@ -20,6 +20,7 @@ import (
 	_ "github.com/docker/distribution/registry/storage/driver/gcs"
 	_ "github.com/docker/distribution/registry/storage/driver/s3-aws"
 	_ "github.com/docker/distribution/registry/storage/driver/swift"
+	"github.com/kelseyhightower/envconfig"
 	kcl "k8s.io/kubernetes/pkg/client/unversioned"
 )
 
@@ -48,7 +49,7 @@ func main() {
 			Usage:   "Run the git server",
 			Action: func(c *cli.Context) {
 				cnf := new(sshd.Config)
-				if err := conf.EnvConfig(serverConfAppName, cnf); err != nil {
+				if err := envconfig.Process(serverConfAppName, cnf); err != nil {
 					pkglog.Err("getting config for %s [%s]", serverConfAppName, err)
 					os.Exit(1)
 				}
@@ -118,7 +119,7 @@ func main() {
 			Usage:   "Run the git-receive hook",
 			Action: func(c *cli.Context) {
 				cnf := new(gitreceive.Config)
-				if err := conf.EnvConfig(gitReceiveConfAppName, cnf); err != nil {
+				if err := envconfig.Process(gitReceiveConfAppName, cnf); err != nil {
 					log.Printf("Error getting config for %s [%s]", gitReceiveConfAppName, err)
 					os.Exit(1)
 				}
