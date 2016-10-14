@@ -39,7 +39,7 @@ To use it yourself, you must have [make](https://www.gnu.org/software/make/) ins
 
 If you don't have Docker installed, please go to https://www.docker.com/ to install it.
 
-After you have those dependencies, build your code with `make build` and execute unit tests with `make test`.
+After you have those dependencies, grab Go dependencies with `make bootstrap`, build your code with `make build` and execute unit tests with `make test`.
 
 ## Native Go Development Environment
 
