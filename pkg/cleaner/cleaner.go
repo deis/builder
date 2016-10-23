@@ -3,16 +3,20 @@
 package cleaner
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
-	"k8s.io/kubernetes/pkg/api"
-
+	"github.com/deis/builder/pkg/gitreceive"
 	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/sys"
+	"github.com/deis/pkg/log"
+	"github.com/docker/distribution/context"
+	storagedriver "github.com/docker/distribution/registry/storage/driver"
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 )
@@ -80,19 +84,54 @@ func dirHasGitSuffix(dir string) bool {
 	return strings.HasSuffix(dir, dotGitSuffix)
 }
 
+func deleteFromObjectStore(app string, storageDriver storagedriver.StorageDriver) error {
+
+	cacheKey := fmt.Sprintf(gitreceive.CacheKeyPattern, app)
+
+	// if cache file exists, delete it
+	if _, err := storageDriver.Stat(context.Background(), cacheKey); err == nil {
+		log.Info("Cleaner deleting cache %s for app %s", cacheKey, app)
+		if err := storageDriver.Delete(context.Background(), cacheKey); err != nil {
+			return err
+		}
+	}
+
+	// delete all slug files matching app
+	objs, err := storageDriver.List(context.Background(), "home")
+	if err != nil {
+		return err
+	}
+
+	// regex needs prepended / to match output of List()
+	gitRegex, err := regexp.Compile(`^/` + fmt.Sprintf(gitreceive.GitKeyPattern, app, ".{8}") + "$")
+	if err != nil {
+		return err
+	}
+
+	for _, obj := range objs {
+		if gitRegex.MatchString(obj) {
+			log.Info("Cleaner deleting slug %s for app %s", obj, app)
+			if err := storageDriver.Delete(context.Background(), obj); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Run starts the deleted app cleaner. Every pollSleepDuration, it compares the result of nsLister.List with the directories in the top level of gitHome on the local file system.
 // On any error, it uses log messages to output a human readable description of what happened.
-func Run(gitHome string, nsLister k8s.NamespaceLister, fs sys.FS, pollSleepDuration time.Duration) error {
+func Run(gitHome string, nsLister k8s.NamespaceLister, fs sys.FS, pollSleepDuration time.Duration, storageDriver storagedriver.StorageDriver) error {
 	for {
 		nsList, err := nsLister.List(api.ListOptions{LabelSelector: labels.Everything(), FieldSelector: fields.Everything()})
 		if err != nil {
-			log.Printf("Cleaner error listing namespaces (%s)", err)
+			log.Err("Cleaner error listing namespaces (%s)", err)
 			continue
 		}
 
 		gitDirs, err := localDirs(gitHome, dirHasGitSuffix)
 		if err != nil {
-			log.Printf("Cleaner error listing local git directories (%s)", err)
+			log.Err("Cleaner error listing local git directories (%s)", err)
 			continue
 		}
 
@@ -103,7 +142,10 @@ func Run(gitHome string, nsLister k8s.NamespaceLister, fs sys.FS, pollSleepDurat
 		for _, appToDelete := range appsToDelete {
 			dirToDelete := filepath.Join(gitHome, appToDelete+dotGitSuffix)
 			if err := fs.RemoveAll(dirToDelete); err != nil {
-				log.Printf("Cleaner error removing deleted app %s (%s)", dirToDelete, err)
+				log.Err("Cleaner error removing local files for deleted app %s (%s)", dirToDelete, err)
+			}
+			if err := deleteFromObjectStore(appToDelete, storageDriver); err != nil {
+				log.Err("Cleaner error removing object store files for deleted app %s (%s)", appToDelete, err)
 			}
 		}
 
