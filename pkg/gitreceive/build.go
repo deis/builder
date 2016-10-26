@@ -195,11 +195,21 @@ func build(
 		if !slugBuilderInfo.DisableCaching() {
 			cacheKey = slugBuilderInfo.CacheKey()
 		}
+		envSecretName := fmt.Sprintf("%s-build-env", appName)
+		err = createAppEnvConfigSecret(kubeClient.Secrets(conf.PodNamespace), envSecretName, appConf.Values)
+		if err != nil {
+			return fmt.Errorf("error creating/updating secret %s: (%s)", envSecretName, err)
+		}
+		defer func() {
+			if err := kubeClient.Secrets(conf.PodNamespace).Delete(envSecretName); err != nil {
+				log.Info("unable to delete secret %s (%s)", envSecretName, err)
+			}
+		}()
 		pod = slugbuilderPod(
 			conf.Debug,
 			buildPodName,
 			conf.PodNamespace,
-			appConf.Values,
+			envSecretName,
 			slugBuilderInfo.TarKey(),
 			slugBuilderInfo.PushKey(),
 			cacheKey,
