@@ -18,8 +18,8 @@ const (
 
 func TestGetDetailsFromRegistrySecretErr(t *testing.T) {
 	expectedErr := errors.New("get secret error")
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, expectedErr
 		},
 	}
@@ -31,8 +31,8 @@ func TestGetDetailsFromRegistrySecretSuccess(t *testing.T) {
 	data := map[string][]byte{"test": []byte("test")}
 	expectedData := map[string]string{"test": "test"}
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -43,8 +43,8 @@ func TestGetDetailsFromRegistrySecretSuccess(t *testing.T) {
 
 func TestGetDetailsFromDockerConfigSecretErr(t *testing.T) {
 	expectedErr := errors.New("get secret error")
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, expectedErr
 		},
 	}
@@ -56,8 +56,8 @@ func TestGetDetailsFromDockerConfigSecretJsonErr(t *testing.T) {
 	expectedErr := errors.New("invalid character 'o' in literal null (expecting 'u')")
 	data := map[string][]byte{api.DockerConfigJsonKey: []byte("not a json")}
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -80,8 +80,8 @@ func TestGetDetailsFromDockerConfigSecretTokenerr(t *testing.T) {
 	data := make(map[string][]byte)
 	data[api.DockerConfigJsonKey] = auth
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -105,8 +105,8 @@ func TestGetDetailsFromDockerConfigSecretSuccess(t *testing.T) {
 	data := make(map[string][]byte)
 	data[api.DockerConfigJsonKey] = auth
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -118,8 +118,8 @@ func TestGetDetailsFromDockerConfigSecretSuccess(t *testing.T) {
 
 func TestGetRegistryDetailsOffclusterErr(t *testing.T) {
 	expectedErr := errors.New("get secret error")
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, expectedErr
 		},
 	}
@@ -139,8 +139,8 @@ func TestGetRegistryDetailsOffclusterSuccess(t *testing.T) {
 	expectedData := map[string]string{"DEIS_REGISTRY_HOSTNAME": "quay.io", "DEIS_REGISTRY_ORGANIZATION": "kmala"}
 	expectedImage := "quay.io/kmala/test-image"
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -172,8 +172,8 @@ func TestGetRegistryDetailsGCRSuccess(t *testing.T) {
 	configData := make(map[string][]byte)
 	configData[api.DockerConfigJsonKey] = auth
 	configSecret := api.Secret{Data: configData}
-	configGetter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	configGetter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &configSecret, nil
 		},
 	}
@@ -185,8 +185,8 @@ func TestGetRegistryDetailsGCRSuccess(t *testing.T) {
 		`)
 	data := map[string][]byte{"key.json": srvAccount}
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}
@@ -213,14 +213,14 @@ func TestGetRegistryDetailsGCRSuccess(t *testing.T) {
 
 func TestGetRegistryDetailsGCRConfigErr(t *testing.T) {
 	expectedErr := errors.New("get secret error")
-	configGetter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	configGetter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, expectedErr
 		},
 	}
 
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, nil
 		},
 	}
@@ -256,14 +256,14 @@ func TestGetRegistryDetailsGCRSecretErr(t *testing.T) {
 	configData := make(map[string][]byte)
 	configData[api.DockerConfigJsonKey] = auth
 	configSecret := api.Secret{Data: configData}
-	configGetter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	configGetter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &configSecret, nil
 		},
 	}
 
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &api.Secret{}, expectedErr
 		},
 	}
@@ -299,16 +299,16 @@ func TestGetRegistryDetailsGCRJsonErr(t *testing.T) {
 	configData := make(map[string][]byte)
 	configData[api.DockerConfigJsonKey] = auth
 	configSecret := api.Secret{Data: configData}
-	configGetter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	configGetter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &configSecret, nil
 		},
 	}
 
 	data := map[string][]byte{"key.json": []byte("test")}
 	secret := api.Secret{Data: data}
-	getter := &k8s.FakeSecretGetter{
-		Fn: func(string) (*api.Secret, error) {
+	getter := &k8s.FakeSecret{
+		FnGet: func(string) (*api.Secret, error) {
 			return &secret, nil
 		},
 	}

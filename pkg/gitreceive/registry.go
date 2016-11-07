@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/deis/builder/pkg/k8s"
 	"github.com/deis/builder/pkg/storage"
 	"k8s.io/kubernetes/pkg/api"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -16,7 +15,7 @@ const (
 	registrySecret = "registry-secret"
 )
 
-func getDetailsFromRegistrySecret(secretGetter k8s.SecretGetter, secret string) (map[string]string, error) {
+func getDetailsFromRegistrySecret(secretGetter client.SecretsInterface, secret string) (map[string]string, error) {
 	regSecret, err := secretGetter.Get(secret)
 	if err != nil {
 		return nil, err
@@ -28,7 +27,7 @@ func getDetailsFromRegistrySecret(secretGetter k8s.SecretGetter, secret string) 
 	return regDetails, nil
 }
 
-func getDetailsFromDockerConfigSecret(secretGetter k8s.SecretGetter, secret string) (map[string]string, error) {
+func getDetailsFromDockerConfigSecret(secretGetter client.SecretsInterface, secret string) (map[string]string, error) {
 	configSecret, err := secretGetter.Get(secret)
 	if err != nil {
 		return nil, err

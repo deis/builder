@@ -6,48 +6,42 @@ import (
 	"k8s.io/kubernetes/pkg/watch"
 )
 
-// SecretGetter is a (k8s.io/kubernetes/pkg/client/unversioned).SecretsInterface compatible
-// interface which only has the Get function. It's used in places that only need Get to make
-// them easier to test and more easily swappable with other implementations
-// (should the need arise).
-type SecretGetter interface {
-	Get(name string) (*api.Secret, error)
-}
-
-// FakeSecretGetter is a mock function that can be swapped in for an SecretGetter or
-// (k8s.io/kubernetes/pkg/client/unversioned).SecretsInterface, so you can
-// unit test your code.
-type FakeSecretGetter struct {
-	Fn func(string) (*api.Secret, error)
+// FakeSecret is a mock function that can be swapped in for
+// (k8s.io/kubernetes/pkg/client/unversioned).SecretsInterface,
+// so you can unit test your code.
+type FakeSecret struct {
+	FnGet    func(string) (*api.Secret, error)
+	FnCreate func(*api.Secret) (*api.Secret, error)
+	FnUpdate func(*api.Secret) (*api.Secret, error)
 }
 
 // Get is the interface definition.
-func (f *FakeSecretGetter) Get(name string) (*api.Secret, error) {
-	return f.Fn(name)
+func (f *FakeSecret) Get(name string) (*api.Secret, error) {
+	return f.FnGet(name)
 }
 
 // Delete is the interface definition.
-func (f *FakeSecretGetter) Delete(name string) error {
+func (f *FakeSecret) Delete(name string) error {
 	return nil
 }
 
 // Create is the interface definition.
-func (f *FakeSecretGetter) Create(secret *api.Secret) (*api.Secret, error) {
-	return &api.Secret{}, nil
+func (f *FakeSecret) Create(secret *api.Secret) (*api.Secret, error) {
+	return f.FnCreate(secret)
 }
 
 // Update is the interface definition.
-func (f *FakeSecretGetter) Update(secret *api.Secret) (*api.Secret, error) {
-	return &api.Secret{}, nil
+func (f *FakeSecret) Update(secret *api.Secret) (*api.Secret, error) {
+	return f.FnUpdate(secret)
 }
 
 // List is the interface definition.
-func (f *FakeSecretGetter) List(opts api.ListOptions) (*api.SecretList, error) {
+func (f *FakeSecret) List(opts api.ListOptions) (*api.SecretList, error) {
 	return &api.SecretList{}, nil
 }
 
 // Watch is the interface definition.
-func (f *FakeSecretGetter) Watch(opts api.ListOptions) (watch.Interface, error) {
+func (f *FakeSecret) Watch(opts api.ListOptions) (watch.Interface, error) {
 	return nil, nil
 }
 

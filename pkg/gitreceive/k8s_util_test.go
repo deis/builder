@@ -1,11 +1,15 @@
 package gitreceive
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/arschles/assert"
+	"github.com/deis/builder/pkg/k8s"
 	"k8s.io/kubernetes/pkg/api"
+	apierrors "k8s.io/kubernetes/pkg/api/errors"
 )
 
 func TestDockerBuilderPodName(t *testing.T) {
@@ -26,7 +30,7 @@ type slugBuildCase struct {
 	debug                      bool
 	name                       string
 	namespace                  string
-	env                        map[string]interface{}
+	envSecretName              string
 	tarKey                     string
 	putKey                     string
 	cacheKey                   string
@@ -55,18 +59,18 @@ func TestBuildPod(t *testing.T) {
 
 	env := make(map[string]interface{})
 	env["KEY"] = "VALUE"
-
+	envSecretName := "test-build-env"
 	var pod *api.Pod
 
 	slugBuilds := []slugBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullIfNotPresent, ""},
-		{true, "test", "default", env, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullNever, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "", "deadbeef", "", "", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullAlways, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullIfNotPresent, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullNever, ""},
 	}
 
 	for _, build := range slugBuilds {
@@ -74,7 +78,7 @@ func TestBuildPod(t *testing.T) {
 			build.debug,
 			build.name,
 			build.namespace,
-			build.env,
+			build.envSecretName,
 			build.tarKey,
 			build.putKey,
 			build.cacheKey,
@@ -192,4 +196,39 @@ func envValueFromKey(pod *api.Pod, key string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no key with name %v found in pod env", key)
+}
+
+func TestCreateAppEnvConfigSecretErr(t *testing.T) {
+	expectedErr := errors.New("get secret error")
+	secretsClient := &k8s.FakeSecret{
+		FnCreate: func(*api.Secret) (*api.Secret, error) {
+			return &api.Secret{}, expectedErr
+		},
+	}
+	err := createAppEnvConfigSecret(secretsClient, "test", nil)
+	assert.Err(t, err, expectedErr)
+}
+
+func TestCreateAppEnvConfigSecretSuccess(t *testing.T) {
+	secretsClient := &k8s.FakeSecret{
+		FnCreate: func(*api.Secret) (*api.Secret, error) {
+			return &api.Secret{}, nil
+		},
+	}
+	err := createAppEnvConfigSecret(secretsClient, "test", nil)
+	assert.NoErr(t, err)
+}
+
+func TestCreateAppEnvConfigSecretAlreadyExists(t *testing.T) {
+	alreadyExistErr := apierrors.NewAlreadyExists(api.Resource("tests"), "1")
+	secretsClient := &k8s.FakeSecret{
+		FnCreate: func(*api.Secret) (*api.Secret, error) {
+			return &api.Secret{}, alreadyExistErr
+		},
+		FnUpdate: func(*api.Secret) (*api.Secret, error) {
+			return &api.Secret{}, nil
+		},
+	}
+	err := createAppEnvConfigSecret(secretsClient, "test", nil)
+	assert.NoErr(t, err)
 }

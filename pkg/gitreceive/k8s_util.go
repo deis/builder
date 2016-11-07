@@ -7,6 +7,8 @@ import (
 	"github.com/deis/builder/pkg/k8s"
 	"github.com/pborman/uuid"
 	"k8s.io/kubernetes/pkg/api"
+	apierrors "k8s.io/kubernetes/pkg/api/errors"
+	client "k8s.io/kubernetes/pkg/client/unversioned"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/util/wait"
 )
@@ -25,6 +27,7 @@ const (
 	dockerSocketPath = "/var/run/docker.sock"
 	builderStorage   = "BUILDER_STORAGE"
 	objectStorePath  = "/var/run/secrets/deis/objectstore/creds"
+	envRoot          = "/tmp/env"
 )
 
 func dockerBuilderPodName(appName, shortSha string) string {
@@ -92,7 +95,7 @@ func slugbuilderPod(
 	debug bool,
 	name,
 	namespace string,
-	env map[string]interface{},
+	envSecretName string,
 	tarKey,
 	putKey,
 	cacheKey,
@@ -103,7 +106,22 @@ func slugbuilderPod(
 	pullPolicy api.PullPolicy,
 ) *api.Pod {
 
-	pod := buildPod(debug, name, namespace, pullPolicy, env)
+	pod := buildPod(debug, name, namespace, pullPolicy, nil)
+
+	pod.Spec.Volumes = append(pod.Spec.Volumes, api.Volume{
+		Name: envSecretName,
+		VolumeSource: api.VolumeSource{
+			Secret: &api.SecretVolumeSource{
+				SecretName: envSecretName,
+			},
+		},
+	})
+
+	pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, api.VolumeMount{
+		Name:      envSecretName,
+		MountPath: envRoot,
+		ReadOnly:  true,
+	})
 
 	pod.Spec.Containers[0].Name = slugBuilderName
 	pod.Spec.Containers[0].Image = image
@@ -266,4 +284,24 @@ func progress(msg string, interval time.Duration) chan bool {
 		}
 	}()
 	return quit
+}
+
+func createAppEnvConfigSecret(secretsClient client.SecretsInterface, secretName string, env map[string]interface{}) error {
+	newSecret := new(api.Secret)
+	newSecret.Name = secretName
+	newSecret.Type = api.SecretTypeOpaque
+	newSecret.Data = make(map[string][]byte)
+	for k, v := range env {
+		newSecret.Data[k] = []byte(fmt.Sprintf("%v", v))
+	}
+	if _, err := secretsClient.Create(newSecret); err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			if _, err = secretsClient.Update(newSecret); err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
+	return nil
 }
