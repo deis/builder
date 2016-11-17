@@ -306,7 +306,7 @@ func build(
 	quit <- true
 	<-quit
 	if controller.CheckAPICompat(client, err) != nil {
-		return fmt.Errorf("publishing release (%s)", err)
+		return fmt.Errorf("The controller returned an error when publishing the release: %s", err)
 	}
 
 	log.Info("Done, %s:v%d deployed to Workflow\n", appName, release)
