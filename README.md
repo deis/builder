@@ -15,11 +15,20 @@ The builder is primarily a git server that responds to `git push`es by executing
 
 1. Calls `git archive` to produce a tarball (i.e. a `.tar.gz` file) on the local file system
 2. Saves the tarball to centralized object storage according to the following rules:
-	- If the `DEIS_OUTSIDE_STORAGE` environment variable exists, saves to the [S3 API][s3-api-ref] compatible server at `https://$DEIS_OUTSIDE_STORAGE`
-  - Otherwise, if the `DEIS_MINIO_SERVICE_HOST` and `DEIS_MINIO_SERVICE_PORT` environment variables exist (these are standard [Kubernetes service discovery environment variables](http://kubernetes.io/docs/user-guide/services/#environment-variables)), saves to the [S3 API][s3-api-ref] compatible server at `http://$DEIS_MINIO_SERVICE_HOST:$DEIS_MINIO_SERVICE_HOST`
+	- If the `BUILDER_STORAGE` environment variable is other than `minio`, attempts to create the appropriate storage driver and saves using this driver.
+  - Otherwise, if `BUILDER_STORAGE` is `minio` and the `DEIS_MINIO_SERVICE_HOST` and `DEIS_MINIO_SERVICE_PORT` environment variables exist (these are standard [Kubernetes service discovery environment variables](http://kubernetes.io/docs/user-guide/services/#environment-variables)), saves to the [S3 API][s3-api-ref] compatible server at `http://$DEIS_MINIO_SERVICE_HOST:$DEIS_MINIO_SERVICE_HOST`
 3. Starts a new [Kubernetes Pod](http://kubernetes.io/docs/user-guide/pods/) to build the code, according to the following rules:
   - If a `Dockerfile` is present in the codebase, starts a [`dockerbuilder`](https://github.com/deis/dockerbuilder) pod, configured to download the code to build from the URL computed in the previous step.
   - Otherwise, starts a [`slugbuilder`](https://github.com/deis/slugbuilder) pod, configured to download the code to build from the URL computed in the previous step.
+
+# Supported Off-Cluster Storage Backends
+
+Builder currently supports the following off-cluster storage backends:
+
+* GCS
+* AWS/S3
+* Azure
+* Swift
 
 # Development
 
@@ -53,7 +62,7 @@ Note that you will not be able to build or push Docker images using this method 
 
 The Deis project requires that as much code as possible is unit tested, but the core contributors also recognize that some code must be tested at a higher level (functional or integration tests, for example).
 
-The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly [dogfood](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) the platform. Since this particular component is at the center of much of the Deis platform, we find it especially important to dogfood it.
+The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our integration tests. Additionally, the core contributors and members of the community also regularly [dogfood](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) the platform. Since this particular component is at the center of much of the Deis Workflow platform, we find it especially important to dogfood it.
 
 ## Running End-to-End Tests
 
@@ -61,7 +70,7 @@ Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.m
 
 ## Dogfooding
 
-Please follow the instructions on the [official Deis docs](http://docs-v2.readthedocs.org/en/latest/installing-workflow/installing-deis-workflow/) to install and configure your Deis cluster and all related tools, and deploy and configure an app on Deis.
+Please follow the instructions on the [official Deis docs](http://docs-v2.readthedocs.org/en/latest/installing-workflow/installing-deis-workflow/) to install and configure your Deis Workflow cluster and all related tools, and deploy and configure an app on Deis Workflow.
 
 # License
 
