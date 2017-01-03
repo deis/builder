@@ -57,7 +57,7 @@ The [end-to-end tests](https://github.com/deis/workflow-e2e) repository has our 
 
 ## Running End-to-End Tests
 
-Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.md) on the end-to-end tests reposotory for instructions on how to set up your testing environment and run the tests.
+Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.md) on the end-to-end tests repository for instructions on how to set up your testing environment and run the tests.
 
 ## Dogfooding
 
