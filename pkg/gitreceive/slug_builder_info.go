@@ -5,7 +5,9 @@ import (
 )
 
 const (
-	slugTGZName = "slug.tgz"
+	slugTGZName     = "slug.tgz"
+	CacheKeyPattern = "home/%s/cache"
+	GitKeyPattern   = "home/%s:git-%s"
 )
 
 // SlugBuilderInfo contains all of the object storage related information needed to pass to a
@@ -19,12 +21,12 @@ type SlugBuilderInfo struct {
 
 // NewSlugBuilderInfo creates and populates a new SlugBuilderInfo based on the given data
 func NewSlugBuilderInfo(appName string, shortSha string, disableCaching bool) *SlugBuilderInfo {
-	slugName := fmt.Sprintf("%s:git-%s", appName, shortSha)
-	tarKey := fmt.Sprintf("home/%s/tar", slugName)
+	basePath := fmt.Sprintf(GitKeyPattern, appName, shortSha)
+	tarKey := fmt.Sprintf("%s/tar", basePath)
 	// this is where workflow tells slugrunner to download the slug from, so we have to tell slugbuilder to upload it to here
-	pushKey := fmt.Sprintf("home/%s/push", slugName)
+	pushKey := fmt.Sprintf("%s/push", basePath)
 
-	cacheKey := fmt.Sprintf("home/%s/cache", appName)
+	cacheKey := fmt.Sprintf(CacheKeyPattern, appName)
 
 	return &SlugBuilderInfo{
 		pushKey:        pushKey,
