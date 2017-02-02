@@ -5,9 +5,11 @@ import (
 )
 
 const (
-	slugTGZName     = "slug.tgz"
+	slugTGZName = "slug.tgz"
+	// CacheKeyPattern is the template for location cache dirs.
 	CacheKeyPattern = "home/%s/cache"
-	GitKeyPattern   = "home/%s:git-%s"
+	// GitKeyPattern is the template for storing git key files.
+	GitKeyPattern = "home/%s:git-%s"
 )
 
 // SlugBuilderInfo contains all of the object storage related information needed to pass to a

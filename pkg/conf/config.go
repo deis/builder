@@ -15,7 +15,8 @@ const (
 	gcsKey              = "key.json"
 )
 
-var BuilderKeyLocation string = "/var/run/secrets/api/auth/builder-key"
+// BuilderKeyLocation holds the path of the builder key secret.
+var BuilderKeyLocation = "/var/run/secrets/api/auth/builder-key"
 
 // Parameters is map which contains storage params
 type Parameters map[string]interface{}

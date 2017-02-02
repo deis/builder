@@ -227,7 +227,7 @@ func build(
 	if err == nil {
 		log.Debug("Pod spec: %v", json)
 	} else {
-		log.Debug("Error creating json representaion of pod spec: %v", err)
+		log.Debug("Error creating json representation of pod spec: %v", err)
 	}
 
 	podsInterface := kubeClient.Pods(conf.PodNamespace)
@@ -290,8 +290,8 @@ func build(
 	}
 	log.Debug("Done")
 
-	procType := deisAPI.ProcessType{}
-	if procType, err = getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey(), bType); err != nil {
+	procType, err := getProcFile(storageDriver, tmpDir, slugBuilderInfo.AbsoluteProcfileKey(), bType)
+	if err != nil {
 		return err
 	}
 

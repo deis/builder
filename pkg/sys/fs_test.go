@@ -9,7 +9,7 @@ import (
 
 const testFilename string = "sys-fs-tests"
 
-var expected []byte = []byte("temporary file's content")
+var expected = []byte("temporary file's content")
 
 func TestRealFS(t *testing.T) {
 	fs := RealFS()
