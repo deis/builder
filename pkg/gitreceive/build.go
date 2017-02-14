@@ -237,7 +237,7 @@ func build(
 		return fmt.Errorf("creating builder pod (%s)", err)
 	}
 
-	pw := k8s.NewPodWatcher(kubeClient, "deis")
+	pw := k8s.NewPodWatcher(kubeClient, conf.PodNamespace)
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 	go pw.Controller.Run(stopCh)
