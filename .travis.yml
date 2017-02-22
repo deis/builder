@@ -3,8 +3,7 @@ branches:
   only:
     - master
 env:
-  DEV_REGISTRY=quay.io
-  DOCKER_BUILD_FLAGS="--pull --no-cache"
+  - DEV_REGISTRY=quay.io DOCKER_BUILD_FLAGS="--pull --no-cache"
 services:
   - docker
 sudo: required
