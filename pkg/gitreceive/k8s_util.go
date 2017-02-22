@@ -67,7 +67,7 @@ func dockerBuilderPod(
 	//
 	// So we need to translate the map into json.
 	dockerBuildArgs, _ := json.Marshal(env)
-	addEnvToPod(pod, "DOCKER_BUILD_ARGS", dockerBuildArgs)
+	addEnvToPod(pod, "DOCKER_BUILD_ARGS", string(dockerBuildArgs))
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
 	pod.Spec.Containers[0].Image = image
