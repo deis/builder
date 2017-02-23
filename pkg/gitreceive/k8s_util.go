@@ -1,6 +1,7 @@
 package gitreceive
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -57,6 +58,16 @@ func dockerBuilderPod(
 ) *api.Pod {
 
 	pod := buildPod(debug, name, namespace, pullPolicy, env)
+
+	// inject application envvars as a special envvar which will be handled by dockerbuilder to
+	// inject them as build-time variables.
+	// NOTE(bacongobbler): docker-py takes buildargs as a json string in the form of
+	//
+	// {"KEY": "value"}
+	//
+	// So we need to translate the map into json.
+	dockerBuildArgs, _ := json.Marshal(env)
+	addEnvToPod(pod, "DOCKER_BUILD_ARGS", string(dockerBuildArgs))
 
 	pod.Spec.Containers[0].Name = dockerBuilderName
 	pod.Spec.Containers[0].Image = image
