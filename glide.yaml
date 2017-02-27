@@ -9,7 +9,7 @@ import:
 - package: github.com/gorilla/mux
   version: e444e69cbd2e2e3e0749a2f3c717cec491552bbf
 - package: golang.org/x/crypto
-  version: b82246307bd525fde15c1df976318003716bca68
+  version: 453249f01cfeb54c3d549ddb75ff152ca243f9d8
   subpackages:
   - ssh
 - package: gopkg.in/yaml.v2

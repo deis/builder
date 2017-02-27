@@ -1,5 +1,5 @@
-hash: 39e2281a70017c96dbce58ceb8233243de88d6a8fcc5be7a258591f09a35791e
-updated: 2017-01-18T10:07:17.7689922-07:00
+hash: d85b2efb6ab99d7c4d431a95b64116345596b1e371c19c2f55b2be73fff9bcbf
+updated: 2017-02-14T09:23:17.687476614-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -140,7 +140,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/kelseyhightower/envconfig
-  version: 4069f29f08928c54bcb1fdf632b31b1bb54b4fdb
+  version: 9aca109c9aec4633fced9717c4a09ecab3d33111
 - name: github.com/matttproud/golang_protobuf_extensions
   version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
   subpackages:
@@ -193,7 +193,7 @@ imports:
   subpackages:
   - codec
 - name: golang.org/x/crypto
-  version: b82246307bd525fde15c1df976318003716bca68
+  version: 453249f01cfeb54c3d549ddb75ff152ca243f9d8
   subpackages:
   - curve25519
   - ed25519
