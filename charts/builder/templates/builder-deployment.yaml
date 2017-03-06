@@ -94,6 +94,10 @@ spec:
                 secretKeyRef:
                   name: builder-key-auth
                   key: builder-key
+{{- if (.Values.builder_pod_node_selector) }}
+            - name: BUILDER_POD_NODE_SELECTOR
+              value: {{.Values.builder_pod_node_selector}}
+{{- end}}
           livenessProbe:
             httpGet:
               path: /healthz
