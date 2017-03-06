@@ -39,6 +39,7 @@ type slugBuildCase struct {
 	slugBuilderImage           string
 	slugBuilderImagePullPolicy api.PullPolicy
 	storageType                string
+	builderPodNodeSelector     map[string]string
 }
 
 type dockerBuildCase struct {
@@ -52,6 +53,7 @@ type dockerBuildCase struct {
 	dockerBuilderImage           string
 	dockerBuilderImagePullPolicy api.PullPolicy
 	storageType                  string
+	builderPodNodeSelector       map[string]string
 }
 
 func TestBuildPod(t *testing.T) {
@@ -62,15 +64,24 @@ func TestBuildPod(t *testing.T) {
 	envSecretName := "test-build-env"
 	var pod *api.Pod
 
+	emptyNodeSelector := make(map[string]string)
+
+	nodeSelector1 := make(map[string]string)
+	nodeSelector1["disk"] = "ssd"
+
+	nodeSelector2 := make(map[string]string)
+	nodeSelector2["disk"] = "magnetic"
+	nodeSelector2["network"] = "fast"
+
 	slugBuilds := []slugBuildCase{
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullAlways, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullIfNotPresent, ""},
-		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullNever, ""},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", envSecretName, "tar", "put-url", "", "deadbeef", "", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullAlways, "", nil},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullIfNotPresent, "", nodeSelector1},
+		{true, "test", "default", envSecretName, "tar", "put-url", "cache-url", "deadbeef", "buildpack", "customimage", api.PullNever, "", nodeSelector2},
 	}
 
 	for _, build := range slugBuilds {
@@ -87,6 +98,7 @@ func TestBuildPod(t *testing.T) {
 			build.storageType,
 			build.slugBuilderImage,
 			build.slugBuilderImagePullPolicy,
+			build.builderPodNodeSelector,
 		)
 
 		if pod.ObjectMeta.Name != build.name {
@@ -123,16 +135,20 @@ func TestBuildPod(t *testing.T) {
 				t.Errorf("expected %v but returned %v", build.slugBuilderImagePullPolicy, pod.Spec.Containers[0].ImagePullPolicy)
 			}
 		}
+
+		if len(pod.Spec.NodeSelector) > 0 || len(build.builderPodNodeSelector) > 0 {
+			assert.Equal(t, pod.Spec.NodeSelector, build.builderPodNodeSelector, "node selector")
+		}
 	}
 
 	dockerBuilds := []dockerBuildCase{
-		{true, "test", "default", emptyEnv, "tar", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "deadbeef", "", "", api.PullAlways, ""},
-		{true, "test", "default", emptyEnv, "tar", "deadbeef", "img", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "deadbeef", "img", "", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullAlways, ""},
-		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullIfNotPresent, ""},
-		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullNever, ""},
+		{true, "test", "default", emptyEnv, "tar", "deadbeef", "", "", api.PullAlways, "", nodeSelector1},
+		{true, "test", "default", env, "tar", "deadbeef", "", "", api.PullAlways, "", nodeSelector2},
+		{true, "test", "default", emptyEnv, "tar", "deadbeef", "img", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", env, "tar", "deadbeef", "img", "", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullAlways, "", emptyNodeSelector},
+		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullIfNotPresent, "", emptyNodeSelector},
+		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullNever, "", nil},
 	}
 	regEnv := map[string]string{"REG_LOC": "on-cluster"}
 	for _, build := range dockerBuilds {
@@ -150,6 +166,7 @@ func TestBuildPod(t *testing.T) {
 			"5555",
 			regEnv,
 			build.dockerBuilderImagePullPolicy,
+			build.builderPodNodeSelector,
 		)
 
 		if pod.ObjectMeta.Name != build.name {
@@ -174,6 +191,10 @@ func TestBuildPod(t *testing.T) {
 					t.Errorf("expected %v but returned %v", build.dockerBuilderImagePullPolicy, pod.Spec.Containers[0].ImagePullPolicy)
 				}
 			}
+		}
+
+		if len(pod.Spec.NodeSelector) > 0 || len(build.builderPodNodeSelector) > 0 {
+			assert.Equal(t, pod.Spec.NodeSelector, build.builderPodNodeSelector, "node selector")
 		}
 	}
 }

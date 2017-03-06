@@ -1,6 +1,7 @@
 package gitreceive
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -159,6 +160,12 @@ func build(
 	var pod *api.Pod
 	var buildPodName string
 	image := appName
+
+	builderPodNodeSelector, err := buildBuilderPodNodeSelector(conf.BuilderPodNodeSelector)
+	if err != nil {
+		return fmt.Errorf("error build builder pod node selector %s", err)
+	}
+
 	if usingDockerfile {
 		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
 		registryLocation := conf.RegistryLocation
@@ -187,6 +194,7 @@ func build(
 			conf.RegistryPort,
 			registryEnv,
 			dockerBuilderImagePullPolicy,
+			builderPodNodeSelector,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -218,6 +226,7 @@ func build(
 			conf.StorageType,
 			conf.SlugBuilderImage,
 			slugBuilderImagePullPolicy,
+			builderPodNodeSelector,
 		)
 	}
 
@@ -316,6 +325,21 @@ func build(
 	run(repoCmd(repoDir, "git", "gc"))
 
 	return nil
+}
+
+func buildBuilderPodNodeSelector(config string) (map[string]string, error) {
+	selector := make(map[string]string)
+	if config != "" {
+		line := bufio.NewScanner(strings.NewReader(config))
+		for line.Scan() {
+			splits := strings.Split(line.Text(), "=")
+			if len(splits) != 2 {
+				return nil, fmt.Errorf("Invalid BuilderPodNodeSelector value format: %s", config)
+			}
+			selector[splits[0]] = splits[1]
+		}
+	}
+	return selector, nil
 }
 
 func prettyPrintJSON(data interface{}) (string, error) {
