@@ -1,7 +1,6 @@
 package gitreceive
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -330,13 +329,12 @@ func build(
 func buildBuilderPodNodeSelector(config string) (map[string]string, error) {
 	selector := make(map[string]string)
 	if config != "" {
-		line := bufio.NewScanner(strings.NewReader(config))
-		for line.Scan() {
-			splits := strings.Split(line.Text(), "=")
-			if len(splits) != 2 {
+		for _, line := range strings.Split(config, ",") {
+			param := strings.Split(line, ":")
+			if len(param) != 2 {
 				return nil, fmt.Errorf("Invalid BuilderPodNodeSelector value format: %s", config)
 			}
-			selector[splits[0]] = splits[1]
+			selector[strings.TrimSpace(param[0])] = strings.TrimSpace(param[1])
 		}
 	}
 	return selector, nil

@@ -237,8 +237,9 @@ func TestBuildBuilderPodNodeSelector(t *testing.T) {
 
 	cazes := []podSelectorBuildCase{
 		{"", emptyNodeSelector},
-		{"pool=worker", map[string]string{"pool": "worker"}},
-		{"pool=worker\nnetwork=fast", map[string]string{"pool": "worker", "network": "fast"}},
+		{"pool:worker", map[string]string{"pool": "worker"}},
+		{"pool:worker,network:fast", map[string]string{"pool": "worker", "network": "fast"}},
+		{"pool:worker ,network:fast, disk:ssd", map[string]string{"pool": "worker", "network": "fast", "disk": "ssd"}},
 	}
 
 	for _, caze := range cazes {
@@ -247,6 +248,6 @@ func TestBuildBuilderPodNodeSelector(t *testing.T) {
 		assert.Equal(t, output, caze.Output, "pod selector")
 	}
 
-	_, err := buildBuilderPodNodeSelector("failtest")
-	assert.ExistsErr(t, err, "fail test")
+	_, err := buildBuilderPodNodeSelector("invalidformat")
+	assert.ExistsErr(t, err, "invalid format")
 }
