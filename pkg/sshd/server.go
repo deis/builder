@@ -78,7 +78,7 @@ func Configure(cnf *Config) (*ssh.ServerConfig, error) {
 			return AuthKey(k, cnf)
 		},
 	}
-	hostKeyTypes := []string{"rsa", "dsa", "ecdsa"}
+	hostKeyTypes := []string{"rsa", "ecdsa"}
 	pathTpl := "/var/run/secrets/deis/builder/ssh/ssh-host-%s-key"
 	for _, t := range hostKeyTypes {
 		path := fmt.Sprintf(pathTpl, t)
