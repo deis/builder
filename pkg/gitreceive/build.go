@@ -159,6 +159,12 @@ func build(
 	var pod *api.Pod
 	var buildPodName string
 	image := appName
+
+	builderPodNodeSelector, err := buildBuilderPodNodeSelector(conf.BuilderPodNodeSelector)
+	if err != nil {
+		return fmt.Errorf("error build builder pod node selector %s", err)
+	}
+
 	if usingDockerfile {
 		buildPodName = dockerBuilderPodName(appName, gitSha.Short())
 		registryLocation := conf.RegistryLocation
@@ -187,6 +193,7 @@ func build(
 			conf.RegistryPort,
 			registryEnv,
 			dockerBuilderImagePullPolicy,
+			builderPodNodeSelector,
 		)
 	} else {
 		buildPodName = slugBuilderPodName(appName, gitSha.Short())
@@ -218,6 +225,7 @@ func build(
 			conf.StorageType,
 			conf.SlugBuilderImage,
 			slugBuilderImagePullPolicy,
+			builderPodNodeSelector,
 		)
 	}
 
@@ -316,6 +324,20 @@ func build(
 	run(repoCmd(repoDir, "git", "gc"))
 
 	return nil
+}
+
+func buildBuilderPodNodeSelector(config string) (map[string]string, error) {
+	selector := make(map[string]string)
+	if config != "" {
+		for _, line := range strings.Split(config, ",") {
+			param := strings.Split(line, ":")
+			if len(param) != 2 {
+				return nil, fmt.Errorf("Invalid BuilderPodNodeSelector value format: %s", config)
+			}
+			selector[strings.TrimSpace(param[0])] = strings.TrimSpace(param[1])
+		}
+	}
+	return selector, nil
 }
 
 func prettyPrintJSON(data interface{}) (string, error) {

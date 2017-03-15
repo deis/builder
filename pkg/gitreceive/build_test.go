@@ -31,6 +31,11 @@ type testJSONStruct struct {
 	Foo string `json:"foo,omitempty"`
 }
 
+type podSelectorBuildCase struct {
+	Config string
+	Output map[string]string
+}
+
 func TestBuild(t *testing.T) {
 	config := &Config{}
 	env := sys.NewFakeEnv()
@@ -225,4 +230,24 @@ func TestRunCmd(t *testing.T) {
 	if output != expected {
 		t.Errorf("expected '%s', got '%s'", expected, output)
 	}
+}
+
+func TestBuildBuilderPodNodeSelector(t *testing.T) {
+	emptyNodeSelector := make(map[string]string)
+
+	cazes := []podSelectorBuildCase{
+		{"", emptyNodeSelector},
+		{"pool:worker", map[string]string{"pool": "worker"}},
+		{"pool:worker,network:fast", map[string]string{"pool": "worker", "network": "fast"}},
+		{"pool:worker ,network:fast, disk:ssd", map[string]string{"pool": "worker", "network": "fast", "disk": "ssd"}},
+	}
+
+	for _, caze := range cazes {
+		output, err := buildBuilderPodNodeSelector(caze.Config)
+		assert.Nil(t, err, "error")
+		assert.Equal(t, output, caze.Output, "pod selector")
+	}
+
+	_, err := buildBuilderPodNodeSelector("invalidformat")
+	assert.ExistsErr(t, err, "invalid format")
 }

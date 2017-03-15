@@ -55,9 +55,10 @@ func dockerBuilderPod(
 	registryPort string,
 	registryEnv map[string]string,
 	pullPolicy api.PullPolicy,
+	nodeSelector map[string]string,
 ) *api.Pod {
 
-	pod := buildPod(debug, name, namespace, pullPolicy, env)
+	pod := buildPod(debug, name, namespace, pullPolicy, nodeSelector, env)
 
 	// inject application envvars as a special envvar which will be handled by dockerbuilder to
 	// inject them as build-time variables.
@@ -115,9 +116,10 @@ func slugbuilderPod(
 	storageType,
 	image string,
 	pullPolicy api.PullPolicy,
+	nodeSelector map[string]string,
 ) *api.Pod {
 
-	pod := buildPod(debug, name, namespace, pullPolicy, nil)
+	pod := buildPod(debug, name, namespace, pullPolicy, nodeSelector, nil)
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes, api.Volume{
 		Name: envSecretName,
@@ -159,6 +161,7 @@ func buildPod(
 	name,
 	namespace string,
 	pullPolicy api.PullPolicy,
+	nodeSelector map[string]string,
 	env map[string]interface{}) api.Pod {
 
 	pod := api.Pod{
@@ -204,6 +207,10 @@ func buildPod(
 				Value: fmt.Sprintf("%v", v),
 			})
 		}
+	}
+
+	if len(nodeSelector) > 0 {
+		pod.Spec.NodeSelector = nodeSelector
 	}
 
 	if debug {

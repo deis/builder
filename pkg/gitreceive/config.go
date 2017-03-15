@@ -41,6 +41,7 @@ type Config struct {
 	SlugBuilderImagePullPolicy    string `envconfig:"SLUG_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
 	DockerBuilderImagePullPolicy  string `envconfig:"DOCKER_BUILDER_IMAGE_PULL_POLICY" default:"Always"`
 	StorageType                   string `envconfig:"BUILDER_STORAGE" default:"minio"`
+	BuilderPodNodeSelector        string `envconfig:"BUILDER_POD_NODE_SELECTOR" default:""`
 }
 
 // App returns the application name represented by c. The app name is the same as c.Repository
