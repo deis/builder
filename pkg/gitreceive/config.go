@@ -33,7 +33,7 @@ type Config struct {
 	Debug                         bool   `envconfig:"DEIS_DEBUG" default:"false"`
 	BuilderPodTickDurationMSec    int    `envconfig:"BUILDER_POD_TICK_DURATION" default:"100"`
 	BuilderPodWaitDurationMSec    int    `envconfig:"BUILDER_POD_WAIT_DURATION" default:"900000"` // 15 minutes
-	ObjectStorageTickDurationMSec int    `envconfing:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
+	ObjectStorageTickDurationMSec int    `envconfig:"OBJECT_STORAGE_TICK_DURATION" default:"500"`
 	ObjectStorageWaitDurationMSec int    `envconfig:"OBJECT_STORAGE_WAIT_DURATION" default:"300000"` // 5 minutes
 	SessionIdleIntervalMsec       int    `envconfig:"SESSION_IDLE_INTERVAL" default:"10000"`         // 10 seconds
 	SlugBuilderImage              string `envconfig:"SLUGBUILDER_IMAGE_NAME" required:"true"`
