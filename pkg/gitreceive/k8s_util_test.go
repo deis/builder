@@ -204,7 +204,7 @@ func checkForEnv(t *testing.T, pod *api.Pod, key, expVal string) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	if val != val {
+	if expVal != val {
 		t.Errorf("expected %v but returned %v ", expVal, val)
 	}
 }
