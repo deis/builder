@@ -4,3 +4,11 @@ docker_tag: canary
 # limits_cpu: "100m"
 # limits_memory: "50Mi"
 # builder_pod_node_selector: "disk:ssd"
+
+global:
+  # Experimental feature to toggle using kubernetes ingress instead of the Deis router.
+  #
+  # Valid values are:
+  # - true: The deis controller will now create Kubernetes ingress rules for each app, and ingress rules will automatically be created for the controller itself.
+  # - false: The default mode, and the default behavior of Deis workflow.
+  experimental_native_ingress: false
