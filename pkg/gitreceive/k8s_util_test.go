@@ -61,6 +61,9 @@ func TestBuildPod(t *testing.T) {
 
 	env := make(map[string]interface{})
 	env["KEY"] = "VALUE"
+	buildArgsEnv := make(map[string]interface{})
+	buildArgsEnv["DEIS_DOCKER_BUILD_ARGS_ENABLED"] = "1"
+	buildArgsEnv["KEY"] = "VALUE"
 	envSecretName := "test-build-env"
 	var pod *api.Pod
 
@@ -149,6 +152,7 @@ func TestBuildPod(t *testing.T) {
 		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullAlways, "", emptyNodeSelector},
 		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullIfNotPresent, "", emptyNodeSelector},
 		{true, "test", "default", env, "tar", "deadbeef", "img", "customimage", api.PullNever, "", nil},
+		{true, "test", "default", buildArgsEnv, "tar", "deadbeef", "img", "customimage", api.PullIfNotPresent, "", emptyNodeSelector},
 	}
 	regEnv := map[string]string{"REG_LOC": "on-cluster"}
 	for _, build := range dockerBuilds {
@@ -180,6 +184,9 @@ func TestBuildPod(t *testing.T) {
 		checkForEnv(t, pod, "TAR_PATH", build.tarKey)
 		checkForEnv(t, pod, "IMG_NAME", build.imgName)
 		checkForEnv(t, pod, "REG_LOC", "on-cluster")
+		if _, ok := build.env["DEIS_DOCKER_BUILD_ARGS_ENABLED"]; ok {
+			checkForEnv(t, pod, "DOCKER_BUILD_ARGS", `{"DEIS_DOCKER_BUILD_ARGS_ENABLED":"1","KEY":"VALUE"}`)
+		}
 		if build.dockerBuilderImage != "" {
 			if pod.Spec.Containers[0].Image != build.dockerBuilderImage {
 				t.Errorf("expected %v but returned %v", build.dockerBuilderImage, pod.Spec.Containers[0].Image)
