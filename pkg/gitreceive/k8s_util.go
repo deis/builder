@@ -33,11 +33,21 @@ const (
 
 func dockerBuilderPodName(appName, shortSha string) string {
 	uid := uuid.New()[:8]
+	// NOTE(bacongobbler): pod names cannot exceed 63 characters in length, so we truncate
+	// the application name to stay under that limit when adding all the extra metadata to the name
+	if len(appName) > 33 {
+		appName = appName[:33]
+	}
 	return fmt.Sprintf("dockerbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
 func slugBuilderPodName(appName, shortSha string) string {
 	uid := uuid.New()[:8]
+	// NOTE(bacongobbler): pod names cannot exceed 63 characters in length, so we truncate
+	// the application name to stay under that limit when adding all the extra metadata to the name
+	if len(appName) > 35 {
+		appName = appName[:35]
+	}
 	return fmt.Sprintf("slugbuild-%s-%s-%s", appName, shortSha, uid)
 }
 
