@@ -15,14 +15,30 @@ import (
 func TestDockerBuilderPodName(t *testing.T) {
 	name := dockerBuilderPodName("demo", "12345678")
 	if !strings.HasPrefix(name, "dockerbuild-demo-12345678-") {
-		t.Fatalf("expected pod name dockerbuild-demo-12345678-*, got %s", name)
+		t.Errorf("expected pod name dockerbuild-demo-12345678-*, got %s", name)
+	}
+
+	name = dockerBuilderPodName("this-name-has-more-than-24-characters-in-length", "12345678")
+	if !strings.HasPrefix(name, "dockerbuild-this-name-has-more-than-24-charac-12345678-") {
+		t.Errorf("expected pod name dockerbuild-this-name-has-more-than-24-charac-12345678-*, got %s", name)
+	}
+	if len(name) > 63 {
+		t.Errorf("expected dockerbuilder pod name length to be <= 63 characters in length, got %d", len(name))
 	}
 }
 
 func TestSlugBuilderPodName(t *testing.T) {
 	name := slugBuilderPodName("demo", "12345678")
 	if !strings.HasPrefix(name, "slugbuild-demo-12345678-") {
-		t.Fatalf("expected pod name slugbuild-demo-12345678-*, got %s", name)
+		t.Errorf("expected pod name slugbuild-demo-12345678-*, got %s", name)
+	}
+
+	name = slugBuilderPodName("this-name-has-more-than-24-characters-in-length", "12345678")
+	if !strings.HasPrefix(name, "slugbuild-this-name-has-more-than-24-characte-12345678-") {
+		t.Errorf("expected pod name slugbuild-this-name-has-more-than-24-characte-12345678-*, got %s", name)
+	}
+	if len(name) > 63 {
+		t.Errorf("expected slugbuilder pod name length to be <= 63 characters in length, got %d", len(name))
 	}
 }
 
