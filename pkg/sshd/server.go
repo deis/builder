@@ -38,6 +38,7 @@ func AuthKey(key ssh.PublicKey, cnf *Config) (*ssh.Permissions, error) {
 	log.Info("Starting ssh authentication")
 	client, err := controller.New(cnf.ControllerHost, cnf.ControllerPort)
 	if err != nil {
+		log.Info("Failed to authenticate with the controller: %s", err)
 		return nil, err
 	}
 
