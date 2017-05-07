@@ -1,0 +1,21 @@
+{{- if (.Values.global.use_rbac) -}}
+{{- if (.Capabilities.APIVersions.Has (include "rbacAPIVersion" .)) -}}
+kind: Role
+apiVersion: {{ template "rbacAPIVersion" . }}
+metadata:
+  name: deis-builder
+  labels:
+    app: deis-builder
+    heritage: deis
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "update", "delete"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create", "get", "watch", "list"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+{{- end -}}
+{{- end -}}

@@ -1,0 +1,15 @@
+{{- if (.Values.global.use_rbac) -}}
+{{- if (.Capabilities.APIVersions.Has (include "rbacAPIVersion" .)) -}}
+kind: ClusterRole
+apiVersion: {{ template "rbacAPIVersion" . }}
+metadata:
+  name: deis:deis-builder
+  labels:
+    app: deis-builder
+    heritage: deis
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["list"]
+{{- end -}}
+{{- end -}}

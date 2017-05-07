@@ -1,0 +1,18 @@
+{{- if (.Values.global.use_rbac) -}}
+{{- if (.Capabilities.APIVersions.Has (include "rbacAPIVersion" .)) -}}
+kind: RoleBinding
+apiVersion: {{ template "rbacAPIVersion" . }}
+metadata:
+  name: deis-builder
+  labels:
+    app: deis-builder
+    heritage: deis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: deis-builder
+subjects:
+- kind: ServiceAccount
+  name: deis-builder
+{{- end -}}
+{{- end -}}
