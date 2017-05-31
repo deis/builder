@@ -310,7 +310,7 @@ func build(
 	if !usingDockerfile {
 		image = slugBuilderInfo.AbsoluteSlugObjectKey()
 	}
-	release, err := hooks.CreateBuild(client, conf.Username, conf.App(), image, gitSha.Short(), procType, usingDockerfile)
+	release, err := hooks.CreateBuild(client, conf.Username, conf.App(), image, gitSha.Short(), procType, usingDockerfile, conf.DeployNow())
 	quit <- true
 	<-quit
 	if controller.CheckAPICompat(client, err) != nil {
