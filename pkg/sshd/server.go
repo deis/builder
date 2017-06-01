@@ -96,6 +96,7 @@ func Configure(cnf *Config) (*ssh.ServerConfig, error) {
 		log.Debug("Parsed host key %s.", path)
 		cfg.AddHostKey(hk)
 	}
+	cfg.Config.Ciphers = []string{"aes128-ctr","aes192-ctr","aes256-ctr","aes128-gcm@openssh.com"}
 	return cfg, nil
 }
 
