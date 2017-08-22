@@ -72,14 +72,6 @@ Please see [README.md](https://github.com/deis/workflow-e2e/blob/master/README.m
 
 Please follow the instructions on the [official Deis docs](http://docs-v2.readthedocs.org/en/latest/installing-workflow/installing-deis-workflow/) to install and configure your Deis Workflow cluster and all related tools, and deploy and configure an app on Deis Workflow.
 
-# License
-
-Copyright 2013, 2014, 2015, 2016 Engine Yard, Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at <http://www.apache.org/licenses/LICENSE-2.0>
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
 
 [s3-api-ref]: http://docs.aws.amazon.com/AmazonS3/latest/API/APIRest.html
 [install-k8s]: http://kubernetes.io/gettingstarted/
